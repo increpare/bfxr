@@ -47,7 +47,7 @@
 				lockablecheckboxes[tag]=checkbox;
 			}
 			
-			public function RegisterParameterSlider(c:MySimpleItemRendererCB):void
+			public function RegisterParameterSlider(c:SoundParameterRowRenderer):void
 			{
 				sliderList[c.data.tag]=c;
 			}
@@ -86,7 +86,7 @@
 				//parameter sliders
 				for(var tag:String in sliderList)
 				{
-					var cb:MySimpleItemRendererCB = sliderList[tag] as MySimpleItemRendererCB;
+					var cb:SoundParameterRowRenderer = sliderList[tag] as SoundParameterRowRenderer;
 					cb.slider.value = _synth.params[tag];
 				}				
 			}
@@ -121,7 +121,7 @@
 			public function sliderChanged(e:Event):void
 			{
 				var s:HSlider = e.target as HSlider;
-				var renderercb:MySimpleItemRendererCB = s.parent.parent as MySimpleItemRendererCB;
+				var renderercb:SoundParameterRowRenderer = s.parent.parent as SoundParameterRowRenderer;
 				
 				trace(renderercb.data.tag);
 				_synth.params[renderercb.data.tag]=s.value;	
@@ -847,7 +847,7 @@
 					<s:layout>
 						<s:VerticalLayout paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0"/>
 					</s:layout>
-					<s:DataGroup itemRenderer="MySimpleItemRendererCB" 
+					<s:DataGroup itemRenderer="SoundParameterRowRenderer" 
 								 height="555"								 
 								  width="322"> 
 						<s:layout>

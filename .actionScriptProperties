@@ -16,7 +16,7 @@
     <application path="sfxr_interface.mxml"/>
   </applications>
   <modules>
-    <module application="src/sfxr_interface.mxml" destPath="MySimpleItemRendererCB.swf" optimize="true" sourcePath="src/MySimpleItemRendererCB.mxml"/>
+    <module application="src/sfxr_interface.mxml" destPath="SoundParameterRowRenderer.swf" optimize="true" sourcePath="src/SoundParameterRowRenderer.mxml"/>
   </modules>
   <buildCSSFiles/>
 </actionScriptProperties>

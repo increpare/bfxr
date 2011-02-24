@@ -17,10 +17,8 @@
 				if (oldValue != inputTxt.text)
 				{
 					data.label = inputTxt.text;
-					labelDisplay.text = inputTxt.text;
+					labelDisplay.text = inputTxt.text;					
 					
-					
-					//dispatch the data update event
 					var list:ListBase = this.owner as ListBase;
 					list.dataProvider.itemUpdated(data, 'label', oldValue, inputTxt.text); 
 					
@@ -36,7 +34,7 @@
 				var l:List = this.parent as List;				
 				inputTxt.text = data.label;
 				isEdit(true);
-				//set cursor postion to end
+
 				inputTxt.selectRange(inputTxt.text.length,inputTxt.text.length+1);
 				inputTxt.setFocus();
 			}
@@ -45,13 +43,12 @@
 			{
 				labelDisplay.visible = !value;
 				inputTxt.visible =  value;
-				//removeBtn.visible = value;
 			}
 			
 			private function removeItem(event:Event):void
 			{
 				var list:ListBase = this.owner as ListBase;
-				//list.dataProvider.removeAll();
+
 				var app:sfxr_interface = parentApplication as sfxr_interface;
 				app.RemoveFromSoundList(list.selectedIndex);
 			}
