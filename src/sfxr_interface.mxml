@@ -865,11 +865,11 @@
 							<fx:Object square="false" bggroup="1" min="-1" max="1" tag="deltaSlide" descr="Delta slide"/>
 							<fx:Object square="false" bggroup="1" min="0" max="1" tag="vibratoDepth" descr="Vibrato depth"/>
 							<fx:Object square="false" bggroup="1" min="0" max="1" tag="vibratoSpeed" descr="Vibrato speed"/>
-							<fx:Object square="false" bggroup="0" min="0" max="1" tag="changePeriod" descr="Charge period"/>
-							<fx:Object square="false" bggroup="0" min="-1" max="1" tag="changeAmount" descr="Charge amount"/>
-							<fx:Object square="false" bggroup="0" min="0" max="1" tag="changeSpeed" descr="Charge speed"/>
-							<fx:Object square="false" bggroup="0" min="-1" max="1" tag="changeAmount2" descr="Charge amount2"/>
-							<fx:Object square="false" bggroup="0" min="0" max="1" tag="changeSpeed2" descr="Charge speed2"/>
+							<fx:Object square="false" bggroup="0" min="0" max="1" tag="changePeriod" descr="Change period"/>
+							<fx:Object square="false" bggroup="0" min="-1" max="1" tag="changeAmount" descr="Change amount"/>
+							<fx:Object square="false" bggroup="0" min="0" max="1" tag="changeSpeed" descr="Change speed"/>
+							<fx:Object square="false" bggroup="0" min="-1" max="1" tag="changeAmount2" descr="Change amount2"/>
+							<fx:Object square="false" bggroup="0" min="0" max="1" tag="changeSpeed2" descr="Change speed2"/>
 							<fx:Object square="true" bggroup="1" min="0" max="1" tag="squareDuty" descr="Square duty"/>
 							<fx:Object square="true" bggroup="1" min="-1" max="1" tag="dutySweep" descr="Duty sweep"/>
 							<fx:Object square="false" bggroup="0" min="0" max="1" tag="overtones" descr="Overtones"/>

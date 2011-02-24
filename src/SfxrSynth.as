@@ -326,8 +326,8 @@
 							if ((length = _cachedMutation.length) < 24576)
 							{
 								// If the sound is smaller than the buffer length, add silence to allow it to play
-								_cachedMutation.position = length;
-								for(i = 0, l = 24576 - length; i < l; i++) _cachedMutation.writeFloat(0.0);
+								_cachedMutation.position = length;														
+								while (_cachedMutation.length<24576) _cachedMutation.writeFloat(0.0);
 							}
 							
 							if (_cachingMutation >= _cachedMutationsNum)
@@ -349,8 +349,8 @@
 						
 						if (synthWave(_cachedWave, 3072, true))
 						{
-
-							// if wave shorter than buffer, fill rest of buffer with silence.
+							
+							// If the sound is smaller than the buffer length, add silence to allow it to play
 							while (_cachedWave.length<24576) _cachedWave.writeFloat(0.0);
 							
 							_cachingNormal = false;
@@ -414,7 +414,7 @@
 				{
 					// If the sound is smaller than the buffer length, add silence to allow it to play
 					_cachedWave.position = length;
-					for(var i:uint = 0, l:uint = 24576 - length; i < l; i++) _cachedWave.writeFloat(0.0);
+					while (_cachedWave.length<24576) _cachedWave.writeFloat(0.0);
 				}
 			}
 		}
@@ -853,18 +853,11 @@
 								break;
 							}
 							case 2: // Sine wave (fast and accurate approx)
-							{
-								
+							{								
 								 _pos = tempphase / _periodTemp;
 								 _pos = _pos > 0.5 ? (_pos - 1.0) * 6.28318531 : _pos * 6.28318531;
 								var _tempsample:Number = _pos < 0 ? 1.27323954 * _pos + .405284735 * _pos * _pos : 1.27323954 * _pos - 0.405284735 * _pos * _pos;
-								_sample += overtonestrength*(_tempsample < 0 ? .225 * (_tempsample *-_tempsample - _tempsample) + _tempsample : .225 * (_tempsample * _tempsample - _tempsample) + _tempsample);
-								/*
-								_pos = _phase / _periodTemp;
-								_pos = _pos > 0.5 ? (_pos - 1.0) * 6.28318531 : _pos * 6.28318531;
-								_sample = _pos < 0 ? 1.27323954 * _pos + .405284735 * _pos * _pos : 1.27323954 * _pos - 0.405284735 * _pos * _pos;
-								_sample = _sample < 0 ? .225 * (_sample *-_sample - _sample) + _sample : .225 * (_sample * _sample - _sample) + _sample;
-								*/
+								_sample += overtonestrength*(_tempsample < 0 ? .225 * (_tempsample *-_tempsample - _tempsample) + _tempsample : .225 * (_tempsample * _tempsample - _tempsample) + _tempsample);								
 								break;
 							}
 							case 3: // Noise
