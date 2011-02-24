@@ -738,7 +738,7 @@
 				var base:String = ExternalInterface.call('window.location.href.toString');
 				base = base.split("?")[0];
 				
-				var myurl:String = base + "?cat=cat&d="+escape(_synth.params.getSettingsString());
+				var myurl:String = base + "?d="+escape(_synth.params.getSettingsString());
 				
 				System.setClipboard(myurl);
 			}
@@ -874,7 +874,7 @@
 							<fx:Object square="true" bggroup="1" min="-1" max="1" tag="dutySweep" descr="Duty sweep"/>
 							<fx:Object square="false" bggroup="0" min="0" max="1" tag="overtones" descr="Overtones"/>
 							<fx:Object square="false" bggroup="0" min="0" max="1" tag="overtoneFalloff" descr="Overtone falloff"/>
-							<fx:Object square="false" bggroup="1" min="0" max="1" tag="repeatSpeed" descr="Repeat sweep"/>
+							<fx:Object square="false" bggroup="1" min="0" max="1" tag="repeatSpeed" descr="Repeat speed"/>
 							<fx:Object square="false" bggroup="0" min="-1" max="1" tag="phaserOffset" descr="Phaser offset"/>
 							<fx:Object square="false" bggroup="0" min="-1" max="1" tag="phaserSweep" descr="Phaser sweep"/>
 							<fx:Object square="false" bggroup="1" min="0" max="1" tag="lpFilterCutoff" descr="Low-pass filter cutoff"/>
