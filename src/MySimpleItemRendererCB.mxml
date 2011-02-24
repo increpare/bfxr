@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- containers\spark\myComponents\MySimpleItemRendererCB.mxml -->
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				dataChange="updateFields();"			
+				>
+	
+	<fx:Script>
+		<![CDATA[
+			import spark.skins.spark.CheckBoxSkin;
+			private function updateFields():void {
+				// Check to see if the data property is null.
+				if (data == null)
+					return;
+				// If the data property is not null, 
+				// set the CheckBox control appropriately..
+				if (data.locked == "yes") {
+					locked.selected = true;
+				}
+				else {
+					locked.selected = false;                    
+				}
+				
+				slider.value=data.slidervalue;				
+			}
+			
+			private function SliderValueChange(event:Event):void
+			{
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				app.sliderChanged(event);
+			}
+			
+			
+			private function OnLockButtonChanged(event:Event):void
+			{
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				app.lockChanged(data.tag,  locked.selected);
+			}
+			
+			private function CreationComplete(event:Event):void
+			{
+				slider.minimum= Number(data.min);
+				slider.maximum= Number(data.max);			
+				
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				app.RegisterParameterSlider(this);
+				app.RegisterLockableParam(data.tag,this.locked);
+				(slider.skin as TickedHSliderSkin).track.skin.invalidateDisplayList();
+				
+				if (data.square==true)
+				{
+					app.RegisterSquareSlider(fieldlabel, slider);
+				}
+				
+			}
+		]]>
+	</fx:Script>
+	
+	<s:Rect width="100%" height="100%">
+		<s:fill><s:SolidColor color="{ (data.bggroup=='0' ? 0xffccbda1:0xffe7d1a7) }" /></s:fill>
+	</s:Rect>
+	<s:HGroup 
+		verticalCenter="0" 
+		left="2" 
+		right="2" 
+		top="1" 
+		bottom="1" 
+		  creationComplete="CreationComplete(event)"
+		>    
+
+		<s:CheckBox 
+			id="locked" 
+			toolTip="Lock field during randomization/mutation?" 
+			verticalCenter="true" 
+			skinClass="spark.skins.spark.CheckBoxSkin"			 
+		 	change="OnLockButtonChanged(event)"
+			/>                
+		<s:Label id = "fieldlabel" text="{data.descr}" width="170" verticalAlign="middle" textAlign="right" />    
+		<s:HSlider
+			  skinClass="TickedHSliderSkin"
+			id="slider" 
+			width="117" 
+			minimum="0" 
+			maximum="1" 
+			stepSize="0.01" 
+			valid="true" 
+			top="0" 
+		 	changeEnd="SliderValueChange(event)"
+			/>
+	</s:HGroup>
+</s:ItemRenderer>

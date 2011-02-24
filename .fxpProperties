@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<fxpProperties abbreviated="false" authoringTool="Flex Builder" compiles="true" parentProject="5867244b-4b51-481e-a944-dde58af01f1f" projectUUID="5867244b-4b51-481e-a944-dde58af01f1f" sdkVersion="4.1.0" uuid="63c0cba3-24e9-42d2-803c-55e4bf6824b3" version="4">
+  <projects/>
+  <src/>
+  <swc>
+    <linked location="sdkPlaceHolder" path="sdkPlaceHolder" position="0" uuid="63c0cba3-24e9-42d2-803c-55e4bf6824b3"/>
+    <linked location="/libs" path="\libs" position="1" uuid="63c0cba3-24e9-42d2-803c-55e4bf6824b3"/>
+  </swc>
+  <misc>
+    <linked location="/Users/icecube/Documents/Adobe Flash Builder 4/toupload/as3sfxr" path="/bin-release1" position="0" uuid="63c0cba3-24e9-42d2-803c-55e4bf6824b3"/>
+  </misc>
+  <theme/>
+</fxpProperties>

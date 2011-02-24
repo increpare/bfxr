@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<actionScriptProperties analytics="false" mainApplicationPath="sfxr_interface.mxml" projectUUID="5867244b-4b51-481e-a944-dde58af01f1f" version="6">
+  <compiler additionalCompilerArguments="-locale en_US -static-link-runtime-shared-libraries=true" autoRSLOrdering="true" copyDependentFiles="true" fteInMXComponents="false" generateAccessible="true" htmlExpressInstall="true" htmlGenerate="true" htmlHistoryManagement="true" htmlPlayerVersionCheck="true" includeNetmonSwc="false" outputFolderPath="bin-debug" sourceFolderPath="src" strict="true" targetPlayerVersion="0.0.0" useApolloConfig="false" useDebugRSLSwfs="true" verifyDigests="true" warn="true">
+    <compilerSourcePath/>
+    <libraryPath defaultLinkType="1">
+      <libraryPathEntry kind="4" path="">
+        <excludedEntries>
+          <libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/flex.swc" useDefaultLinkType="false"/>
+        </excludedEntries>
+      </libraryPathEntry>
+      <libraryPathEntry kind="1" linkType="1" path="libs"/>
+    </libraryPath>
+    <sourceAttachmentPath/>
+  </compiler>
+  <applications>
+    <application path="sfxr_interface.mxml"/>
+  </applications>
+  <modules>
+    <module application="src/sfxr_interface.mxml" destPath="MySimpleItemRendererCB.swf" optimize="true" sourcePath="src/MySimpleItemRendererCB.mxml"/>
+  </modules>
+  <buildCSSFiles/>
+</actionScriptProperties>
