@@ -28,6 +28,8 @@
 			
 			private var _saveDat:SharedObject;
 			
+		//	private var _saveManager:SaveManager = new SaveManager;
+			
 			public function playOnChangeClick(e:Event):void
 			{
 				GlobalSettingCommit(e);
