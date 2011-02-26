@@ -1,16 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
 			   xmlns:s="library://ns.adobe.com/flex/spark" 
-			   xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="750" minHeight="700" pageTitle="as3sfxr-b" backgroundColor="#CCBDA1" preloaderChromeColor="#CCBDA1"
-			   applicationComplete="init();" width="750" height="700"  keyDown="keyDown(event);" >
+			   xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="662" minHeight="604" pageTitle="as3sfxr-b" backgroundColor="#CCBDA1" preloaderChromeColor="#CCBDA1"
+			   applicationComplete="init();" width="662" height="584"  keyDown="keyDown(event);" xmlns:local="*" >
 	<s:layout>
-		<s:HorizontalLayout verticalAlign="justify" paddingLeft="1" paddingBottom="1" paddingTop="1" paddingRight="0"/>
+		<s:BasicLayout/>
 	</s:layout>
-	
-	
-
-	
-	
 	<fx:Script>
 		<![CDATA[
 			import mx.collections.ArrayList;
@@ -21,25 +16,33 @@
 			import mx.events.PropertyChangeEvent;
 			import mx.utils.URLUtil;
 			
-			public static const version:int = 103;
 			
 			private var _synth:SfxrSynth;				// Synthesizer instance
-			private var _mutePlayOnChange:Boolean;		// If the change playing should be muted because of non-user changes			
 			
-			private var _saveDat:SharedObject;
-			
-		//	private var _saveManager:SaveManager = new SaveManager;
+			private var _saveManager:SaveManager;
 			
 			public function playOnChangeClick(e:Event):void
 			{
 				GlobalSettingCommit(e);
 			}
 			
+			/** returns -1 if nothing found */
+			private function GetSelectedItemID():int
+			{
+				var index:int = soundList.selectedIndex;
+				if (index==-1)
+					return -1;
+				return items.getItemAt(index).id;
+			}
+			
 			public function GlobalSettingCommit(e:Event):void
 			{				
-				_saveDat.data.samplerate = samplerate.selectedIndex;
-				_saveDat.data.bitdepth = bitdepth.selectedIndex;
-				_saveDat.data.playonchange = playonchange.selected;
+				CommitGlobal();
+			}
+					
+			private function CommitGlobal():void
+			{
+				_saveManager.commitGlobal(samplerate.selectedIndex,bitdepth.selectedIndex,playonchange.selected,GetSelectedItemID());			
 			}
 			
 			private var lockablecheckboxes:Object = new Object();
@@ -58,6 +61,13 @@
 			{
 				squareSlider.push(label);
 				squareSlider.push(s);
+			}			
+			
+			public function ResetParameterValue(paramname:String):void
+			{
+				_synth.params.resetParams([paramname]);
+				OnParameterChanged();
+				UIUpdateTrigger();
 			}
 			
 			private var sliderList:Array = new Array();
@@ -110,7 +120,6 @@
 					var sldr:Object = squareSlider[i];
 					var cmp:UIComponent = sldr as UIComponent;
 					cmp.enabled=_synth.params.waveType==0;
-					trace(cmp.enabled);
 				}
 		
 			}
@@ -125,7 +134,6 @@
 				var s:HSlider = e.target as HSlider;
 				var renderercb:SoundParameterRowRenderer = s.parent.parent as SoundParameterRowRenderer;
 				
-				trace(renderercb.data.tag);
 				_synth.params[renderercb.data.tag]=s.value;	
 				OnParameterChanged();				
 			}
@@ -141,31 +149,7 @@
 				*/
 			}
 			
-			private function LoadSavedSoundsFromSharedObject():void
-			{
-				this.items.removeAll();
-				for (var i:int=0;i< _saveDat.data.soundList.length;i++)
-				{
-					var entry:Object = new Object();
-					try
-					{
-						entry.label= _saveDat.data.soundList[i].label;
-						entry.data = _saveDat.data.soundList[i].data;
-						this.items.addItem(entry);	
-					}
-					catch (e:Error)
-					{
-						trace(e.message);
-					}
-				}
-				if (items.length==0)
-				{					
-					_synth.params.randomize();
-					AddToSoundList("Randomize");
-				}
-				
-				soundListSelectionChanged(null);
-			}
+		
 			
 			private var _time:Timer = new Timer(50);  
 			private var ba:ByteArray = new ByteArray();
@@ -201,57 +185,69 @@
 							break;
 					}
 				}
+				
+				//unmodified
+				switch(event.keyCode)
+				{
+					case 13://enter
+						DoPlay();
+						break;					
+				}
+			}
+			
+			
+			private function GeneratorPaneCreationComplete():void
+			{				
+			}
+			
+			private function MixerPaneCreationComplete():void
+			{
+				mixerListComponent.dataProvider = mixerlist;
+				
 			}
 			
 			private function init():void 
-			{
-			
+			{				
 				_time.addEventListener(TimerEvent.TIMER, timerHandler);  
 				_time.start();  
 
 				_synth = new SfxrSynth();
 				
-				_saveDat = SharedObject.getLocal("as3sfxr");
+				_saveManager = new SaveManager(this);
 				
-				if (_saveDat.data.version == undefined )
-				{					
-					_saveDat.data.soundList = new Array();
-					_saveDat.data.version = version;
-					_saveDat.data.samplerate = 0;
-					_saveDat.data.bitdepth = 0;
-					_saveDat.data.playonchange = true;
-										
-					if (TryLoadFromURL())
-					{
-							AddToSoundList("Linked");
-					}
-					else
-					{
-						_synth.params.randomize();
-						AddToSoundList("Randomize");							
-					}				
-					
-					SelectItemInSoundList(0);
+				
+				_saveManager.LoadData();
+				
+				samplerate.selectedIndex = _saveManager.samplerate;
+				bitdepth.selectedIndex = _saveManager.bitdepth;
+				playonchange.selected =  _saveManager.playonchange;
+				
+				_saveManager.LoadSavedSoundsFromSharedObject(items);
+				
+				SelectItemInSoundListByID(_saveManager.selectedItemID);	
+				
+				if (TryLoadFromURL())
+				{
+					AddToSoundList("Linked");
 				}
 				else
 				{
-					samplerate.selectedIndex = _saveDat.data.samplerate;
-					bitdepth.selectedIndex = _saveDat.data.bitdepth;
-					playonchange.selected =  _saveDat.data.playonchange;
-					
-					LoadSavedSoundsFromSharedObject();	
-										
-					if (TryLoadFromURL())
+					if (items.length==0)
 					{
-							AddToSoundList("Linked");					
+						_synth.params.randomize();
+						AddToSoundList("Randomize");
+						SelectItemInSoundList(0);
 					}
-				}
+					
+				}				
+				
+				
 				
 				items.addEventListener(CollectionEvent.COLLECTION_CHANGE, onCollectionChange, false, 0, true);
 				items.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, onPropertyChange, false, 0, true);
 				
 				samplerate.dataProvider = samplerates;
-				samplerate.selectedIndex=0;
+				samplerate.selectedIndex=0;				
 				
 				bitdepth.dataProvider = bitdepths;
 				bitdepth.selectedIndex=0;
@@ -337,20 +333,22 @@
 			
 			public function RemoveFromSoundList(index:int):void
 			{
-				items.removeItemAt(soundList.selectedIndex);
-				RecalculateSaveDatSoundList();
+				if (index>=0)
+				{
+					items.removeItemAt(soundList.selectedIndex);
+					RecalculateSaveDatSoundList();
+				}
+				else
+				{
+					trace("eek out of range index trying to remove");
+				}
 			}
 			
 			public function RecalculateSaveDatSoundList():void
 			{
-				_saveDat.data.soundList = new Array();
-				var i:int=0;
-				for (var o:Object in items)
-				{
-					_saveDat.data.soundList.push(o);
-					i++;
-				}
+				_saveManager.PushSoundList(items);
 			}
+			
 			private function AddToSoundList(_name:String):void
 			{
 				//loop through existing objects and see if name is already in use
@@ -380,18 +378,36 @@
 				var entry:Object = new Object();
 				entry.label=_name+suffix;
 				entry.data = _synth.params.getSettingsString();
-				items.addItem(entry);
+				items.addItem(entry);				
 				
-				entry.index=_saveDat.data.soundList.length;
-				_saveDat.data.soundList.push(entry);
+				_saveManager.PushSound(new SoundData(entry.label,entry.data,_saveManager.GetID()));
 
 				SelectItemInSoundList(items.length-1);				
 			}
 
 			private function SelectItemInSoundList(i:int):void
 			{				
-				soundList.selectedIndex=i;		
+				soundList.selectedIndex=i;
+				soundListSelectionChanged(null);
 				callLater(function():void { soundList.ensureIndexIsVisible(i); });
+			}
+			
+			private function SelectItemInSoundListByID(id:int):void
+			{				
+				if (id==-1)
+					soundList.selectedIndex=-1;
+				
+				for (var i:int=0;i<items.length;i++)
+				{
+					var o:Object = items.getItemAt(i);
+					if (o.id==id)
+					{
+						SelectItemInSoundList(i);
+						break;
+					}
+				}
+				
+				trace("error - couldn't select item with id " + id + "no such item exists");
 			}
 				
 			private function UpdateSelectedSound():void
@@ -406,11 +422,19 @@
 					{
 						SelectItemInSoundList(0);
 					}
+				}					
+			}
+			
+			/** returns -1 if no item found */
+			private function GetIndexOfItemWithID(id:int):int
+			{
+				for (var i:int=0;i<items.length;i++)
+				{
+					var o:Object = items.getItemAt(i);
+					if (o.id==id)
+						return i;
 				}
-				var selected:Object = items.getItemAt(soundList.selectedIndex);
-				selected.data = _synth.params.getSettingsString();		
-				
-				_saveDat.data.soundList[selected.index]=selected;
+				return -1;
 			}
 			
 			protected function clickPreset(event:MouseEvent):void
@@ -445,6 +469,7 @@
 				
 				_synth.params.setSettingsString(row.data);
 				
+				CommitGlobal();
 				UIUpdateTrigger();
 				OnParameterChanged();
 			}
@@ -535,7 +560,7 @@
 				var file:ByteArray = new ByteArray();
 				file.endian = Endian.LITTLE_ENDIAN;
 				
-				file.writeInt(version);
+				file.writeInt(SfxrSynth.version);
 				file.writeInt(_synth.params.waveType);
 				file.writeFloat(_synth.params.masterVolume);
 				
@@ -717,6 +742,19 @@
 			
 			
 						
+			public function LoadSavedSoundsFromSharedObject():void
+			{
+				_saveManager.LoadSavedSoundsFromSharedObject(items);
+
+				if (items.length==0)
+				{					
+					_synth.params.randomize();
+					
+					AddToSoundList("Randomize");
+				}
+				
+				soundListSelectionChanged(null);
+			}
 			
 			
 			protected function clickCopyButton():void
@@ -732,6 +770,23 @@
 				UIUpdateTrigger();
 				OnParameterChanged();
 				AddToSoundList("Paste");
+			}
+			
+			private function OnTabChanged(event:Event):void
+			{
+				switch (viewstack1.selectedIndex)
+				{
+					case 0:
+						trace("tab 0");
+						this.soundList.dragEnabled=false;
+						this.soundList.dragMoveEnabled=false;
+						break;
+					case 1:
+						trace("tab 1");
+						this.soundList.dragEnabled=true;
+						this.soundList.dragMoveEnabled=true;
+						break;
+				}
 			}
 
 
@@ -759,42 +814,51 @@
 
 	
 	<fx:Declarations>
-		<mx:ArrayList id="items">
+		<mx:ArrayList id = "samplerates">
+			<local:GenericListEntry label="44100 Hz" data="44100"/>
+			<local:GenericListEntry label="22050 Hz" data="22050"/>			
 		</mx:ArrayList>
 		
-		<mx:ArrayList id = "samplerates">
-			<fx:Object label="44100 Hz" data="44100"/>
-			<fx:Object label="22050 Hz" data="22050"/>			
+		<mx:ArrayList id = "items">			
+		</mx:ArrayList>
+		
+		<mx:ArrayList id = "mixerlist">
+			<local:GenericListEntry label="16-bit" id="cat1" bggroup="0"/>
+			<local:GenericListEntry label="16-bit" id="cat2" bggroup="1"/>
+			<local:GenericListEntry label="16-bit" id="cat3" bggroup="0"/>
+			<local:GenericListEntry label="16-bit" id="cat4" bggroup="1"/>
+			<local:GenericListEntry label="16-bit" id="cat5z" bggroup="0"/>
 		</mx:ArrayList>
 		
 		<mx:ArrayList id = "bitdepths">
-			<fx:Object label="16-bit" data="16"/>
-			<fx:Object label="8-bit" data="8"/>			
+			<local:GenericListEntry label="16-bit" data="16"/>
+			<local:GenericListEntry label="8-bit" data="8"/>			
 		</mx:ArrayList>
 	</fx:Declarations>
 	
 	
-	<s:VGroup width="160" height="600" horizontalAlign="justify" paddingLeft="1" paddingRight="1" paddingBottom="1" paddingTop="1">
-		<s:BorderContainer width="200" height="243" backgroundColor="#CCBDA1">
-			<s:layout>
-				<s:VerticalLayout horizontalAlign="justify" paddingLeft="1" paddingRight="1" paddingBottom="1" paddingTop="1"/>
-			</s:layout>
-			<s:Button label="Pickup/coin" click="clickPreset(event)" id="generatePickupCoin"/>
-			<s:Button label="Laser/shoot" click="clickPreset(event)" id="generateLaserShoot"/>
-			<s:Button label="Explosion" click="clickPreset(event)" id="generateExplosion"/>
-			<s:Button label="Powerup" click="clickPreset(event)" id="generatePowerup"/>
-			<s:Button label="Hit/hurt" click="clickPreset(event)" id="generateHitHurt"/>
-			<s:Button label="Jump" click="clickPreset(event)" id="generateJump"/>
-			<s:Button label="Blip/Select" click="clickPreset(event)" id="generateBlipSelect"/>
-			<s:Button label="Randomize" click="clickPreset(event)" id="randomize"/>
-			<s:Button label="Mutate" click="clickPreset(event)" id="mutate"/>
-		</s:BorderContainer>
-		<s:BorderContainer width="200" height="342" backgroundColor="#CCBDA1" borderVisible="false">
-			<s:layout>
-				<s:VerticalLayout horizontalAlign="justify" paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0" gap="0"/>
-			</s:layout>
-
-			<fx:Script>
+	<s:HGroup verticalAlign="justify" left="0" horizontalCenter="0" right="-0" bottom="0" verticalCenter="0" top="0">
+		<s:VGroup width="160" height="591" horizontalAlign="justify" paddingLeft="1" paddingRight="1" paddingBottom="1" paddingTop="1">
+			<s:BorderContainer width="200" height="243" backgroundColor="#CCBDA1">
+				<s:layout>
+					<s:VerticalLayout horizontalAlign="justify" paddingLeft="1" paddingRight="1" paddingBottom="1" paddingTop="1"/>
+				</s:layout>
+				<s:Button label="Pickup/coin" click="clickPreset(event)" id="generatePickupCoin"/>
+				<s:Button label="Laser/shoot" click="clickPreset(event)" id="generateLaserShoot"/>
+				<s:Button label="Explosion" click="clickPreset(event)" id="generateExplosion"/>
+				<s:Button label="Powerup" click="clickPreset(event)" id="generatePowerup"/>
+				<s:Button label="Hit/hurt" click="clickPreset(event)" id="generateHitHurt"/>
+				<s:Button label="Jump" click="clickPreset(event)" id="generateJump"/>
+				<s:Button label="Blip/Select" click="clickPreset(event)" id="generateBlipSelect"/>
+				<s:Button label="Randomize" click="clickPreset(event)" id="randomize"/>
+				<s:Button label="Mutate" click="clickPreset(event)" id="mutate"/>
+			</s:BorderContainer>
+			<s:BorderContainer width="200" height="100%" backgroundColor="#CCBDA1" borderVisible="false">
+				<s:layout>
+					<s:VerticalLayout horizontalAlign="justify" paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0" gap="0"/>
+				</s:layout>
+				
+				<fx:Script>
 				<![CDATA[            
 					import spark.skins.spark.DefaultComplexItemRenderer;
 					import spark.skins.spark.DefaultItemRenderer;
@@ -805,122 +869,166 @@
 						tag:"thingy",
 						descr:"High-pass filter cutoff sweep"
 					};
+					
+					
 				]]>
 			</fx:Script>
-
-
-
-			<s:List id="soundList"
-					
-					width="170" height="340"
-					itemRenderer="EditableListItemRenderer" 
-					contentBackgroundColor="#CCBDA1"
-				 click="soundListSelectionChanged(event)"
-					/>
+				
+				
+				
+				<s:List id="soundList"
 						
-			
-			
-			
-			
-			
-		</s:BorderContainer>
-	</s:VGroup>
-	<s:VGroup width="456" height="600" paddingLeft="1" paddingRight="5" paddingBottom="1" paddingTop="1" id="square" horizontalAlign="justify">
-		<s:BorderContainer width="447" height="27" backgroundColor="#CCBDA1">
-			<s:layout>
-				<s:HorizontalLayout paddingLeft="2" paddingRight="5" paddingBottom="1" paddingTop="1" verticalAlign="justify"/>
-			</s:layout>
-			<s:CheckBox 
-				id="lockwave" 
-				 change="WaveTypeLockClicked()"
-				toolTip="Lock field during randomization/mutation?" 
-				creationComplete="RegisterWaveTypeLock()"
-				/>
-			<s:ToggleButton label="Square"  change="WaveformSelect(event)" id="W0" width="65"/>
-			<s:ToggleButton label="Saw" change="WaveformSelect(event)" id="W1" width="65"/>
-			<s:ToggleButton label="Triangle" change="WaveformSelect(event)" id="W4" width="65"/>
-			<s:ToggleButton label="Sin" change="WaveformSelect(event)" id="W2" width="65"/>
-			<s:ToggleButton label="White" change="WaveformSelect(event)" id="W3" width="65"/>
-			<s:ToggleButton label="Pink " change="WaveformSelect(event)" id="W5" width="65"/>
-		</s:BorderContainer>
-		<s:HGroup width="463" height="555" verticalAlign="contentJustify" paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0">
-			<s:VGroup width="324" height="200" paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0" horizontalAlign="justify">
-				<s:BorderContainer width="200" height="556" backgroundColor="#CCBDA1">
-					<s:layout>
-						<s:VerticalLayout paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0"/>
-					</s:layout>
-					<s:DataGroup itemRenderer="SoundParameterRowRenderer" 
-								 height="555"								 
-								  width="323"
-								    > 
+						width="170" height="100%"
+						itemRenderer="EditableListItemRenderer" 
+						contentBackgroundColor="#CCBDA1"
+					 	click="soundListSelectionChanged(event)"
+						 
+						/>
+							
+				
+				
+				
+				
+				
+			</s:BorderContainer>
+		</s:VGroup>
+		<mx:ViewStack id="viewstack1" height="100%" width="343">
+			<s:NavigatorContent label="View 1" width="100%" height="100%">
+				<mx:TabNavigator left="0" horizontalCenter="0" right="0" top="0" verticalCenter="0" bottom="0" backgroundColor="#CCBDA1" contentBackgroundColor="#CCBDA1" creationPolicy="all">
+					<s:NavigatorContent label="Make" width="100%" height="100%" contentBackgroundColor="#CCBDA1" tabIndexChange="OnTabChanged(event);">
 						<s:layout>
-							<s:VerticalLayout useVirtualLayout="true" 
-							paddingLeft="0" paddingTop="0" paddingRight="0" paddingBottom="0" gap="0"/> 
+							<s:HorizontalLayout verticalAlign="justify"/>
 						</s:layout>
-						<mx:ArrayList>
-							<fx:Object odd="0" square="false" bggroup="0" min="0" max="1" tag="attackTime" descr="Attack time"/>
-							<fx:Object odd="1" square="false" bggroup="0" min="0" max="1" tag="sustainTime" descr="Sustain time"/>
-							<fx:Object odd="0" square="false" bggroup="0" min="0" max="1" tag="sustainPunch" descr="Sustain punch"/>
-							<fx:Object odd="1" square="false" bggroup="0" min="0" max="1" tag="decayTime" descr="Decay time"/>
-							<fx:Object odd="0" square="false" bggroup="1" min="0" max="1" tag="startFrequency" descr="Start frequency"/>
-							<fx:Object odd="1" square="false" bggroup="1" min="0" max="1" tag="minFrequency" descr="Min frequency cutoff"/>
-							<fx:Object odd="0" square="false" bggroup="1" min="-1" max="1" tag="slide" descr="Slide"/>
-							<fx:Object odd="1" square="false" bggroup="1" min="-1" max="1" tag="deltaSlide" descr="Delta slide"/>
-							<fx:Object odd="0" square="false" bggroup="1" min="0" max="1" tag="vibratoDepth" descr="Vibrato depth"/>
-							<fx:Object odd="1" square="false" bggroup="1" min="0" max="1" tag="vibratoSpeed" descr="Vibrato speed"/>
-							<fx:Object odd="0" square="false" bggroup="0" min="0" max="1" tag="changePeriod" descr="Change period"/>
-							<fx:Object odd="1" square="false" bggroup="0" min="-1" max="1" tag="changeAmount" descr="Change amount"/>
-							<fx:Object odd="0" square="false" bggroup="0" min="0" max="1" tag="changeSpeed" descr="Change speed"/>
-							<fx:Object odd="1" square="false" bggroup="0" min="-1" max="1" tag="changeAmount2" descr="Change amount2"/>
-							<fx:Object odd="0" square="false" bggroup="0" min="0" max="1" tag="changeSpeed2" descr="Change speed2"/>
-							<fx:Object odd="1" square="true" bggroup="1" min="0" max="1" tag="squareDuty" descr="Square duty"/>
-							<fx:Object odd="0" square="true" bggroup="1" min="-1" max="1" tag="dutySweep" descr="Duty sweep"/>
-							<fx:Object odd="1" square="false" bggroup="0" min="0" max="1" tag="overtones" descr="Overtones"/>
-							<fx:Object odd="0" square="false" bggroup="0" min="0" max="1" tag="overtoneFalloff" descr="Overtone falloff"/>
-							<fx:Object odd="1" square="false" bggroup="1" min="0" max="1" tag="repeatSpeed" descr="Repeat speed"/>
-							<fx:Object odd="0" square="false" bggroup="0" min="-1" max="1" tag="phaserOffset" descr="Phaser offset"/>
-							<fx:Object odd="1" square="false" bggroup="0" min="-1" max="1" tag="phaserSweep" descr="Phaser sweep"/>
-							<fx:Object odd="0" square="false" bggroup="1" min="0" max="1" tag="lpFilterCutoff" descr="Low-pass filter cutoff"/>
-							<fx:Object odd="1" square="false" bggroup="1" min="-1" max="1" tag="lpFilterCutoffSweep" descr="Low-pass filter cutoff sweep"/>
-							<fx:Object odd="0" square="false" bggroup="1" min="0" max="1" tag="lpFilterResonance" descr="Low-pass filter resonance"/>
-							<fx:Object odd="1" square="false" bggroup="1" min="0" max="1" tag="hpFilterCutoff" descr="High-pass filter cutoff"/>
-							<fx:Object odd="0" square="false" bggroup="1" min="-1" max="1" tag="hpFilterCutoffSweep" descr="High-pass filter cutoff sweep"/>
-						</mx:ArrayList>            
-					</s:DataGroup>
-				</s:BorderContainer>
-			</s:VGroup>
-			<s:VGroup width="124" height="200" horizontalAlign="justify" paddingRight="5" paddingLeft="5" paddingTop="0" paddingBottom="5">
-				<s:BorderContainer width="112" height="200" backgroundColor="#CCBDA1" contentBackgroundColor="#CCBDA1" backgroundImage="@Embed(source='resources/logo.png')">
-					<s:layout>
-						<s:VerticalLayout paddingLeft="0" paddingRight="29" paddingTop="0" paddingBottom="0" horizontalAlign="justify"/>
-					</s:layout>
-					<mx:Image height="197" id="equalizer"  width="83"/>
-				</s:BorderContainer>
-				<s:CheckBox label="Play On Change" id="playonchange" click="playOnChangeClick(event)" selected="true"/>
-				<s:Button label="Play" click="PlayClick(event)"/>
-				<s:HSlider		
-					id="volumeslider"
-					changeEnd="VolumeChanged(event)"
-					 minimum="0"
-					  maximum="2"
-					  stepSize="0.01" 
-					/>
-				<s:Label text="Playback Volume"/>
-				<mx:Spacer height="25"/>
-				<s:Button label="Export Wav" id="exportwav" click="SaveWave()"/>
-				<s:BorderContainer width="193" height="62" backgroundColor="#CCBDA1">
-					<s:layout>
-						<s:VerticalLayout paddingLeft="5" paddingRight="5" paddingBottom="5" paddingTop="5" horizontalAlign="justify" gap="5"/>
-					</s:layout>
-					<s:DropDownList id="samplerate" change="GlobalSettingCommit(event)"></s:DropDownList>
-					<s:DropDownList id="bitdepth" change="GlobalSettingCommit(event)"></s:DropDownList>
-				</s:BorderContainer>
-				<s:Button label="Load from disk" id="import_sfxr" click="clickLoadSound()"/>
-				<s:Button label="Save to disk" id="export_sfxr" click="clickSaveSound()"/>
-				<s:Button label="Copy" id="linkbutton" click="clickCopyButton()"/>
-				<s:Button label="Paste" id="linkbutton0" click="clickPasteButton()"/>
-				<s:Button label="Copy Link" id="linkbutton1" click="clickLinkButton()"/>
-			</s:VGroup>
-		</s:HGroup>
-	</s:VGroup>
+							<s:VGroup width="100%" height="100%" paddingLeft="1" paddingRight="1" paddingBottom="1" paddingTop="1" id="square" horizontalAlign="justify">
+								<s:BorderContainer width="293" height="47" backgroundColor="#CCBDA1">
+									<s:layout>
+										<s:BasicLayout/>
+									</s:layout>
+									<s:HGroup x="0" y="0" width="100%" height="100%">
+										<s:CheckBox 
+											id="lockwave" 
+											 change="WaveTypeLockClicked()"
+											toolTip="Lock field during randomization/mutation?" 
+											creationComplete="RegisterWaveTypeLock()"
+											/>
+										<s:TileGroup width="100%" height="100%" requestedRowCount="2" requestedColumnCount="3" columnWidth="98" verticalGap="1">
+											<s:ToggleButton label="Triangle" change="WaveformSelect(event)" id="W4" width="65"/>
+											<s:ToggleButton label="Sin" change="WaveformSelect(event)" id="W2" width="65" x="37.9" y="40.9"/>
+											<s:ToggleButton label="White" change="WaveformSelect(event)" id="W3" width="65" x="32.35" y="61.6"/>
+											<s:ToggleButton label="Pink " change="WaveformSelect(event)" id="W5" width="65" x="95.9" y="62.05"/>
+											<s:ToggleButton label="Saw" change="WaveformSelect(event)" id="W1" width="65"/>
+											<s:ToggleButton label="Square"  change="WaveformSelect(event)" id="W0" width="65"/>
+										</s:TileGroup>
+									</s:HGroup>
+								</s:BorderContainer>
+								<s:HGroup width="100%" height="100%" paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0" verticalAlign="justify" gap="0">
+									<s:VGroup width="100%" height="100%" paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0">
+										<s:BorderContainer width="100%" height="100%" backgroundColor="#CCBDA1" borderVisible="false" dropShadowVisible="false">
+											<s:layout>
+												<s:VerticalLayout paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0"/>
+											</s:layout>
+											<s:DataGroup id = "SoundParameterGroup"
+														 itemRenderer="SoundParameterRowRenderer" 
+														 height="100%"								 
+														  width="100%"
+														   clipAndEnableScrolling="true"														    
+														    > 
+												<s:layout>
+													<s:VerticalLayout useVirtualLayout="true" 
+													paddingLeft="1" paddingTop="1" paddingRight="0" paddingBottom="0" gap="0"/> 
+												</s:layout>
+												<mx:ArrayList>
+													<local:SoundListRowData odd="0" square="false" bggroup="0" min="0" max="1" tag="attackTime" descr="Attack time"/>
+													<local:SoundListRowData odd="1" square="false" bggroup="0" min="0" max="1" tag="sustainTime" descr="Sustain time"/>
+													<local:SoundListRowData odd="0" square="false" bggroup="0" min="0" max="1" tag="sustainPunch" descr="Sustain punch"/>
+													<local:SoundListRowData odd="1" square="false" bggroup="0" min="0" max="1" tag="decayTime" descr="Decay time"/>
+													<local:SoundListRowData odd="0" square="false" bggroup="1" min="0" max="1" tag="startFrequency" descr="Start frequency"/>
+													<local:SoundListRowData odd="1" square="false" bggroup="1" min="0" max="1" tag="minFrequency" descr="Min frequency cutoff"/>
+													<local:SoundListRowData odd="0" square="false" bggroup="1" min="-1" max="1" tag="slide" descr="Slide"/>
+													<local:SoundListRowData odd="1" square="false" bggroup="1" min="-1" max="1" tag="deltaSlide" descr="Delta slide"/>
+													<local:SoundListRowData odd="0" square="false" bggroup="1" min="0" max="1" tag="vibratoDepth" descr="Vibrato depth"/>
+													<local:SoundListRowData odd="1" square="false" bggroup="1" min="0" max="1" tag="vibratoSpeed" descr="Vibrato speed"/>
+													<local:SoundListRowData odd="0" square="false" bggroup="0" min="0" max="1" tag="changePeriod" descr="Change period"/>
+													<local:SoundListRowData odd="1" square="false" bggroup="0" min="-1" max="1" tag="changeAmount" descr="Change amount"/>
+													<local:SoundListRowData odd="0" square="false" bggroup="0" min="0" max="1" tag="changeSpeed" descr="Change speed"/>
+													<local:SoundListRowData odd="1" square="false" bggroup="0" min="-1" max="1" tag="changeAmount2" descr="Change amount2"/>
+													<local:SoundListRowData odd="0" square="false" bggroup="0" min="0" max="1" tag="changeSpeed2" descr="Change speed2"/>
+													<local:SoundListRowData odd="1" square="true" bggroup="1" min="0" max="1" tag="squareDuty" descr="Square duty"/>
+													<local:SoundListRowData odd="0" square="true" bggroup="1" min="-1" max="1" tag="dutySweep" descr="Duty sweep"/>
+													<local:SoundListRowData odd="1" square="false" bggroup="0" min="0" max="1" tag="overtones" descr="Overtones"/>
+													<local:SoundListRowData odd="0" square="false" bggroup="0" min="0" max="1" tag="overtoneFalloff" descr="Overtone falloff"/>
+													<local:SoundListRowData odd="1" square="false" bggroup="1" min="0" max="1" tag="repeatSpeed" descr="Repeat speed"/>
+													<local:SoundListRowData odd="0" square="false" bggroup="0" min="-1" max="1" tag="phaserOffset" descr="Phaser offset"/>
+													<local:SoundListRowData odd="1" square="false" bggroup="0" min="-1" max="1" tag="phaserSweep" descr="Phaser sweep"/>
+													<local:SoundListRowData odd="0" square="false" bggroup="1" min="0" max="1" tag="lpFilterCutoff" descr="Low-pass filter cutoff"/>
+													<local:SoundListRowData odd="1" square="false" bggroup="1" min="-1" max="1" tag="lpFilterCutoffSweep" descr="Low-pass filter cutoff sweep"/>
+													<local:SoundListRowData odd="0" square="false" bggroup="1" min="0" max="1" tag="lpFilterResonance" descr="Low-pass filter resonance"/>
+													<local:SoundListRowData odd="1" square="false" bggroup="1" min="0" max="1" tag="hpFilterCutoff" descr="High-pass filter cutoff"/>
+													<local:SoundListRowData odd="0" square="false" bggroup="1" min="-1" max="1" tag="hpFilterCutoffSweep" descr="High-pass filter cutoff sweep"/>
+												</mx:ArrayList>            
+											</s:DataGroup>
+										</s:BorderContainer>
+									</s:VGroup>	
+									<s:VScrollBar viewport="{SoundParameterGroup}" height="100"/>
+
+								</s:HGroup>
+							</s:VGroup>
+					</s:NavigatorContent>
+					<s:NavigatorContent creationComplete="MixerPaneCreationComplete()" label="Layer" width="100%" height="100%">
+						<s:layout>
+							<s:BasicLayout/>
+						</s:layout>
+						<s:List 
+							id="mixerListComponent"
+							verticalCenter="0" 
+							bottom="0" top="0" 
+							left="-1" 
+							horizontalCenter="0" 
+							right="-1"
+							  itemRenderer="MixerRowRenderer"
+							   borderAlpha="0"
+							    dropEnabled="true"								 
+							>
+							<s:layout>
+								<s:VerticalLayout horizontalAlign="justify" paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" gap="0"/>
+							</s:layout>
+						</s:List>
+					</s:NavigatorContent>
+				</mx:TabNavigator>
+			</s:NavigatorContent>
+		</mx:ViewStack>
+		
+		<s:VGroup width="124" height="740" horizontalAlign="justify" paddingRight="5" paddingLeft="5" paddingTop="0" paddingBottom="5" y="-55">
+			<s:BorderContainer width="112" height="200" backgroundColor="#CCBDA1" contentBackgroundColor="#CCBDA1" backgroundImage="@Embed(source='resources/logo.png')">
+				<s:layout>
+					<s:VerticalLayout paddingLeft="0" paddingRight="29" paddingTop="0" paddingBottom="0" horizontalAlign="justify"/>
+				</s:layout>
+				<mx:Image height="197" id="equalizer"  width="83"/>
+			</s:BorderContainer>
+			<s:CheckBox label="Play On Change" id="playonchange" click="playOnChangeClick(event)" selected="true"/>
+			<s:Button label="Play" click="PlayClick(event)"/>
+			<s:HSlider		
+				id="volumeslider"
+				changeEnd="VolumeChanged(event)"
+				minimum="0"
+				maximum="2"
+				stepSize="0.01" 
+				/>
+			<s:Label text="Playback Volume"/>
+			<mx:Spacer height="25"/>
+			<s:Button label="Export Wav" id="exportwav" click="SaveWave()"/>
+			<s:BorderContainer width="193" height="62" backgroundColor="#CCBDA1">
+				<s:layout>
+					<s:VerticalLayout paddingLeft="5" paddingRight="5" paddingBottom="5" paddingTop="5" horizontalAlign="justify" gap="5"/>
+				</s:layout>
+				<s:DropDownList id="samplerate" change="GlobalSettingCommit(event)"></s:DropDownList>
+				<s:DropDownList id="bitdepth" change="GlobalSettingCommit(event)"></s:DropDownList>
+			</s:BorderContainer>
+			<s:Button label="Load from disk" id="import_sfxr" click="clickLoadSound()"/>
+			<s:Button label="Save to disk" id="export_sfxr" click="clickSaveSound()"/>
+			<s:Button label="Copy" id="linkbutton" click="clickCopyButton()"/>
+			<s:Button label="Paste" id="linkbutton0" click="clickPasteButton()"/>
+			<s:Button label="Copy Link" id="linkbutton1" click="clickLinkButton()"/>
+		</s:VGroup>
+	</s:HGroup>
 </s:Application>

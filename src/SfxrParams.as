@@ -432,49 +432,78 @@ package
 		/**
 		 * Resets the parameters, used at the start of each generate function
 		 */
-		protected function resetParams():void
+		public function resetParams(paramsToReset:Array = null):void
 		{
 			paramsDirty = true;
 			
-			_waveType = 0;
-			_startFrequency = 0.3;
-			_minFrequency = 0.0;
-			_slide = 0.0;
-			_deltaSlide = 0.0;
-			_squareDuty = 0.0;
-			_dutySweep = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("waveType")>=0)
+				_waveType = 0;
+			if (paramsToReset==null || paramsToReset.indexOf("startFrequency")>=0)
+				_startFrequency = 0.3;
+			if (paramsToReset==null || paramsToReset.indexOf("minFrequency")>=0)
+				_minFrequency = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("slide")>=0)
+				_slide = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("deltaSlide")>=0)
+				_deltaSlide = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("squareDuty")>=0)
+				_squareDuty = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("dutySweep")>=0)
+				_dutySweep = 0.0;
 			
-			_vibratoDepth = 0.0;
-			_vibratoSpeed = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("vibratoDepth")>=0)
+				_vibratoDepth = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("vibratoSpeed")>=0)
+				_vibratoSpeed = 0.0;
 			
-			_attackTime = 0.0;
-			_sustainTime = 0.3;
-			_decayTime = 0.4;
-			_sustainPunch = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("attackTime")>=0)
+				_attackTime = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("sustainTime")>=0)
+				_sustainTime = 0.3;
+			if (paramsToReset==null || paramsToReset.indexOf("decayTime")>=0)
+				_decayTime = 0.4;
+			if (paramsToReset==null || paramsToReset.indexOf("sustainPunch")>=0)
+				_sustainPunch = 0.0;
 			
-			_lpFilterResonance = 0.0;
-			_lpFilterCutoff = 1.0;
-			_lpFilterCutoffSweep = 0.0;
-			_hpFilterCutoff = 0.0;
-			_hpFilterCutoffSweep = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("lpFilterResonance")>=0)
+				_lpFilterResonance = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("lpFilterCutoff")>=0)
+				_lpFilterCutoff = 1.0;
+			if (paramsToReset==null || paramsToReset.indexOf("lpFilterCutoffSweep")>=0)
+				_lpFilterCutoffSweep = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("hpFilterCutoff")>=0)
+				_hpFilterCutoff = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("hpFilterCutoffSweep")>=0)
+				_hpFilterCutoffSweep = 0.0;
 			
-			_phaserOffset = 0.0;
-			_phaserSweep = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("phaserOffset")>=0)
+				_phaserOffset = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("phaserSweep")>=0)
+				_phaserSweep = 0.0;
 			
-			_repeatSpeed = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("repeatSpeed")>=0)
+				_repeatSpeed = 0.0;
 			
-			_changePeriod = 1.0;
+			if (paramsToReset==null || paramsToReset.indexOf("changePeriod")>=0)
+				_changePeriod = 1.0;
 			
-			_changeSpeed = 0.0;
-			_changeAmount = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("changeSpeed")>=0)
+				_changeSpeed = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("changeAmount")>=0)
+				_changeAmount = 0.0;
 			
-			_changeSpeed2 = 0.0;
-			_changeAmount2 = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("changeSpeed2")>=0)
+				_changeSpeed2 = 0.0;
+			if (paramsToReset==null || paramsToReset.indexOf("changeAmount2")>=0)
+				_changeAmount2 = 0.0;
 			
-			_overtoneFalloff=0;
-			_overtones=0;
+			if (paramsToReset==null || paramsToReset.indexOf("overtoneFalloff")>=0)
+				_overtoneFalloff=0;
+			if (paramsToReset==null || paramsToReset.indexOf("overtones")>=0)
+				_overtones=0;
 			
-			_lockedParams = new Vector.<String>();
+			if (paramsToReset==null || paramsToReset.indexOf("lockedParams")>=0)
+				_lockedParams = new Vector.<String>();
 			
 		}
 		

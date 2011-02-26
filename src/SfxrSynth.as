@@ -35,6 +35,8 @@
 		//
 		//--------------------------------------------------------------------------
 		
+		public static const version:int = 104;
+		
 		private var _params:SfxrParams = new SfxrParams;	// Params instance
 		
 		private var _sound:Sound;							// Sound instance used to play the sound
@@ -296,7 +298,6 @@
 		 */
 		private function onSampleData(e:SampleDataEvent):void
 		{
-			trace("sample provided");
 			if(_waveData)
 			{
 				if(_waveDataPos + _waveDataBytes > _waveDataLength) _waveDataBytes = _waveDataLength - _waveDataPos;

@@ -3,7 +3,6 @@
 <s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
 				xmlns:mx="library://ns.adobe.com/flex/mx" 
 				xmlns:s="library://ns.adobe.com/flex/spark"
-				dataChange="updateFields();"
 				
 				 contentBackgroundColor="#FFFFFF">
 	
@@ -11,6 +10,7 @@
 		<![CDATA[
 			import spark.skins.spark.CheckBoxSkin;
 			private function updateFields():void {
+				/*
 				// Check to see if the data property is null.
 				if (data == null)
 					return;
@@ -20,10 +20,10 @@
 					locked.selected = true;
 				}
 				else {
-					locked.selected = false;                    
+					locked.selected = false;              
 				}
 				
-				slider.value=data.slidervalue;				
+				slider.value=data.slidervalue;*/			
 			}
 			
 			private function SliderValueChange(event:Event):void
@@ -55,6 +55,16 @@
 				}
 				
 			}
+			
+			private function LabelClick():void
+			{				
+				if (fieldlabel.enabled)
+				{
+					var app:sfxr_interface = this.parentApplication as sfxr_interface;
+					app.ResetParameterValue(data.tag);
+				}
+			}
+				
 		]]>
 	</fx:Script>
 	
@@ -85,19 +95,28 @@
 			verticalCenter="0" 
 			skinClass="spark.skins.spark.CheckBoxSkin"			 
 		 	change="OnLockButtonChanged(event)"
-			 height="17"/>                
-		<s:Label id = "fieldlabel" text="{data.descr}" width="170" height="17"  verticalAlign="middle"  textAlign="right" />    
+			 height="17"
+			 />                
+		<s:Label 		
+			id = "fieldlabel" 
+			text="{data.descr}" 
+			width="170" 
+			height="17"  
+			verticalAlign="middle"  
+			textAlign="right"
+			click="LabelClick()"
+			/>    
 		<s:HSlider
 			  skinClass="TickedHSliderSkin"
 			id="slider" 
 			width="116" 
 			minimum="0" 
 			maximum="1" 
-			stepSize="0.01" 
+			stepSize="0.005" 
 			valid="true" 
 			top="0" 
 			bottom="5"
 		 	changeEnd="SliderValueChange(event)"
-/>
+			/>
 	</s:HGroup>
 </s:ItemRenderer>

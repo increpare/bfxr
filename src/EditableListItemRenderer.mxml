@@ -73,7 +73,7 @@
 	
 	<s:Button id="removeBtn"
 		width="30"
-		label="X"
+		label="X"		
 		visible="true"
 		right="1"
 		top="2"

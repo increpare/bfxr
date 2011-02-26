@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				
+				 contentBackgroundColor="#CCBDA1" height="74" width="340"
+				 
+				 >
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			import spark.skins.spark.CheckBoxSkin;
+			private function updateFields():void {
+		
+			}
+			
+			private function SliderValueChange(event:Event):void
+			{
+				/*
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				app.sliderChanged(event);
+				*/
+			}
+			
+			
+			private function OnLockButtonChanged(event:Event):void
+			{
+				/*
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				app.lockChanged(data.tag,  locked.selected);
+				*/
+			}
+			
+			private function CreationComplete(event:Event):void
+			{
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				dropdown.dataProvider=app.items;
+				
+				/*
+				slider.minimum= Number(data.min);
+				slider.maximum= Number(data.max);			
+				
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				app.RegisterParameterSlider(this);
+				app.RegisterLockableParam(data.tag,this.locked);
+				(slider.skin as TickedHSliderSkin).track.skin.invalidateDisplayList();
+				
+				if (data.square==true)
+				{
+					app.RegisterSquareSlider(fieldlabel, slider);
+				}
+				*/
+				
+			}
+			
+			private function LabelClick():void
+			{			
+				/*
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				app.ResetParameterValue(data.tag);
+				*/
+			}
+				
+		]]>
+	</fx:Script>
+	
+	<s:Rect top="0" verticalCenter="0" bottom="0" left="0" horizontalCenter="0" right="0">
+		<s:fill><s:SolidColor color="{ ((data.bggroup=='0') ? 0xffccbda1 : 0xffe7d1a7)  }" /></s:fill>	
+	</s:Rect>
+	<s:Rect top="-1" bottom="-1" left="-1" right="-1">
+		<s:stroke>
+			<mx:SolidColorStroke color="0"/>
+		</s:stroke>		
+	</s:Rect>
+	<s:HGroup 
+		verticalCenter="91" 
+		left="73" 
+		right="-66" 
+		top="93" 
+		bottom="-90" 
+		verticalAlign="top"
+		  creationComplete="CreationComplete(event)"
+		>    
+
+	</s:HGroup>
+	<s:VSlider x="150" y="10" height="54"/>
+	<s:VSlider x="169" y="10" height="54"/>
+	<s:VSlider x="188" y="10" height="54"/>
+	<s:DropDownList id="dropdown" x="14" y="10"></s:DropDownList>
+	<s:Button x="14" y="43" label="Play"/>
+</s:ItemRenderer>
