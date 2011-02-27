@@ -2,12 +2,14 @@
 {
 	import flash.display.Shape;
 	import flash.events.Event;
+	import flash.events.EventDispatcher;
 	import flash.events.SampleDataEvent;
 	import flash.media.Sound;
 	import flash.media.SoundChannel;
 	import flash.utils.ByteArray;
 	import flash.utils.Endian;
 	import flash.utils.getTimer;
+
 	/**
 	 * SfxrSynth
 	 * 
@@ -27,7 +29,7 @@
 	 * 
 	 * @author Thomas Vian
 	 */
-	public class SfxrSynth
+	public class SfxrSynth extends EventDispatcher
 	{
 		//--------------------------------------------------------------------------
 		//
@@ -36,6 +38,7 @@
 		//--------------------------------------------------------------------------
 		
 		public static const version:int = 104;
+		public static const CACHED:String = "cached";		// triggered when the synth stored in this is fully cached (either via a cache command, or play()).
 		
 		private var _params:SfxrParams = new SfxrParams;	// Params instance
 		
@@ -192,7 +195,7 @@
 			
 			_mutation = false;
 			
-			if (_params.paramsDirty || _cachingNormal || !_cachedWave) 
+			if (Dirty()) 
 			{
 				// Needs to cache new data
 				_cachedWave = new ByteArray;
@@ -213,14 +216,7 @@
 			
 			if (!_sound) (_sound = new Sound()).addEventListener(SampleDataEvent.SAMPLE_DATA, onSampleData);
 			
-			try
-			{
-				_channel = _sound.play();
-			}
-			catch(e:Error)
-			{
-				trace(e.message);
-			}
+			_channel = _sound.play();
 		}
 		
 		/**
@@ -304,6 +300,12 @@
 				
 				if(_waveDataBytes > 0) e.data.writeBytes(_waveData, _waveDataPos, _waveDataBytes);
 				
+				while (e.data.length<24576) 
+				{
+					e.data.writeFloat(0.0);
+					_waveDataPos+=4;
+				}
+				
 				_waveDataPos += _waveDataBytes;
 			}
 			else
@@ -354,7 +356,9 @@
 							// If the sound is smaller than the buffer length, add silence to allow it to play
 							while (_cachedWave.length<24576) _cachedWave.writeFloat(0.0);
 							
-							_cachingNormal = false;
+							_cachingNormal = false;							
+							
+							this.dispatchEvent(new Event(SfxrSynth.CACHED));
 						}
 						
 						_waveDataBytes = _cachedWave.length - _waveDataPos;
@@ -371,6 +375,25 @@
 		//
 		//--------------------------------------------------------------------------
 		
+		/* whether or not it is cached*/
+		public function Dirty():Boolean
+		{
+			return _params.paramsDirty || _cachingNormal || !_cachedWave;
+		}
+		
+		private function Caching():Boolean
+		{
+			return _cachingNormal;
+		}
+		
+		public function get cachedWave():ByteArray
+		{
+			if (Dirty())
+				this.cacheSound();
+			
+			return _cachedWave;
+		}
+		
 		/**
 		 * Cache the sound for speedy playback. 
 		 * If a callback is passed in, the caching will be done asynchronously, taking maxTimePerFrame milliseconds 
@@ -381,6 +404,9 @@
 		 */
 		public function cacheSound(callback:Function = null, maxTimePerFrame:uint = 5):void
 		{
+			if (!Dirty())
+				return;
+			
 			stop();
 			
 			if (_cachingAsync) return;
@@ -417,6 +443,8 @@
 					_cachedWave.position = length;
 					while (_cachedWave.length<24576) _cachedWave.writeFloat(0.0);
 				}
+				
+				this.dispatchEvent(new Event(SfxrSynth.CACHED));
 			}
 		}
 		
@@ -529,6 +557,8 @@
 						_cachedCallback();
 						_cachedCallback = null;
 						_cacheTicker.removeEventListener(Event.ENTER_FRAME, cacheSection);
+						
+						this.dispatchEvent(new Event(SfxrSynth.CACHED));
 						
 						return;
 					}

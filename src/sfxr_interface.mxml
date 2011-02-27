@@ -105,7 +105,21 @@
 			
 			public function OnParameterChanged():void
 			{
+				//save changes
+				
+				var index:int = this.soundList.selectedIndex;
+				if (index>=0)
+				{
+					var s:SoundData = items.getItemAt(index) as SoundData;
+					if (s)
+					{
+						s.data=_synth.params.getSettingsString();
+						_saveManager.UpdateItem(s);
+					}
+				}										
+					
 				UpdateSelectedSound();
+				
 				//_synth.params.wave
 				if (playonchange.selected)
 				{
@@ -126,7 +140,33 @@
 			
 			public function DoPlay():void
 			{
-				_synth.play();
+				switch (tabs.selectedIndex)
+				{
+					case 0:
+						_synth.play();
+						break;
+					case 1:
+						MixerPlay();
+						break;
+				}
+			}
+			
+			private var _mixer: Mixer;
+			public function MixerPlay():void
+			{
+				_mixer.Clear();
+				for (var i:int=0;i<mixerlist.length;i++)
+				{
+					var dat : MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
+					//synth.();
+					if (dat.synthset)
+					{
+						var msd:MixerSoundData = new MixerSoundData(dat.synth.cachedWave,dat.onset,dat.amplitudemodifier);
+						_mixer.AddTrack(msd);
+					}
+				}
+				
+				_mixer.Play();
 			}
 			
 			public function sliderChanged(e:Event):void
@@ -207,11 +247,12 @@
 			}
 			
 			private function init():void 
-			{				
+			{		
 				_time.addEventListener(TimerEvent.TIMER, timerHandler);  
 				_time.start();  
 
 				_synth = new SfxrSynth();
+				_mixer = new Mixer();
 				
 				_saveManager = new SaveManager(this);
 				
@@ -410,6 +451,7 @@
 				trace("error - couldn't select item with id " + id + "no such item exists");
 			}
 				
+			//what does this do, and why do I call it?
 			private function UpdateSelectedSound():void
 			{
 				if (soundList.selectedIndex==-1)
@@ -774,7 +816,7 @@
 			
 			private function OnTabChanged(event:Event):void
 			{
-				switch (viewstack1.selectedIndex)
+				switch (tabs.selectedIndex)
 				{
 					case 0:
 						trace("tab 0");
@@ -809,6 +851,12 @@
 				this.RegisterLockableParam("waveType",lockwave);
 			}
 
+
+			protected function AddNewMixerLayer(event:MouseEvent):void
+			{				
+				this.mixerlist.addItemAt(new MixerListEntryDat(),0);
+			}
+
 		]]>
 	</fx:Script>
 
@@ -823,11 +871,14 @@
 		</mx:ArrayList>
 		
 		<mx:ArrayList id = "mixerlist">
-			<local:GenericListEntry label="16-bit" id="cat1" bggroup="0"/>
-			<local:GenericListEntry label="16-bit" id="cat2" bggroup="1"/>
-			<local:GenericListEntry label="16-bit" id="cat3" bggroup="0"/>
-			<local:GenericListEntry label="16-bit" id="cat4" bggroup="1"/>
-			<local:GenericListEntry label="16-bit" id="cat5z" bggroup="0"/>
+			<local:MixerListEntryDat label="16-bit" bggroup="0"/>
+			<local:MixerListEntryDat label="16-bit" bggroup="0"/>
+			<local:MixerListEntryDat label="16-bit" bggroup="0"/>
+			<local:MixerListEntryDat label="16-bit" bggroup="0"/>
+			<local:MixerListEntryDat label="16-bit" bggroup="0"/>
+			<local:MixerListEntryDat label="16-bit" bggroup="0"/>
+			<local:MixerListEntryDat label="16-bit" bggroup="0"/>
+			<local:MixerListEntryDat label="16-bit" bggroup="0"/>
 		</mx:ArrayList>
 		
 		<mx:ArrayList id = "bitdepths">
@@ -894,7 +945,7 @@
 		</s:VGroup>
 		<mx:ViewStack id="viewstack1" height="100%" width="343">
 			<s:NavigatorContent label="View 1" width="100%" height="100%">
-				<mx:TabNavigator left="0" horizontalCenter="0" right="0" top="0" verticalCenter="0" bottom="0" backgroundColor="#CCBDA1" contentBackgroundColor="#CCBDA1" creationPolicy="all">
+				<mx:TabNavigator id="tabs" left="0" horizontalCenter="0" right="0" top="0" verticalCenter="0" bottom="0" backgroundColor="#CCBDA1" contentBackgroundColor="#CCBDA1" creationPolicy="all">
 					<s:NavigatorContent label="Make" width="100%" height="100%" contentBackgroundColor="#CCBDA1" tabIndexChange="OnTabChanged(event);">
 						<s:layout>
 							<s:HorizontalLayout verticalAlign="justify"/>
@@ -978,21 +1029,24 @@
 						<s:layout>
 							<s:BasicLayout/>
 						</s:layout>
-						<s:List 
-							id="mixerListComponent"
-							verticalCenter="0" 
-							bottom="0" top="0" 
-							left="-1" 
-							horizontalCenter="0" 
-							right="-1"
-							  itemRenderer="MixerRowRenderer"
-							   borderAlpha="0"
-							    dropEnabled="true"								 
-							>
-							<s:layout>
-								<s:VerticalLayout horizontalAlign="justify" paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" gap="0"/>
-							</s:layout>
-						</s:List>
+						<s:VGroup horizontalAlign="justify" bottom="0" top="0" verticalCenter="0" left="0" horizontalCenter="0" right="0" gap="0" id="Random">
+							<s:HGroup width="200" height="31" paddingTop="1" paddingLeft="1">
+								<s:Button label="Random"/>
+								<s:Button label="Mutate"/>
+								<mx:Spacer height="10" width="151"/>
+								<s:Button label="+" width="28" height="28" click="AddNewMixerLayer(event)"/>
+							</s:HGroup>
+							<s:List 
+								id="mixerListComponent"
+								  itemRenderer="MixerRowRenderer"
+								   borderAlpha="0"
+								    dropEnabled="true"								 
+								 width="167" height="452">
+								<s:layout>
+									<s:VerticalLayout horizontalAlign="justify" paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" gap="0"/>
+								</s:layout>
+							</s:List>
+						</s:VGroup>
 					</s:NavigatorContent>
 				</mx:TabNavigator>
 			</s:NavigatorContent>

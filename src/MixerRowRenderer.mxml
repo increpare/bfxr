@@ -5,14 +5,17 @@
 				
 				 contentBackgroundColor="#CCBDA1" height="74" width="340"
 				 
-				 >
+				  symbolColor="#CCBDA1">
 	<s:layout>
 		<s:BasicLayout/>
 	</s:layout>
 	
 	<fx:Script>
 		<![CDATA[
+			
+			import spark.components.List;
 			import spark.skins.spark.CheckBoxSkin;
+			
 			private function updateFields():void {
 		
 			}
@@ -34,10 +37,27 @@
 				*/
 			}
 			
+			private function PlayClick():void
+			{
+				if (dropdown.selectedIndex>=0)
+				{
+					data.synth.play();
+				}
+			}
+			private function removeItem(event:Event):void
+			{
+				var list:List = this.owner as List;
+				list.dataProvider.removeItemAt(list.selectedIndex);
+//				
+//				var app:sfxr_interface = parentApplication as sfxr_interface;
+//				app.RemoveFromSoundList(list.selectedIndex);
+			}
+			
 			private function CreationComplete(event:Event):void
 			{
 				var app:sfxr_interface = this.parentApplication as sfxr_interface;
 				dropdown.dataProvider=app.items;
+				this.data.synth = new SfxrSynth();
 				
 				/*
 				slider.minimum= Number(data.min);
@@ -64,6 +84,86 @@
 				*/
 			}
 				
+			
+			private function DropdownChange(event:Event):void
+			{
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				
+				var row:Object = dropdown.dataProvider.getItemAt(dropdown.selectedIndex);
+				
+				data.synth.params.setSettingsString(row.data);
+				
+				var synth:SfxrSynth = data.synth;
+				
+				synth.addEventListener(SfxrSynth.CACHED,OnSynthCached);
+				
+				data.cached=false;
+				cachingtext.visible=true;
+				data.synthset=true;
+				
+				if (app.playonchange.selected)
+				{
+					synth.play();
+				}
+				else
+				{
+					synth.cacheSound(function():void{})
+				}
+			}
+			
+			private function Deselect():void
+			{
+				data.synthset=false;
+				data.cached=false;			
+			}
+			
+			private function OnSynthCached(event:Event):void
+			{
+				data.cached=true;
+				this.cachingtext.visible=false;
+			}
+			
+			private function SynthRefresh():void
+			{
+				var synth:SfxrSynth = data.synth;
+				if (!synth.Dirty())
+					return; // dont' need to do anything
+				
+				//otherwise, need to cache
+				
+				data.cached=false;
+				this.cachingtext.visible=true;		
+				
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				if (app.playonchange.selected)
+				{
+					synth.play();
+				}
+				else
+				{
+					synth.cacheSound(function():void{})
+				}				
+			}
+			
+			private function volumechanged():void
+			{
+				data.amplitudemodifier=volumeslider.value;
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				if (app.playonchange)
+				{
+					app.DoPlay();
+				}
+			}
+			
+			private function onsetchanged():void
+			{
+				data.onset=onsetslider.value;		
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				if (app.playonchange)
+				{
+					app.DoPlay();
+				}
+			}
 		]]>
 	</fx:Script>
 	
@@ -86,9 +186,20 @@
 		>    
 
 	</s:HGroup>
-	<s:VSlider x="150" y="10" height="54"/>
-	<s:VSlider x="169" y="10" height="54"/>
-	<s:VSlider x="188" y="10" height="54"/>
-	<s:DropDownList id="dropdown" x="14" y="10"></s:DropDownList>
-	<s:Button x="14" y="43" label="Play"/>
+	
+	<s:Button id="removeBtn"
+			  width="30"
+			  label="X"		
+			  visible="true"
+			  right="1"
+			  top="2"
+			  click="removeItem(event)"
+			  toolTip="Remove item from list"
+			  />
+	
+	<s:VSlider x="150" y="10" height="54" minimum="0" value="0" maximum="2" id="onsetslider" changeEnd="onsetchanged()" stepSize=".01"/>
+	<s:VSlider x="169" y="10" height="54" id="volumeslider" value="1" minimum="0" maximum="2" changeEnd="volumechanged()" stepSize=".01"/>
+	<s:DropDownList id="dropdown" x="14" y="10" change="DropdownChange(event)"></s:DropDownList>
+	<s:Button x="14" y="43" label="Play" click="PlayClick()"/>
+	<s:Label x="207" y="10" text="Caching" id="cachingtext" width="94" height="54" verticalAlign="middle" visible="false"/>
 </s:ItemRenderer>

@@ -50,13 +50,11 @@ package
 			soundList.removeAll();
 			for (var s:String in _saveDat.data.soundList)
 			{
-				trace("X");
 				var o:Object = _saveDat.data.soundList[s];
 				var sd:SoundData = new SoundData(o.label,o.data,o.id);
 				trace(_saveDat.data.soundList[s]);
 				trace(sd);
 				soundList.addItem(sd);
-				trace("Y");
 			}
 		}
 		
@@ -66,11 +64,9 @@ package
 			_saveDat.data.soundList = new Array();
 			for (var i:int=0;i<items.length;i++)
 			{
-				trace("A");
 				var o:SoundData  = items.getItemAt(i) as SoundData;
 				trace(o);
 				_saveDat.data.soundList.push(o);
-				trace("B");
 			}
 			OnChange();
 		}
@@ -78,10 +74,8 @@ package
 		//potentially dangerous
 		public function PushSound(sound:SoundData):void
 		{
-			trace("C");
 			_saveDat.data.soundList.push(sound);
 			
-			trace("D");
 			OnChange();
 		}
 		
@@ -166,7 +160,7 @@ package
 			{
 				if (soundarray[s].id==newdata.id)
 				{
-					soundarray[s]=newdata.ToObject()
+					soundarray[s]=newdata;
 					return true;
 				}
 			}
