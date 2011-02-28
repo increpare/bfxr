@@ -39,6 +39,7 @@
 		
 		public static const version:int = 104;
 		public static const CACHED:String = "cached";		// triggered when the synth stored in this is fully cached (either via a cache command, or play()).
+		public static const PLAY_COMPLETE:String = "playcomplete";		// triggered when the synth stored in this is fully cached (either via a cache command, or play()).
 		
 		private var _params:SfxrParams = new SfxrParams;	// Params instance
 		
@@ -176,6 +177,8 @@
 			_params.paramsDirty = true;
 		}
 		
+		private var updateCallback:Function;
+		
 		//--------------------------------------------------------------------------
 		//	
 		//  Sound Methods
@@ -187,9 +190,11 @@
 		 * If they're not, plays from the cached sound. 
 		 * Won't play if caching asynchronously. 
 		 */
-		public function play():void
+		public function play(updateCallback:Function = null):void
 		{
 			if (_cachingAsync) return;
+			
+			this.updateCallback = updateCallback;
 			
 			stop();
 			
@@ -294,16 +299,23 @@
 		 */
 		private function onSampleData(e:SampleDataEvent):void
 		{
+			
+			if (updateCallback!=null)
+			{
+				updateCallback(_waveDataPos/(4*44100));
+			}
+			
 			if(_waveData)
 			{
-				if(_waveDataPos + _waveDataBytes > _waveDataLength) _waveDataBytes = _waveDataLength - _waveDataPos;
-				
-				if(_waveDataBytes > 0) e.data.writeBytes(_waveData, _waveDataPos, _waveDataBytes);
-				
-				while (e.data.length<24576) 
+				if(_waveDataPos + _waveDataBytes > _waveDataLength) 
 				{
-					e.data.writeFloat(0.0);
-					_waveDataPos+=4;
+					_waveDataBytes = _waveDataLength - _waveDataPos;
+					dispatchEvent(new Event(SfxrSynth.PLAY_COMPLETE));	
+				}
+
+				if(_waveDataBytes > 0) 
+				{
+					e.data.writeBytes(_waveData, _waveDataPos, _waveDataBytes);
 				}
 				
 				_waveDataPos += _waveDataBytes;

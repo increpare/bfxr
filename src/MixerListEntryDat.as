@@ -12,6 +12,12 @@ package
 		public var synth:SfxrSynth 	= null;
 		public var cached:Boolean 	= false;
 		public var synthset:Boolean = false;
+		public var dilation:Number  = 30;
+		public var absolutePlayCallback:Function = null;
+		public var PlayStartCallback:Function = null;
+		public var PlayStopCallback:Function = null;
+		public var SetDilationCallback:Function = null;
+		public var CalcLengthCallback:Function = null;
 		
 		public var onset:Number = 0 ;
 		public var amplitudemodifier:Number = 1;

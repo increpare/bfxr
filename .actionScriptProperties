@@ -14,6 +14,7 @@
   </compiler>
   <applications>
     <application path="sfxr_interface.mxml"/>
+    <application path="CanvasDD.mxml"/>
   </applications>
   <modules>
     <module application="src/sfxr_interface.mxml" destPath="SoundParameterRowRenderer.swf" optimize="true" sourcePath="src/SoundParameterRowRenderer.mxml"/>

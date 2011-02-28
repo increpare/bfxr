@@ -166,7 +166,65 @@
 					}
 				}
 				
-				_mixer.Play();
+				MixerPlayStart();
+				_mixer.Play(MixerPlayCallback);
+			}
+			
+			public function RecalcDilation():void
+			{
+				var maxlength:Number = 0.1;
+				//step 1: find max dilation
+				for (var i:int=0;i<mixerlist.length;i++)
+				{
+					var mled:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
+					var cand:Number = mled.CalcLengthCallback();
+					if (cand>maxlength)
+					{
+						maxlength=cand;
+					}					
+				}
+				
+				//find the appropriate dilation value
+				const boxwidth:Number=191;//double-check, eh?
+				//dilation => 1 second = d pixels
+				var dilation:Number=boxwidth/(2*maxlength);
+				
+				//let all the data things know
+				for (i=0;i<mixerlist.length;i++)
+				{
+					mled = mixerlist.getItemAt(i) as MixerListEntryDat;
+					mled.SetDilationCallback(dilation);			
+				}
+				
+				
+				
+			}
+			
+			public function MixerPlayStart():void
+			{
+				for(var i:int=0;i<this.mixerlist.length;i++)
+				{
+					var mled:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
+					mled.PlayStartCallback();
+				}
+			}
+			
+			public function MixerPlayCallback(n:Number):void
+			{
+				for(var i:int=0;i<this.mixerlist.length;i++)
+				{
+					var mled:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
+					mled.absolutePlayCallback(n);
+				}
+			}
+			
+			public function MixerPlayStop(event:Event=null):void
+			{
+				for(var i:int=0;i<this.mixerlist.length;i++)
+				{
+					var mled:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
+					mled.PlayStopCallback();
+				}
 			}
 			
 			public function sliderChanged(e:Event):void
@@ -253,6 +311,7 @@
 
 				_synth = new SfxrSynth();
 				_mixer = new Mixer();
+				_mixer.addEventListener(SfxrSynth.PLAY_COMPLETE,MixerPlayStop);
 				
 				_saveManager = new SaveManager(this);
 				
@@ -871,14 +930,6 @@
 		</mx:ArrayList>
 		
 		<mx:ArrayList id = "mixerlist">
-			<local:MixerListEntryDat label="16-bit" bggroup="0"/>
-			<local:MixerListEntryDat label="16-bit" bggroup="0"/>
-			<local:MixerListEntryDat label="16-bit" bggroup="0"/>
-			<local:MixerListEntryDat label="16-bit" bggroup="0"/>
-			<local:MixerListEntryDat label="16-bit" bggroup="0"/>
-			<local:MixerListEntryDat label="16-bit" bggroup="0"/>
-			<local:MixerListEntryDat label="16-bit" bggroup="0"/>
-			<local:MixerListEntryDat label="16-bit" bggroup="0"/>
 		</mx:ArrayList>
 		
 		<mx:ArrayList id = "bitdepths">
@@ -1041,7 +1092,7 @@
 								  itemRenderer="MixerRowRenderer"
 								   borderAlpha="0"
 								    dropEnabled="true"								 
-								 width="167" height="452">
+								 width="100%" height="100%">
 								<s:layout>
 									<s:VerticalLayout horizontalAlign="justify" paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" gap="0"/>
 								</s:layout>

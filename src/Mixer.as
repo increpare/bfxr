@@ -1,12 +1,14 @@
 package
 {
+	import flash.events.EventDispatcher;
 	import flash.events.SampleDataEvent;
 	import flash.media.Sound;
 	import flash.media.SoundChannel;
 	import flash.media.SoundMixer;
 	import flash.utils.ByteArray;
-
-	public class Mixer
+	import flash.events.Event;
+	
+	public class Mixer extends EventDispatcher
 	{
 		private var sourcesounds:Vector.<MixerSoundData>;		
 		
@@ -22,7 +24,7 @@ package
 		private var _waveDataPos:uint;						// Current position in the waveData
 		private var _waveDataLength:uint;					// Number of bytes in the waveData
 		private var _waveDataBytes:uint;					// Number of bytes to write to the soundcard
-		
+		private var _updateCallback:Function;
 		private var _zeros:ByteArray;
 		
 		public function Mixer()
@@ -47,8 +49,10 @@ package
 			_dirty=true;
 		}
 		
-		public function Play():void
+		public function Play(updateCallback:Function=null):void
 		{
+			_updateCallback=updateCallback;
+			
 			_trackcount = sourcesounds.length;
 			for (var i:int=0;i<_trackcount;i++)
 			{
@@ -61,7 +65,7 @@ package
 			{
 				var b:ByteArray = new ByteArray();
 			
-				var silentbytes:int = sourcesounds[i].onset*44100*4;
+				var silentbytes:int = int(sourcesounds[i].onset*44100)*4;
 				
 				// create starting silence.
 				while(silentbytes>0)
@@ -133,21 +137,29 @@ package
 		private var _caching:Boolean=false;
 		
 		private function onSoundData(e:SampleDataEvent) : void
-		{
+		{		
+			if (_updateCallback!=null)
+			{
+				_updateCallback(_waveDataPos/(4*44100));
+			}
+			
 			if (_caching)
 			{
-				if(_waveDataPos + _waveDataBytes > _waveDataLength) _waveDataBytes = _waveDataLength - _waveDataPos;
+				if(_waveDataPos + _waveDataBytes > _waveDataLength)
+				{
+					_waveDataBytes = _waveDataLength - _waveDataPos;
+					dispatchEvent(new Event(SfxrSynth.PLAY_COMPLETE));	
+				}
 				
 				if(_waveDataBytes > 0) e.data.writeBytes(_waveData, _waveDataPos, _waveDataBytes);
 							
 				//if too short..append data
-				if (e.data.length<24576) 
+				if (e.data.length<_waveDataBytes) 
 				{
 					_caching=false;
-					while (e.data.length<24576)
+					while (e.data.length<_waveDataBytes)
 					{
 						e.data.writeFloat(0.0);
-						_waveDataPos+=4;
 					}
 				}
 				

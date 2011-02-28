@@ -4,7 +4,7 @@
 				xmlns:mx="library://ns.adobe.com/flex/mx" 
 				xmlns:s="library://ns.adobe.com/flex/spark"
 				
-				 contentBackgroundColor="#FFFFFF">
+				 contentBackgroundColor="#FFFFFF" xmlns:local="*">
 	
 	<fx:Script>
 		<![CDATA[

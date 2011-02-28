@@ -100,8 +100,8 @@ package
 		{
 			if (_saveDat==null)
 			{
-				_saveDat = SharedObject.getLocal("as3sfxr");
-				//_saveDat.clear();
+				_saveDat = SharedObject.getLocal("com.increpare.as3sfxr-b2");
+				_saveDat.clear();
 				if (_saveDat.data.version == undefined )
 				{			
 					//Default values
