@@ -13,8 +13,11 @@
 			import mx.core.UIComponent;
 			import mx.events.CollectionEvent;
 			import mx.events.CollectionEventKind;
+			import mx.events.FlexEvent;
 			import mx.events.PropertyChangeEvent;
 			import mx.utils.URLUtil;
+			
+			import myComponents.SoundParameterRowRenderer;
 			
 			
 			private var _synth:SfxrSynth;				// Synthesizer instance
@@ -103,24 +106,21 @@
 				}				
 			}
 			
-			public function OnParameterChanged():void
-			{
-				//save changes
-				
-				var index:int = this.soundList.selectedIndex;
-				if (index>=0)
+			// called when synth and visuals have been synced
+			// audible if we want to retrigger a play 
+			//(e.g. changing lock status of a field shouldn't trigger a replay)
+			public function OnParameterChanged(audible:Boolean=true,underlyingModification:Boolean=true):void
+			{				
+				//apply applications to selected item's data
+				if (underlyingModification)
 				{
-					var s:SoundData = items.getItemAt(index) as SoundData;
-					if (s)
-					{
-						s.data=_synth.params.getSettingsString();
-						_saveManager.UpdateItem(s);
-					}
-				}										
+					var sd:SoundData = items.getItemAt(soundList.selectedIndex) as SoundData;
+					sd.data=_synth.params.getSettingsString();
 					
-				
+					EnableApplyButton(true);
+				}
 				//_synth.params.wave
-				if (playonchange.selected)
+				if (audible && playonchange.selected)
 				{
 					DoPlay();
 				}				
@@ -244,7 +244,7 @@
 			public function lockChanged(tag:String, locked:Boolean):void
 			{
 				_synth.params.setParamLocked(tag,locked);
-				OnParameterChanged();							
+				OnParameterChanged(false);	
 				/*
 				var cb:CheckBox = e.target as CheckBox;
 				var renderercb:MySimpleItemRendererCB = cb.parent.parent as MySimpleItemRendererCB;
@@ -328,24 +328,30 @@
 				
 				_saveManager.LoadSavedSoundsFromSharedObject(items);
 				
-				SelectItemInSoundListByID(_saveManager.selectedItemID);	
+				if (_saveManager.selectedItemID>=0)
+				{
+					SelectItemInSoundListByID(_saveManager.selectedItemID);	
+				}
+				else if (items.length>0)
+				{
+					SelectItemInSoundListByID(0);						
+				}
 				
 				if (TryLoadFromURL())
-				{
-					AddToSoundList("Linked");
+				{					
+					UIUpdateTrigger();
+					OnParameterChanged(true,false);
+					AddToSoundList("Linked",true);
 				}
 				else
 				{
 					if (items.length==0)
 					{
 						_synth.params.randomize();
-						AddToSoundList("Randomize");
-						SelectItemInSoundList(0);
+						AddToSoundList("Randomize",true);
 					}
 					
 				}				
-				
-				
 				
 				items.addEventListener(CollectionEvent.COLLECTION_CHANGE, onCollectionChange, false, 0, true);
 				items.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, onPropertyChange, false, 0, true);
@@ -359,9 +365,37 @@
 				soundList.dataProvider = items;	
 				
 				UIUpdateTrigger();
-				OnParameterChanged();												
-			}			
+				OnParameterChanged(false);	
+								
+				DisableApplyButton(true);
+			}						
 			
+			private function EnableApplyButton(changesMade:Boolean=false):void
+			{
+				applybutton.enabled=true;
+				revertbutton.enabled=true;	
+				
+				if (changesMade)
+				{
+					var index:int = soundList.selectedIndex;				
+					var sd:SoundData = items.getItemAt(index) as SoundData;
+					sd.dispatchEvent(new Event(FlexEvent.CHANGE_START));
+				}
+			}
+			
+			private function DisableApplyButton(changesMade:Boolean=false):void
+			{
+				applybutton.enabled=false;
+				revertbutton.enabled=false;
+				//remove star from next to name of item				
+				
+				if (changesMade)
+				{
+					var index:int = soundList.selectedIndex;				
+					var sd:SoundData = items.getItemAt(index) as SoundData;
+					sd.dispatchEvent(new Event(FlexEvent.CHANGE_END));
+				}
+			}
 			
 			private function TryLoadFromURL():Boolean
 			{
@@ -375,9 +409,6 @@
 					var tail:String = ar[1] as String;
 					var sounddescr:String = unescape(tail.substr(2));
 					return _synth.params.setSettingsString(sounddescr);
-					
-					UIUpdateTrigger();
-					OnParameterChanged();
 				}
 				catch (e:Error)
 				{
@@ -435,17 +466,21 @@
 			}
 			
 			
-			public function RemoveFromSoundList(index:int):void
+			public function RemoveFromSoundList(dat:Object):void
 			{
-				if (index>=0)
-				{
-					items.removeItemAt(soundList.selectedIndex);
-					RecalculateSaveDatSoundList();
-				}
-				else
-				{
-					trace("eek out of range index trying to remove");
-				}
+				if (items.length==1)
+					return;
+				
+				var index:int = items.getItemIndex(dat);
+				var sd:SoundData = items.getItemAt(index) as SoundData;
+				items.removeItemAt(index);
+				//items.dispatchEvent(FlexEvent.REMOVE);
+				_saveManager.RemoveItemWithID(sd.id);					
+				
+				var newindex:int=index;
+				if (newindex==items.length)
+					newindex--;					
+				SelectItemInSoundList(newindex,index==items.length);			
 			}
 			
 			public function RecalculateSaveDatSoundList():void
@@ -453,8 +488,9 @@
 				_saveManager.PushSoundList(items);
 			}
 			
-			private function AddToSoundList(_name:String):void
+			private function AddToSoundList(_name:String,select:Boolean=false,triggerplay:Boolean=true):void
 			{
+				this.lastmanipulation=_name;
 				//loop through existing objects and see if name is already in use
 				var currentindex:int=0;
 				var found:Boolean=true;
@@ -479,20 +515,26 @@
 					}
 				}
 				
-				var entry:Object = new Object();
-				entry.label=_name+suffix;
-				entry.data = _synth.params.getSettingsString();
+				var entry:SoundData = new SoundData(
+					_name+suffix,
+					_synth.params.getSettingsString(),
+					_saveManager.GetID()
+					);
+
 				items.addItem(entry);				
 				
 				_saveManager.PushSound(new SoundData(entry.label,entry.data,_saveManager.GetID()));
 
-				SelectItemInSoundList(items.length-1);				
+				if (select)
+				{
+					SelectItemInSoundList(items.length-1,triggerplay);
+				}
 			}
 
-			private function SelectItemInSoundList(i:int):void
+			private function SelectItemInSoundList(i:int,triggerplay:Boolean=true):void
 			{				
 				soundList.selectedIndex=i;
-				soundListSelectionChanged(null);
+				soundListSelectionChanged(null,triggerplay);
 				callLater(function():void { soundList.ensureIndexIsVisible(i); });
 			}
 			
@@ -507,11 +549,13 @@
 					if (o.id==id)
 					{
 						SelectItemInSoundList(i);
-						break;
+						return;
 					}
 				}
 				
-				trace("error - couldn't select item with id " + id + "no such item exists");
+				SelectItemInSoundList(0);
+				
+				throw new Error("error - couldn't select item with id " + id + "no such item exists");
 			}
 			
 			/** returns -1 if no item found */
@@ -526,12 +570,14 @@
 				return -1;
 			}
 			
+			private var lastmanipulation:String= "Randomize";
 			protected function clickPreset(event:MouseEvent):void
 			{
 				var b:Button = event.target as Button;
 				
 				_synth.params[b.id]();
-				AddToSoundList(b.label);
+				lastmanipulation=b.label;
+				//AddToSoundList(b.label);
 				
 				UIUpdateTrigger();
 				OnParameterChanged();
@@ -539,17 +585,44 @@
 			}
 			
 			protected function clickApply(event:MouseEvent):void
-			{
-				
+			{				
+				//save changes
+				var index:int = this.soundList.selectedIndex;
+			
+				var s:SoundData = items.getItemAt(index) as SoundData;
+
+				//this is unnecessary, surely?
+				//s.data=_synth.params.getSettingsString();
+				_saveManager.UpdateItem(s);
+			
+				DisableApplyButton(true);			
 			}
 			
-			protected function clickDuplicate(event:MouseEvent):void
-			{
+			protected function clickRevert(event:MouseEvent):void
+			{				
+				//save changes
+				var index:int = this.soundList.selectedIndex;
+
+				var s:SoundData = items.getItemAt(index) as SoundData;
 				
+				var savedData:SoundData = _saveManager.GetSoundDataWithID(s.id);						
+				s.data=savedData.data.concat();
+				
+				_synth.params.setSettingsString(s.data);
+				UIUpdateTrigger();
+				OnParameterChanged(true,true);
+				DisableApplyButton(true);									
+			}
+			
+			protected function clickNew(event:MouseEvent):void
+			{
+				//could remember last operation
+				AddToSoundList(lastmanipulation,true,false);
+				DisableApplyButton(false);
 			}
 		
 			
-			private function soundListSelectionChanged(event:Event):void
+			private function soundListSelectionChanged(event:Event, triggerPlay:Boolean=true):void
 			{
 				if (soundList.selectedIndex==-1)
 				{					
@@ -563,13 +636,22 @@
 					}
 				}
 				
-				var row:Object = items.getItemAt(soundList.selectedIndex);
+				var row:SoundData = items.getItemAt(soundList.selectedIndex) as SoundData;
 				
 				_synth.params.setSettingsString(row.data);
 				
 				CommitGlobal();
 				UIUpdateTrigger();
-				OnParameterChanged();
+				OnParameterChanged(triggerPlay,false);
+				
+				if (row.modified)
+				{
+					EnableApplyButton(false);
+				}
+				else
+				{
+					DisableApplyButton(false);	
+				}
 			}
 
 			private function VolumeChanged(event:Event):void
@@ -612,11 +694,11 @@
 			{
 				_fileRef.removeEventListener(Event.COMPLETE, onLoadSettings);
 							
+				AddToSoundList("loaded");
 				setSettingsFile(_fileRef.data);
-				AddToSoundList("loaded");				
 				UIUpdateTrigger();
-				OnParameterChanged();
-				
+				OnParameterChanged(true,false);
+				this.DisableApplyButton(false);				
 				_fileRef = null;
 			}
 			
@@ -881,7 +963,7 @@
 				{					
 					_synth.params.randomize();
 					
-					AddToSoundList("Randomize");
+					//AddToSoundList("Randomize");
 				}
 				
 				soundListSelectionChanged(null);
@@ -897,10 +979,10 @@
 			protected function clickPasteButton():void
 			{
 				var pasted:String = ExternalInterface.call('function(){return prompt();}');
+				AddToSoundList("Paste",true);
 				_synth.params.setSettingsString(pasted);
 				UIUpdateTrigger();
-				OnParameterChanged();
-				AddToSoundList("Paste");
+				OnParameterChanged(true,false);
 			}
 			
 			private function OnTabChanged(event:Event):void
@@ -985,12 +1067,13 @@
 				<s:Button label="Randomize" click="clickPreset(event)" id="randomize"/>
 				<s:Button label="Mutate" click="clickPreset(event)" id="mutate"/>
 			</s:BorderContainer>
-			<s:BorderContainer width="200" height="54" backgroundColor="#CCBDA1" contentBackgroundColor="#CCBDA1">
+			<s:BorderContainer width="200" height="85" backgroundColor="#CCBDA1" contentBackgroundColor="#CCBDA1">
 				<s:layout>
 					<s:VerticalLayout horizontalAlign="justify" paddingLeft="1" paddingTop="1" paddingBottom="1" paddingRight="1" gap="6"/>
 				</s:layout>
-				<s:Button label="Apply" click="clickApply(event)" id="mutate0"/>
-				<s:Button label="Duplicate" click="clickDuplicate(event)" id="mutate1"/>
+				<s:Button label="Apply" click="clickApply(event)" id="applybutton" enabled="false" />
+				<s:Button label="Revert" click="clickRevert(event)" id="revertbutton" enabled="false" />
+				<s:Button label="New" click="clickNew(event)" id="duplicatebutton"/>
 			</s:BorderContainer>
 			<s:BorderContainer width="200" height="100%" backgroundColor="#CCBDA1" borderVisible="false">
 				<s:layout>
@@ -1018,7 +1101,7 @@
 				<s:List id="soundList"
 						
 						width="170" height="100%"
-						itemRenderer="EditableListItemRenderer" 
+						itemRenderer="myComponents.EditableListItemRenderer" 
 						contentBackgroundColor="#CCBDA1"
 					 	click="soundListSelectionChanged(event)"
 						 
@@ -1055,11 +1138,11 @@
 											<s:ToggleButton label="Sin" change="WaveformSelect(event)" id="W2" width="65" x="37.9" y="40.9"/>
 											<s:ToggleButton label="Square"  change="WaveformSelect(event)" id="W0" width="65"/>
 											<s:ToggleButton label="Saw" change="WaveformSelect(event)" id="W1" width="65"/>
-											<s:ToggleButton label="Whistle" change="WaveformSelect(event)" id="W7" width="65"/>
 											<s:ToggleButton label="Up" change="WaveformSelect(event)" id="W8" width="65"/>
+											<s:ToggleButton label="Steep" change="WaveformSelect(event)" id="W6" width="65"/>
+											<s:ToggleButton label="Whistle" change="WaveformSelect(event)" id="W7" width="65"/>
 											<s:ToggleButton label="White" change="WaveformSelect(event)" id="W3" width="65" x="32.35" y="61.6"/>
 											<s:ToggleButton label="Pink " change="WaveformSelect(event)" id="W5" width="65" x="95.9" y="62.05"/>
-											<s:ToggleButton label="Steep" change="WaveformSelect(event)" id="W6" width="65"/>
 										</s:TileGroup>
 									</s:HGroup>
 								</s:BorderContainer>
@@ -1070,7 +1153,7 @@
 												<s:VerticalLayout paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0"/>
 											</s:layout>
 											<s:DataGroup id = "SoundParameterGroup"
-														 itemRenderer="SoundParameterRowRenderer" 
+														 itemRenderer="myComponents.SoundParameterRowRenderer" 
 														 height="100%"								 
 														  width="100%"
 														   clipAndEnableScrolling="true"														    
@@ -1129,7 +1212,7 @@
 							</s:HGroup>
 							<s:List 
 								id="mixerListComponent"
-								  itemRenderer="MixerRowRenderer"
+								  itemRenderer="myComponents.MixerRowRenderer"
 								   borderAlpha="0"
 								    dropEnabled="true"								 
 								 width="100%" height="100%">

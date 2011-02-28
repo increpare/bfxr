@@ -52,10 +52,23 @@ package
 			{
 				var o:Object = _saveDat.data.soundList[s];
 				var sd:SoundData = new SoundData(o.label,o.data,o.id);
-				trace(_saveDat.data.soundList[s]);
-				trace(sd);
 				soundList.addItem(sd);
 			}
+		}
+		
+		public function RemoveItemWithID(id:int):void
+		{
+			var sl:Array = _saveDat.data.soundList as Array;
+			for (var i:int=0;i<sl.length;i++)
+			{
+				var o:Object  = sl[i];
+				if (o.id==id)
+				{
+					sl.splice(i,1);
+					OnChange();
+					return;
+				}
+			}			
 		}
 		
 		//potentially quite dangerous?
@@ -65,8 +78,7 @@ package
 			for (var i:int=0;i<items.length;i++)
 			{
 				var o:SoundData  = items.getItemAt(i) as SoundData;
-				trace(o);
-				_saveDat.data.soundList.push(o);
+				_saveDat.data.soundList.push(o.Clone());
 			}
 			OnChange();
 		}
@@ -74,7 +86,7 @@ package
 		//potentially dangerous
 		public function PushSound(sound:SoundData):void
 		{
-			_saveDat.data.soundList.push(sound);
+			_saveDat.data.soundList.push(sound.Clone());
 			
 			OnChange();
 		}
@@ -95,13 +107,31 @@ package
 			return curmax+1;
 		}
 		
+		public function GetSoundDataWithID(id:int):SoundData
+		{
+			var soundarray:Array = _saveDat.data.soundList;
+			var curmax:int=0;
+			for(var s:String in soundarray)
+			{
+				var o:Object = soundarray[s];
+				var sd:SoundData = new SoundData(o.label,o.data,o.id);
+				
+				if (sd.id==id)
+				{					
+					return sd;
+				}
+			}
+			throw new Error("couldn't find sound with id = " + id);			
+		}
+		
+		
 		//returns true if changes were made (if current version is out of date)
 		public function LoadData():void
 		{
 			if (_saveDat==null)
 			{
 				_saveDat = SharedObject.getLocal("com.increpare.as3sfxr-b2");
-				_saveDat.clear();
+				//_saveDat.clear();
 				if (_saveDat.data.version == undefined )
 				{			
 					//Default values
@@ -160,7 +190,7 @@ package
 			{
 				if (soundarray[s].id==newdata.id)
 				{
-					soundarray[s]=newdata;
+					soundarray[s] = newdata.Clone();
 					return true;
 				}
 			}

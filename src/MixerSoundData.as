@@ -1,7 +1,7 @@
 package
 {
 	import flash.utils.ByteArray;
-
+	
 	public class MixerSoundData
 	{
 		public var bytes:ByteArray;

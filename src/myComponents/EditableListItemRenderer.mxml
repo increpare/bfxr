@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="true"
+				creationComplete="onCreationComplete()">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.List;
+			import mx.events.FlexEvent;
+			
+			import spark.components.supportClasses.ListBase;
+						
+			private function onCreationComplete():void
+			{	
+				var sd:SoundData = this.data as SoundData;
+				sd.addEventListener(FlexEvent.CHANGE_START,TriggerSoundModified);
+				sd.addEventListener(FlexEvent.CHANGE_END ,TriggerSoundUnModified);	
+			}
+			
+			private function TriggerSoundModified(event:Event):void
+			{
+				var oldValue:String = labelDisplay.text;
+				data.modified=true;
+				labelDisplay.text = data.label +"*";
+				labelDisplay.alpha=0.5;
+				this.inputTxt.alpha=0.5;
+			}
+			
+			private function TriggerSoundUnModified(event:Event):void
+			{
+				var oldValue:String = labelDisplay.text;
+				data.modified=false;
+				labelDisplay.text = data.label;
+				labelDisplay.alpha=1.0;
+				this.inputTxt.alpha=1.0;
+			}
+			
+			private function onChange(event:Event):void 
+			{								
+				var oldValue:String = labelDisplay.text;
+				
+				if (oldValue != inputTxt.text)
+				{
+					data.label = inputTxt.text;
+					labelDisplay.text = inputTxt.text;
+					if (data.modified)
+						labelDisplay.text = labelDisplay.text+"*";
+										
+					//var app:sfxr_interface = this.parentApplication as sfxr_interface;
+					//app.RecalculateSaveDatSoundList();
+				}
+				isEdit(false);
+				
+			}
+			
+			private function onEdit(event:Event):void 
+			{
+				var l:List = this.parent as List;				
+				inputTxt.text = data.label;
+				isEdit(true);
+
+				inputTxt.selectRange(inputTxt.text.length,inputTxt.text.length+1);
+				inputTxt.setFocus();
+			}
+			
+			private function isEdit(value:Boolean):void 
+			{
+				labelDisplay.visible = !value;
+				inputTxt.visible =  value;
+			}
+			
+			private function removeItem(event:Event):void
+			{
+				var list:ListBase = this.owner as ListBase;
+
+				var app:sfxr_interface = parentApplication as sfxr_interface;
+				app.RemoveFromSoundList(data);
+				event.stopImmediatePropagation();
+			}
+			
+			
+			private function gobble(event:Event):void
+			{
+				event.stopImmediatePropagation();
+			}
+			
+		]]>
+	</fx:Script>
+	
+		
+	<s:Label id="labelDisplay" 
+			 text="{data.label}"   
+			 click="onEdit(event)" 
+			 top="0" bottom="0" left="0" right="0"
+			 
+			 paddingTop="7" paddingBottom="5" paddingLeft="5" paddingRight="3"  
+			verticalAlign="middle"
+			 />
+	
+	<s:TextInput id="inputTxt"  
+				 visible="false"  
+				 focusOut="onChange(event)"	
+				 top="1"  bottom="1" left="1" right="0" minWidth="25"/>
+	
+	<s:Button id="removeBtn"
+		width="30"
+		label="X"		
+		visible="true"
+		right="1"
+		top="2"
+		 mouseDown="gobble(event)"
+		click="removeItem(event)"
+		 mouseOver="gobble(event)"
+		  mouseUp="gobble(event)"
+		toolTip="Remove item from list"
+		/>
+		
+	
+</s:ItemRenderer>
