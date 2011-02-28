@@ -39,7 +39,9 @@
 		
 		public static const version:int = 104;
 		public static const CACHED:String = "cached";		// triggered when the synth stored in this is fully cached (either via a cache command, or play()).
-		public static const PLAY_COMPLETE:String = "playcomplete";		// triggered when the synth stored in this is fully cached (either via a cache command, or play()).
+		public static const PLAY_COMPLETE:String = "playcomplete";		// triggered when the synth stored in this is fully cached (either via a cache command, or play()).		
+		//should be <32
+		private const LoResNoisePeriod:int = 8;
 		
 		private var _params:SfxrParams = new SfxrParams;	// Params instance
 		
@@ -155,6 +157,7 @@
 		
 		private var _noiseBuffer:Vector.<Number>;			// Buffer of random values used to generate noise
 		private var _pinkNoiseBuffer:Vector.<Number>;			// Buffer of random values used to generate noise
+		private var _loResNoiseBuffer:Vector.<Number>;			// Buffer of random values used to generate noise
 		
 		private var _pinkNumber:PinkNumber;
 		
@@ -703,12 +706,14 @@
 				if(!_phaserBuffer) _phaserBuffer = new Vector.<Number>(1024, true);
 				if(!_noiseBuffer) _noiseBuffer = new Vector.<Number>(32, true);
 				if(!_pinkNoiseBuffer) _pinkNoiseBuffer = new Vector.<Number>(32, true);
+				if(!_loResNoiseBuffer) _loResNoiseBuffer = new Vector.<Number>(32, true);
 				if (!_pinkNumber) _pinkNumber = new PinkNumber();
 				
 				for(var i:uint = 0; i < 1024; i++) _phaserBuffer[i] = 0.0;
 				for(i = 0; i < 32; i++) _noiseBuffer[i] = Math.random() * 2.0 - 1.0;
 				for(i = 0; i < 32; i++) _pinkNoiseBuffer[i] = _pinkNumber.GetNextValue();
-				
+				for(i = 0; i < 32; i++) _loResNoiseBuffer[i] = ((i%LoResNoisePeriod)==0) ? Math.random()*2.0-1.0 : _loResNoiseBuffer[i-1];							
+			
 				_repeatTime = 0;
 				
 				if (p.repeatSpeed == 0.0) 	_repeatLimit = 0;
@@ -875,6 +880,10 @@
 						{
 							for(n = 0; n < 32; n++) _pinkNoiseBuffer[n] = _pinkNumber.GetNextValue();							
 						}
+						else if (_waveType == 6)
+						{
+							for(n = 0; n < 32; n++) _loResNoiseBuffer[n] = ((n%LoResNoisePeriod)==0) ? Math.random()*2.0-1.0 : _loResNoiseBuffer[n-1];							
+						}
 					}
 					
 					_sample=0;
@@ -916,6 +925,36 @@
 							case 5: // Pink Noise
 							{						
 								_sample += overtonestrength*(_pinkNoiseBuffer[uint(tempphase * 32 / int(_periodTemp))%32]);
+								break;
+							}
+							case 6: // Low-res Noise
+							{
+								amp = tempphase/_periodTemp;								
+								_sample += overtonestrength*(Math.abs(1-amp*amp*amp*2)-1);
+								break;
+							}
+							case 7: // Whistle 
+							{				
+								// Sin wave code
+								_pos = tempphase / _periodTemp;
+								_pos = _pos > 0.5 ? (_pos - 1.0) * 6.28318531 : _pos * 6.28318531;
+								_tempsample = _pos < 0 ? 1.27323954 * _pos + .405284735 * _pos * _pos : 1.27323954 * _pos - 0.405284735 * _pos * _pos;
+								var value:Number = 0.75*(_tempsample < 0 ? .225 * (_tempsample *-_tempsample - _tempsample) + _tempsample : .225 * (_tempsample * _tempsample - _tempsample) + _tempsample);
+								//then whistle (essentially an overtone with frequencyx20 and amplitude0.25
+								
+								_pos = ((tempphase*20) % _periodTemp) / _periodTemp;
+								_pos = _pos > 0.5 ? (_pos - 1.0) * 6.28318531 : _pos * 6.28318531;
+								_tempsample = _pos < 0 ? 1.27323954 * _pos + .405284735 * _pos * _pos : 1.27323954 * _pos - 0.405284735 * _pos * _pos;
+								value += 0.25*(_tempsample < 0 ? .225 * (_tempsample *-_tempsample - _tempsample) + _tempsample : .225 * (_tempsample * _tempsample - _tempsample) + _tempsample);
+								
+								_sample += overtonestrength*value;//main wave
+								
+								break;
+							}
+							case 8: // Up 
+							{	
+								var amp:Number = tempphase/_periodTemp;								
+								_sample += overtonestrength*(Math.abs(1-amp*amp*2)-1);
 								break;
 							}
 						}

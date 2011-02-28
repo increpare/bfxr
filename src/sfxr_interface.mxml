@@ -80,8 +80,8 @@
 				this.volumeslider.value=2*_synth.params.masterVolume;
 				
 				// waveform
-				for (var i:int=0;i<6;i++)
-				{
+				for (var i:int=0;i<SfxrParams.WAVETYPECOUNT;i++)
+				{	
 					var tb:ToggleButton = this["W"+i] as ToggleButton;
 					tb.selected = _synth.params.waveType==i;					
 				}
@@ -118,7 +118,6 @@
 					}
 				}										
 					
-				UpdateSelectedSound();
 				
 				//_synth.params.wave
 				if (playonchange.selected)
@@ -153,7 +152,7 @@
 			
 			private var _mixer: Mixer;
 			public function MixerPlay():void
-			{
+			{				
 				_mixer.Clear();
 				for (var i:int=0;i<mixerlist.length;i++)
 				{
@@ -164,7 +163,7 @@
 						var msd:MixerSoundData = new MixerSoundData(dat.synth.cachedWave,dat.onset,dat.amplitudemodifier);
 						_mixer.AddTrack(msd);
 					}
-				}
+				}				
 				
 				MixerPlayStart();
 				_mixer.Play(MixerPlayCallback);
@@ -177,6 +176,11 @@
 				for (var i:int=0;i<mixerlist.length;i++)
 				{
 					var mled:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
+					if (mled.CalcLengthCallback==null)
+					{
+						return;
+					}
+					
 					var cand:Number = mled.CalcLengthCallback();
 					if (cand>maxlength)
 					{
@@ -403,7 +407,7 @@
 				var ind:int = parseInt(tb.id.charAt(1));
 				
 				//deselect other buttons
-				for (var i:int=0;i<6;i++)
+				for (var i:int=0;i<SfxrParams.WAVETYPECOUNT;i++)
 				{
 					(this["W"+i] as ToggleButton).selected=i==ind;				
 				}
@@ -509,22 +513,6 @@
 				
 				trace("error - couldn't select item with id " + id + "no such item exists");
 			}
-				
-			//what does this do, and why do I call it?
-			private function UpdateSelectedSound():void
-			{
-				if (soundList.selectedIndex==-1)
-				{
-					if (items.length==0)
-					{
-						return;
-					}
-					else
-					{
-						SelectItemInSoundList(0);
-					}
-				}					
-			}
 			
 			/** returns -1 if no item found */
 			private function GetIndexOfItemWithID(id:int):int
@@ -550,6 +538,15 @@
 							
 			}
 			
+			protected function clickApply(event:MouseEvent):void
+			{
+				
+			}
+			
+			protected function clickDuplicate(event:MouseEvent):void
+			{
+				
+			}
 		
 			
 			private function soundListSelectionChanged(event:Event):void
@@ -634,7 +631,20 @@
 				new FileReference().save(file, "sfx.sfs");
 			}
 			
-			protected function SaveWave():void
+			private function SaveWave():void
+			{
+				switch (tabs.selectedIndex)
+				{
+					case 0:
+						SaveSoundWave();
+						break;
+					case 1:
+						SaveMixerWave();
+						break;
+				}
+			}
+			
+			protected function SaveSoundWave():void
 			{
 				var _sampleRate:int = parseInt(samplerates.getItemAt(samplerate.selectedIndex).data);
 				
@@ -646,6 +656,26 @@
 			}
 			
 			
+			private function SaveMixerWave():void
+			{				
+				var _sampleRate:int = parseInt(samplerates.getItemAt(samplerate.selectedIndex).data);
+				
+				var _bitDepth:int = parseInt(bitdepths.getItemAt(bitdepth.selectedIndex).data);
+								
+				_mixer.Clear();
+				for (var i:int=0;i<mixerlist.length;i++)
+				{
+					var dat : MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
+					//synth.();
+					if (dat.synthset)
+					{
+						var msd:MixerSoundData = new MixerSoundData(dat.synth.getWavFile(_sampleRate, _bitDepth),dat.onset,dat.amplitudemodifier);
+						_mixer.AddTrack(msd);
+					}
+				}				
+				
+				new FileReference().save(_mixer.getWavFile(_sampleRate,_bitDepth));
+			}
 			
 			
 			
@@ -943,7 +973,7 @@
 		<s:VGroup width="160" height="591" horizontalAlign="justify" paddingLeft="1" paddingRight="1" paddingBottom="1" paddingTop="1">
 			<s:BorderContainer width="200" height="243" backgroundColor="#CCBDA1">
 				<s:layout>
-					<s:VerticalLayout horizontalAlign="justify" paddingLeft="1" paddingRight="1" paddingBottom="1" paddingTop="1"/>
+					<s:VerticalLayout horizontalAlign="justify" paddingLeft="1" paddingRight="1" paddingBottom="1" paddingTop="1" gap="6"/>
 				</s:layout>
 				<s:Button label="Pickup/coin" click="clickPreset(event)" id="generatePickupCoin"/>
 				<s:Button label="Laser/shoot" click="clickPreset(event)" id="generateLaserShoot"/>
@@ -954,6 +984,13 @@
 				<s:Button label="Blip/Select" click="clickPreset(event)" id="generateBlipSelect"/>
 				<s:Button label="Randomize" click="clickPreset(event)" id="randomize"/>
 				<s:Button label="Mutate" click="clickPreset(event)" id="mutate"/>
+			</s:BorderContainer>
+			<s:BorderContainer width="200" height="54" backgroundColor="#CCBDA1" contentBackgroundColor="#CCBDA1">
+				<s:layout>
+					<s:VerticalLayout horizontalAlign="justify" paddingLeft="1" paddingTop="1" paddingBottom="1" paddingRight="1" gap="6"/>
+				</s:layout>
+				<s:Button label="Apply" click="clickApply(event)" id="mutate0"/>
+				<s:Button label="Duplicate" click="clickDuplicate(event)" id="mutate1"/>
 			</s:BorderContainer>
 			<s:BorderContainer width="200" height="100%" backgroundColor="#CCBDA1" borderVisible="false">
 				<s:layout>
@@ -1002,7 +1039,7 @@
 							<s:HorizontalLayout verticalAlign="justify"/>
 						</s:layout>
 							<s:VGroup width="100%" height="100%" paddingLeft="1" paddingRight="1" paddingBottom="1" paddingTop="1" id="square" horizontalAlign="justify">
-								<s:BorderContainer width="293" height="47" backgroundColor="#CCBDA1">
+								<s:BorderContainer width="293" height="73" backgroundColor="#CCBDA1">
 									<s:layout>
 										<s:BasicLayout/>
 									</s:layout>
@@ -1016,10 +1053,13 @@
 										<s:TileGroup width="100%" height="100%" requestedRowCount="2" requestedColumnCount="3" columnWidth="98" verticalGap="1">
 											<s:ToggleButton label="Triangle" change="WaveformSelect(event)" id="W4" width="65"/>
 											<s:ToggleButton label="Sin" change="WaveformSelect(event)" id="W2" width="65" x="37.9" y="40.9"/>
+											<s:ToggleButton label="Square"  change="WaveformSelect(event)" id="W0" width="65"/>
+											<s:ToggleButton label="Saw" change="WaveformSelect(event)" id="W1" width="65"/>
+											<s:ToggleButton label="Whistle" change="WaveformSelect(event)" id="W7" width="65"/>
+											<s:ToggleButton label="Up" change="WaveformSelect(event)" id="W8" width="65"/>
 											<s:ToggleButton label="White" change="WaveformSelect(event)" id="W3" width="65" x="32.35" y="61.6"/>
 											<s:ToggleButton label="Pink " change="WaveformSelect(event)" id="W5" width="65" x="95.9" y="62.05"/>
-											<s:ToggleButton label="Saw" change="WaveformSelect(event)" id="W1" width="65"/>
-											<s:ToggleButton label="Square"  change="WaveformSelect(event)" id="W0" width="65"/>
+											<s:ToggleButton label="Steep" change="WaveformSelect(event)" id="W6" width="65"/>
 										</s:TileGroup>
 									</s:HGroup>
 								</s:BorderContainer>

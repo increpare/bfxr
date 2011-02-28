@@ -82,9 +82,11 @@ package
 		//
 		//--------------------------------------------------------------------------
 		
+		public static const WAVETYPECOUNT:int = 9;
+		
 		/** Shape of the wave (0:square, 1:saw, 2:sin, 3:noise, or 4:triangle) */
 		public function get waveType():uint { return _waveType; }
-		public function set waveType(value:uint):void { _waveType = value > 5 ? 0 : value; paramsDirty = true; }
+		public function set waveType(value:uint):void { _waveType = value >= WAVETYPECOUNT ? 0 : value; paramsDirty = true; }
 		
 		/** Overall volume of the sound (0 to 1) */
 		public function get masterVolume():Number { return _masterVolume; }
@@ -585,7 +587,7 @@ package
 			paramsDirty = true;
 			
 			if (!lockedParam("waveType"))
-				_waveType = uint(Math.random() * 6);
+				_waveType = uint(Math.random() * WAVETYPECOUNT);
 			
 			if (!lockedParam("attackTime"))
 				_attackTime =  		pow(Math.random()*2-1, 4);
