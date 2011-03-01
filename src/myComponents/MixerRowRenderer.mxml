@@ -48,9 +48,9 @@
 				}
 			}
 			private function removeItem(event:Event):void
-			{
-				var list:List = this.owner as List;
-				list.dataProvider.removeItemAt(list.selectedIndex);
+			{			
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;								
+				app.mixer_on_item_removed(this.data.id!=-1,data);
 //				
 //				var app:sfxr_interface = parentApplication as sfxr_interface;
 //				app.RemoveFromSoundList(list.selectedIndex);
@@ -59,7 +59,7 @@
 			private function CreationComplete(event:Event):void
 			{
 				var app:sfxr_interface = this.parentApplication as sfxr_interface;
-				dropdown.dataProvider=app.items;
+				dropdown.dataProvider=app.soundItems;
 				this.data.synth = new SfxrSynth();
 				this.data.absolutePlayCallback= this.PlayCallbackAbsolute;
 				this.data.PlayStartCallback = this.PlayStart;
@@ -69,6 +69,18 @@
 				
 				this.data.synth.addEventListener(SfxrSynth.PLAY_COMPLETE,PlayStop);				
 				this.data.synth.addEventListener(SfxrSynth.CACHED,OnSynthCached);
+				
+				
+				for (var i:int=0;i<app.soundItems.length;i++)
+				{
+					var o:Object = app.soundItems.getItemAt(i);
+					if (o.id==this.data.id)
+					{
+						dropdown.selectedIndex=i;
+						DropdownChange();
+						break;
+					}
+				}
 				
 				/*
 				slider.minimum= Number(data.min);
@@ -96,7 +108,7 @@
 			}
 				
 			
-			private function DropdownChange(event:Event):void
+			private function DropdownChange(event:Event = null):void
 			{
 				var app:sfxr_interface = this.parentApplication as sfxr_interface;
 				
@@ -122,6 +134,8 @@
 				{
 					synth.cacheSound(function():void{})
 				}
+				
+				app.mixer_onset_soundidChanged();
 			}
 			
 			private var dilation:Number=15;
@@ -240,14 +254,11 @@
 				}				
 			}
 			
-			private function volumechanged():void
+			private function volumechanged(event:Event):void
 			{
 				data.amplitudemodifier=volumeslider.value;
-				var app:sfxr_interface = this.parentApplication as sfxr_interface;
-				if (app.playonchange.selected)
-				{
-					app.DoPlay();
-				}
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;								
+				app.mixer_volume_sliderChanged(event);
 			}						
 			
 			private var sliderClickPosition:Point;
@@ -298,7 +309,7 @@
 				}
 			
 				targetPoint = sliderimagecontainer.globalToLocal(targetPoint);
-				trace(targetPoint);
+			
 				sliderimage.x=int(targetPoint.x);
 			}
 			
@@ -337,11 +348,8 @@
 			private function SliderImageChangeEnd():void
 			{				
 				data.onset=onsetSliderPosition;		
-				var app:sfxr_interface = this.parentApplication as sfxr_interface;
-				if (app.playonchange.selected)
-				{
-					app.DoPlay();
-				}
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;				
+				app.mixer_onset_sliderChanged();
 			}
 			
 			public var onsettimescale:Number=1;
@@ -398,7 +406,7 @@
 			  click="removeItem(event)"
 			  toolTip="Remove item from list"
 			  />
-	<s:VSlider x="130" y="10" height="54" id="volumeslider" value="1" minimum="0" maximum="2" changeEnd="volumechanged()" stepSize=".01"/>
+	<s:VSlider x="130" y="10" height="54" id="volumeslider" value="1" minimum="0" maximum="2" changeEnd="volumechanged(event)" stepSize=".01"/>
 	<s:DropDownList id="dropdown" x="14" y="10" change="DropdownChange(event)"></s:DropDownList>
 	<s:Button x="14" y="43" label="Play" click="PlayClick()"/>
 	<s:Button x="92" y="43" label="R" click="PlayClick()" width="30"/>

@@ -30,12 +30,21 @@
 			}
 			
 			/** returns -1 if nothing found */
-			private function GetSelectedItemID():int
+			private function GetSelectedSoundItemID():int
 			{
 				var index:int = soundList.selectedIndex;
 				if (index==-1)
 					return -1;
-				return items.getItemAt(index).id;
+				return soundItems.getItemAt(index).id;
+			}
+			
+			/** returns -1 if nothing found */
+			private function GetSelectedLayerItemID():int
+			{
+				var index:int = layerList.selectedIndex;
+				if (index==-1)
+					return -1;
+				return layerItems.getItemAt(index).id;
 			}
 			
 			public function GlobalSettingCommit(e:Event):void
@@ -45,7 +54,7 @@
 					
 			private function CommitGlobal():void
 			{
-				_saveManager.commitGlobal(samplerate.selectedIndex,bitdepth.selectedIndex,playonchange.selected,GetSelectedItemID());			
+				_saveManager.commitGlobal(samplerate.selectedIndex,bitdepth.selectedIndex,playonchange.selected,GetSelectedSoundItemID(),GetSelectedLayerItemID());			
 			}
 			
 			private var lockablecheckboxes:Object = new Object();
@@ -66,10 +75,10 @@
 				squareSlider.push(s);
 			}			
 			
-			public function ResetParameterValue(paramname:String):void
+			public function ResetSoundParameterValue(paramname:String):void
 			{
 				_synth.params.resetParams([paramname]);
-				OnParameterChanged();
+				OnSoundParameterChanged();
 				UIUpdateTrigger();
 			}
 			
@@ -103,23 +112,63 @@
 				{
 					var cb:SoundParameterRowRenderer = sliderList[tag] as SoundParameterRowRenderer;
 					cb.slider.value = _synth.params[tag];
+				}		
+				
+				//layer pane
+				//might want to be conservative/smart about how the follow code gets called
+				if (tabs.selectedIndex==1)
+				{
+					this.mixerlist.removeAll();
+					//this.mixerList.addIte .removeAll();
+					for (i=0;i<_mixer.params.items.length;i++)
+					{
+						var item:MixerItemParams = _mixer.params.items[i];
+						var dat:MixerListEntryDat = new MixerListEntryDat(item.id);
+						dat.amplitudemodifier = item.amplitudemodifier;
+						dat.onset = item.onset;
+						dat.preset=true;
+						
+						this.mixerlist.addItemAt(dat,mixerlist.length);
+						
+						//layerItems.ad
+					}
+				}
+			}
+			
+			// called when synth and visuals have been synced
+			// audible if we want to retrigger a play 
+			//(e.g. changing lock status of a field shouldn't trigger a replay)
+			public function OnSoundParameterChanged(audible:Boolean=true,underlyingModification:Boolean=true):void
+			{				
+				//apply applications to selected item's data
+				if (underlyingModification)
+				{
+					var sd:SoundData = soundItems.getItemAt(soundList.selectedIndex) as SoundData;
+					sd.data=_synth.params.getSettingsString();
+					
+					EnableApplyButton(true);
+				}
+				//_synth.params.wave
+				if (audible && playonchange.selected)
+				{
+					_synth.play();
 				}				
 			}
 			
 			// called when synth and visuals have been synced
 			// audible if we want to retrigger a play 
 			//(e.g. changing lock status of a field shouldn't trigger a replay)
-			public function OnParameterChanged(audible:Boolean=true,underlyingModification:Boolean=true):void
+			public function OnLayerParameterChanged(audible:Boolean=true,underlyingModification:Boolean=true):void
 			{				
 				//apply applications to selected item's data
 				if (underlyingModification)
 				{
-					var sd:SoundData = items.getItemAt(soundList.selectedIndex) as SoundData;
-					sd.data=_synth.params.getSettingsString();
+					var ld:LayerData = layerItems.getItemAt(layerList.selectedIndex) as LayerData;
+					ld.data=_mixer.params.getSettingsString();
 					
 					EnableApplyButton(true);
 				}
-				//_synth.params.wave
+				
 				if (audible && playonchange.selected)
 				{
 					DoPlay();
@@ -160,7 +209,7 @@
 					//synth.();
 					if (dat.synthset)
 					{
-						var msd:MixerSoundData = new MixerSoundData(dat.synth.cachedWave,dat.onset,dat.amplitudemodifier);
+						var msd:MixerSoundData = new MixerSoundData(dat.id, dat.synth.cachedWave,dat.onset,dat.amplitudemodifier);
 						_mixer.AddTrack(msd);
 					}
 				}				
@@ -210,6 +259,7 @@
 				{
 					var mled:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
 					mled.PlayStartCallback();
+					
 				}
 			}
 			
@@ -237,14 +287,51 @@
 				var renderercb:SoundParameterRowRenderer = s.parent.parent as SoundParameterRowRenderer;
 				
 				_synth.params[renderercb.data.tag]=s.value;	
-				OnParameterChanged();				
+				OnSoundParameterChanged();				
 			}
 			
+			public function mixer_volume_sliderChanged(e:Event=null):void
+			{
+				///uch, just update all the volumes
+				for (var i:int=0;i<this.mixerlist.length;i++)
+				{
+					var msd:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
+					_mixer.params.items[i].amplitudemodifier = msd.amplitudemodifier;
+				}
+
+				OnLayerParameterChanged();	
+			}
+			
+			public function mixer_onset_sliderChanged(e:Event=null):void
+			{
+				///uch, just update all the volumes
+				for (var i:int=0;i<this.mixerlist.length;i++)
+				{
+					var msd:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
+					_mixer.params.items[i].onset = msd.onset;
+				}
+				
+				OnLayerParameterChanged();	
+			}
+			
+			public function mixer_onset_soundidChanged(e:Event=null):void
+			{
+				///uch, just update all the volumes
+				for (var i:int=0;i<this.mixerlist.length;i++)
+				{
+					var msd:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
+					_mixer.params.items[i].id = msd.id;
+				}
+				
+				OnLayerParameterChanged(false);	
+			}
+			
+						
 			
 			public function lockChanged(tag:String, locked:Boolean):void
 			{
 				_synth.params.setParamLocked(tag,locked);
-				OnParameterChanged(false);	
+				OnSoundParameterChanged(false);	
 				/*
 				var cb:CheckBox = e.target as CheckBox;
 				var renderercb:MySimpleItemRendererCB = cb.parent.parent as MySimpleItemRendererCB;
@@ -317,8 +404,7 @@
 				_mixer = new Mixer();
 				_mixer.addEventListener(SfxrSynth.PLAY_COMPLETE,MixerPlayStop);
 				
-				_saveManager = new SaveManager(this);
-				
+				_saveManager = new SaveManager(this);				
 				
 				_saveManager.LoadData();
 				
@@ -326,13 +412,14 @@
 				bitdepth.selectedIndex = _saveManager.bitdepth;
 				playonchange.selected =  _saveManager.playonchange;
 				
-				_saveManager.LoadSavedSoundsFromSharedObject(items);
+				_saveManager.LoadSavedSoundsFromSharedObject(soundItems);
+				_saveManager.LoadSavedLayersFromSharedObject(layerItems);
 				
-				if (_saveManager.selectedItemID>=0)
+				if (_saveManager.selectedSoundItemID>=0)
 				{
-					SelectItemInSoundListByID(_saveManager.selectedItemID);	
+					SelectItemInSoundListByID(_saveManager.selectedSoundItemID);	
 				}
-				else if (items.length>0)
+				else if (soundItems.length>0)
 				{
 					SelectItemInSoundListByID(0);						
 				}
@@ -340,21 +427,29 @@
 				if (TryLoadFromURL())
 				{					
 					UIUpdateTrigger();
-					OnParameterChanged(true,false);
+					OnSoundParameterChanged(true,false);
 					AddToSoundList("Linked",true);
 				}
 				else
 				{
-					if (items.length==0)
+					if (soundItems.length==0)
 					{
 						_synth.params.randomize();
 						AddToSoundList("Randomize",true);
 					}
 					
-				}				
+				}			
 				
-				items.addEventListener(CollectionEvent.COLLECTION_CHANGE, onCollectionChange, false, 0, true);
-				items.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, onPropertyChange, false, 0, true);
+				if (layerItems.length==0)
+				{
+					AddToLayerList("Default",true); 
+				}
+				
+				soundItems.addEventListener(CollectionEvent.COLLECTION_CHANGE, onCollectionChange, false, 0, true);
+				soundItems.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, onPropertyChange, false, 0, true);
+				
+				layerItems.addEventListener(CollectionEvent.COLLECTION_CHANGE, onCollectionChange, false, 0, true);
+				layerItems.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, onPropertyChange, false, 0, true);
 				
 				samplerate.dataProvider = samplerates;
 				samplerate.selectedIndex=0;				
@@ -362,10 +457,12 @@
 				bitdepth.dataProvider = bitdepths;
 				bitdepth.selectedIndex=0;
 				
-				soundList.dataProvider = items;	
+				soundList.dataProvider = soundItems;
+				layerList.dataProvider = layerItems;	
 				
 				UIUpdateTrigger();
-				OnParameterChanged(false);	
+				OnLayerParameterChanged(false);
+				OnSoundParameterChanged(false);	
 								
 				DisableApplyButton(true);
 			}						
@@ -377,9 +474,19 @@
 				
 				if (changesMade)
 				{
-					var index:int = soundList.selectedIndex;				
-					var sd:SoundData = items.getItemAt(index) as SoundData;
-					sd.dispatchEvent(new Event(FlexEvent.CHANGE_START));
+					switch (tabs.selectedIndex)
+					{
+						case 0:
+							var index:int = soundList.selectedIndex;				
+							var sd:SoundData = soundItems.getItemAt(index) as SoundData;
+							sd.dispatchEvent(new Event(FlexEvent.CHANGE_START));
+							break;
+						case 1:
+							index = layerList.selectedIndex;				
+							var ld:LayerData = layerItems.getItemAt(index) as LayerData;
+							ld.dispatchEvent(new Event(FlexEvent.CHANGE_START));
+							break;
+					}
 				}
 			}
 			
@@ -391,9 +498,19 @@
 				
 				if (changesMade)
 				{
-					var index:int = soundList.selectedIndex;				
-					var sd:SoundData = items.getItemAt(index) as SoundData;
-					sd.dispatchEvent(new Event(FlexEvent.CHANGE_END));
+					switch (tabs.selectedIndex)
+					{
+						case 0:
+							var index:int = soundList.selectedIndex;				
+							var sd:SoundData = soundItems.getItemAt(index) as SoundData;
+							sd.dispatchEvent(new Event(FlexEvent.CHANGE_END));
+							break;
+						case 1:
+							index = layerList.selectedIndex;				
+							var ld:LayerData = layerItems.getItemAt(index) as LayerData;
+							ld.dispatchEvent(new Event(FlexEvent.CHANGE_END));
+							break;
+					}
 				}
 			}
 			
@@ -447,7 +564,7 @@
 				
 				CalculateSquareSliderEnabledness();
 				
-				OnParameterChanged();
+				OnSoundParameterChanged();
 			}
 
 
@@ -464,28 +581,61 @@
 						len++;
 				return len;
 			}
-			
-			
+						
 			public function RemoveFromSoundList(dat:Object):void
 			{
-				if (items.length==1)
+				if (soundItems.length==1)
 					return;
 				
-				var index:int = items.getItemIndex(dat);
-				var sd:SoundData = items.getItemAt(index) as SoundData;
-				items.removeItemAt(index);
+				var index:int = soundItems.getItemIndex(dat);
+				var sd:SoundData = soundItems.getItemAt(index) as SoundData;
+				soundItems.removeItemAt(index);
 				//items.dispatchEvent(FlexEvent.REMOVE);
 				_saveManager.RemoveItemWithID(sd.id);					
 				
 				var newindex:int=index;
-				if (newindex==items.length)
+				if (newindex==soundItems.length)
 					newindex--;					
-				SelectItemInSoundList(newindex,index==items.length);			
+				SelectItemInSoundList(newindex,index==soundItems.length);			
+			}
+			
+			public function RemoveFromLayerList(dat:Object):void
+			{
+				if (layerItems.length==1)
+					return;
+				
+				var index:int = layerItems.getItemIndex(dat);
+				var sd:SoundData = layerItems.getItemAt(index) as SoundData;
+				layerItems.removeItemAt(index);
+				//items.dispatchEvent(FlexEvent.REMOVE);
+				_saveManager.RemoveItemWithID(sd.id);					
+				
+				var newindex:int=index;
+				if (newindex==layerItems.length)
+					newindex--;					
+				SelectItemInSoundList(newindex,index==layerItems.length);			
+			}
+			
+			public function RenameSoundData(sd:SoundData):void
+			{
+				//don't want to commit everything, just the name
+				_saveManager.UpdateSoundName(sd);
+			}
+			
+			public function RenameLayerData(ld:LayerData):void
+			{
+				//don't want to commit everything, just the name
+				_saveManager.UpdateLayerName(ld);
 			}
 			
 			public function RecalculateSaveDatSoundList():void
 			{
-				_saveManager.PushSoundList(items);
+				_saveManager.PushSoundList(soundItems);
+			}
+			
+			public function RecalculateSaveDatLayerList():void
+			{
+				_saveManager.PushLayerList(layerItems);
 			}
 			
 			private function AddToSoundList(_name:String,select:Boolean=false,triggerplay:Boolean=true):void
@@ -504,9 +654,9 @@
 						suffix = currentindex.toString();
 					}
 					
-					for (var i:int =0;i<items.length;i++)
+					for (var i:int =0;i<soundItems.length;i++)
 					{
-						var o:Object = items.getItemAt(i);
+						var o:Object = soundItems.getItemAt(i);
 						if (o.label==_name + suffix)
 						{
 							found=true;
@@ -521,16 +671,60 @@
 					_saveManager.GetID()
 					);
 
-				items.addItem(entry);				
+				soundItems.addItem(entry);				
 				
 				_saveManager.PushSound(new SoundData(entry.label,entry.data,_saveManager.GetID()));
 
 				if (select)
 				{
-					SelectItemInSoundList(items.length-1,triggerplay);
+					SelectItemInSoundList(soundItems.length-1,triggerplay);
 				}
 			}
 
+			
+			private function AddToLayerList(_name:String,select:Boolean=false,triggerplay:Boolean=true):void
+			{
+				this.lastmanipulation=_name;
+				//loop through existing objects and see if name is already in use
+				var currentindex:int=0;
+				var found:Boolean=true;
+				var suffix:String="";
+				while (found)
+				{
+					found=false;
+					currentindex++;
+					if (currentindex>1)
+					{
+						suffix = currentindex.toString();
+					}
+					
+					for (var i:int =0;i<layerItems.length;i++)
+					{
+						var o:Object = layerItems.getItemAt(i);
+						if (o.label==_name + suffix)
+						{
+							found=true;
+							break;
+						}
+					}
+				}
+				
+				var entry:LayerData = new LayerData(
+					_name+suffix,
+					_mixer.params.getSettingsString(),
+					_saveManager.GetID()
+				);
+				
+				layerItems.addItem(entry);				
+				
+				_saveManager.PushLayer(new LayerData(entry.label,entry.data,_saveManager.GetID()));
+				
+				if (select)
+				{
+					SelectItemInLayerList(layerItems.length-1,triggerplay);
+				}
+			}
+			
 			private function SelectItemInSoundList(i:int,triggerplay:Boolean=true):void
 			{				
 				soundList.selectedIndex=i;
@@ -538,14 +732,22 @@
 				callLater(function():void { soundList.ensureIndexIsVisible(i); });
 			}
 			
+			private function SelectItemInLayerList(i:int,triggerplay:Boolean=true):void
+			{				
+				layerList.selectedIndex=i;
+				layerListSelectionChanged(null,triggerplay);
+				callLater(function():void { layerList.ensureIndexIsVisible(i); });
+			}
+			
+			
 			private function SelectItemInSoundListByID(id:int):void
 			{				
 				if (id==-1)
 					soundList.selectedIndex=-1;
 				
-				for (var i:int=0;i<items.length;i++)
+				for (var i:int=0;i<soundItems.length;i++)
 				{
-					var o:Object = items.getItemAt(i);
+					var o:Object = soundItems.getItemAt(i);
 					if (o.id==id)
 					{
 						SelectItemInSoundList(i);
@@ -558,12 +760,44 @@
 				throw new Error("error - couldn't select item with id " + id + "no such item exists");
 			}
 			
-			/** returns -1 if no item found */
-			private function GetIndexOfItemWithID(id:int):int
-			{
-				for (var i:int=0;i<items.length;i++)
+			private function SelectItemInLayerListByID(id:int):void
+			{				
+				if (id==-1)
+					layerList.selectedIndex=-1;
+				
+				for (var i:int=0;i<layerItems.length;i++)
 				{
-					var o:Object = items.getItemAt(i);
+					var o:Object = layerItems.getItemAt(i);
+					if (o.id==id)
+					{
+						SelectItemInLayerList(i);
+						return;
+					}
+				}
+				
+				SelectItemInLayerList(0);
+				
+				throw new Error("error - couldn't select item with id " + id + "no such item exists");
+			}
+			
+			/** returns -1 if no item found */
+			private function GetIndexOfSoundItemWithID(id:int):int
+			{
+				for (var i:int=0;i<soundItems.length;i++)
+				{
+					var o:Object = soundItems.getItemAt(i);
+					if (o.id==id)
+						return i;
+				}
+				return -1;
+			}
+			
+			/** returns -1 if no item found */
+			private function GetIndexOfLayerItemWithID(id:int):int
+			{
+				for (var i:int=0;i<layerItems.length;i++)
+				{
+					var o:Object = layerItems.getItemAt(i);
 					if (o.id==id)
 						return i;
 				}
@@ -575,50 +809,131 @@
 			{
 				var b:Button = event.target as Button;
 				
+				if (tabs.selectedIndex==1)
+				{
+					AddToSoundList(b.label);
+				}
 				_synth.params[b.id]();
 				lastmanipulation=b.label;
-				//AddToSoundList(b.label);
+				
+				if (tabs.selectedIndex==1)
+				{
+					clickApplySound();
+				}
 				
 				UIUpdateTrigger();
-				OnParameterChanged();
+				OnSoundParameterChanged();
 							
 			}
 			
 			protected function clickApply(event:MouseEvent):void
 			{				
+				switch (tabs.selectedIndex)
+				{
+					case 0:
+						clickApplySound();
+						break;
+					case 1:
+						clickApplyLayer();
+						break;
+				}
+			}
+			
+			protected function clickApplySound():void
+			{				
 				//save changes
 				var index:int = this.soundList.selectedIndex;
 			
-				var s:SoundData = items.getItemAt(index) as SoundData;
+				var s:SoundData = soundItems.getItemAt(index) as SoundData;
 
 				//this is unnecessary, surely?
 				//s.data=_synth.params.getSettingsString();
-				_saveManager.UpdateItem(s);
+				_saveManager.UpdateSoundItem(s);
 			
+				DisableApplyButton(true);			
+			}
+			
+			protected function clickApplyLayer():void
+			{				
+				//save changes
+				var index:int = this.layerList.selectedIndex;
+				
+				var l:LayerData = layerItems.getItemAt(index) as LayerData;
+				
+				//this is unnecessary, surely?
+				//s.data=_synth.params.getSettingsString();
+				_saveManager.UpdateLayerItem(l);
+				
 				DisableApplyButton(true);			
 			}
 			
 			protected function clickRevert(event:MouseEvent):void
 			{				
+				switch (tabs.selectedIndex)
+				{
+					case 0:
+						clickRevertSound();
+						break;
+					case 1:
+						clickRevertLayer();
+						break;
+				}
+			}
+			
+			private function clickRevertSound():void
+			{
 				//save changes
 				var index:int = this.soundList.selectedIndex;
 
-				var s:SoundData = items.getItemAt(index) as SoundData;
+				var s:SoundData = soundItems.getItemAt(index) as SoundData;
 				
 				var savedData:SoundData = _saveManager.GetSoundDataWithID(s.id);						
-				s.data=savedData.data.concat();
+				s.data=savedData.data;
 				
 				_synth.params.setSettingsString(s.data);
 				UIUpdateTrigger();
-				OnParameterChanged(true,true);
+				OnSoundParameterChanged(true,true);
 				DisableApplyButton(true);									
+			}
+			
+			
+			private function clickRevertLayer():void
+			{
+				//save changes
+				var index:int = this.soundList.selectedIndex;
+				
+				var l:LayerData = layerItems.getItemAt(index) as LayerData;
+				
+				var savedData:LayerData = _saveManager.GetLayerDataWithID(l.id);						
+				l.data=savedData.data;
+				
+				_mixer.params.setSettingsString(l.data);
+				ReformMixerData();
+				
+				UIUpdateTrigger();
+				OnLayerParameterChanged(true,true);
+				DisableApplyButton(true);									
+			}
+			
+			private function ReformMixerData():void
+			{
+				
 			}
 			
 			protected function clickNew(event:MouseEvent):void
 			{
-				//could remember last operation
-				AddToSoundList(lastmanipulation,true,false);
-				DisableApplyButton(false);
+				
+				switch (tabs.selectedIndex)
+				{
+					case 0:
+						AddToSoundList(lastmanipulation,true,false);
+						DisableApplyButton(false);
+						break;
+					case 1:
+						AddToLayerList("Composite",true,false);
+						DisableApplyButton(false);
+						break;
+				}
 			}
 		
 			
@@ -626,7 +941,7 @@
 			{
 				if (soundList.selectedIndex==-1)
 				{					
-					if (items.length==0)
+					if (soundItems.length==0)
 					{
 						return;
 					}
@@ -636,13 +951,13 @@
 					}
 				}
 				
-				var row:SoundData = items.getItemAt(soundList.selectedIndex) as SoundData;
+				var row:SoundData = soundItems.getItemAt(soundList.selectedIndex) as SoundData;
 				
 				_synth.params.setSettingsString(row.data);
 				
 				CommitGlobal();
 				UIUpdateTrigger();
-				OnParameterChanged(triggerPlay,false);
+				OnSoundParameterChanged(triggerPlay,false);
 				
 				if (row.modified)
 				{
@@ -654,10 +969,43 @@
 				}
 			}
 
+			
+			private function layerListSelectionChanged(event:Event, triggerPlay:Boolean=true):void
+			{
+				if (layerList.selectedIndex==-1)
+				{					
+					if (layerItems.length==0)
+					{
+						return;
+					}
+					else
+					{
+						SelectItemInLayerList(0);
+					}
+				}
+				
+				var row:LayerData = layerItems.getItemAt(layerList.selectedIndex) as LayerData;
+				
+				_mixer.params.setSettingsString(row.data);
+				
+				CommitGlobal();
+				OnLayerParameterChanged(triggerPlay,false);
+				UIUpdateTrigger();
+				
+				if (row.modified)
+				{
+					EnableApplyButton(false);
+				}
+				else
+				{
+					DisableApplyButton(false);	
+				}
+			}
+			
 			private function VolumeChanged(event:Event):void
 			{
 				_synth.params.masterVolume = volumeslider.value/2;
-				OnParameterChanged();
+				OnSoundParameterChanged();
 			}			
 			
 			private var _fileRef:FileReference;			// File reference for loading in sfs file
@@ -697,7 +1045,7 @@
 				AddToSoundList("loaded");
 				setSettingsFile(_fileRef.data);
 				UIUpdateTrigger();
-				OnParameterChanged(true,false);
+				OnSoundParameterChanged(true,false);
 				this.DisableApplyButton(false);				
 				_fileRef = null;
 			}
@@ -751,7 +1099,7 @@
 					//synth.();
 					if (dat.synthset)
 					{
-						var msd:MixerSoundData = new MixerSoundData(dat.synth.getWavFile(_sampleRate, _bitDepth),dat.onset,dat.amplitudemodifier);
+						var msd:MixerSoundData = new MixerSoundData(dat.id, dat.synth.getWavFile(_sampleRate, _bitDepth),dat.onset,dat.amplitudemodifier);
 						_mixer.AddTrack(msd);
 					}
 				}				
@@ -957,14 +1305,15 @@
 						
 			public function LoadSavedSoundsFromSharedObject():void
 			{
-				_saveManager.LoadSavedSoundsFromSharedObject(items);
+				_saveManager.LoadSavedSoundsFromSharedObject(soundItems);
 
-				if (items.length==0)
-				{					
-					_synth.params.randomize();
-					
-					//AddToSoundList("Randomize");
-				}
+				soundListSelectionChanged(null);
+			}
+			
+			
+			public function LoadSavedLayersFromSharedObject():void
+			{
+				_saveManager.LoadSavedLayersFromSharedObject(layerItems);
 				
 				soundListSelectionChanged(null);
 			}
@@ -982,7 +1331,7 @@
 				AddToSoundList("Paste",true);
 				_synth.params.setSettingsString(pasted);
 				UIUpdateTrigger();
-				OnParameterChanged(true,false);
+				OnSoundParameterChanged(true,false);
 			}
 			
 			private function OnTabChanged(event:Event):void
@@ -1025,7 +1374,21 @@
 
 			protected function AddNewMixerLayer(event:MouseEvent):void
 			{				
-				this.mixerlist.addItemAt(new MixerListEntryDat(),0);
+				this.mixerlist.addItemAt(new MixerListEntryDat(-1),0);
+				_mixer.params.items.splice(0,0,new MixerItemParams(-1,0,0));
+				
+				
+				OnLayerParameterChanged(false);	
+			}
+			
+			public function mixer_on_item_removed(audible:Boolean,dat:Object):void
+			{				
+				var index:int = layerItems.getItemIndex(dat);
+				
+				layerItems.removeItemAt(index);
+				_mixer.params.items.splice(index,1);
+				
+				OnLayerParameterChanged(audible,true);
 			}
 
 		]]>
@@ -1038,7 +1401,10 @@
 			<local:GenericListEntry label="22050 Hz" data="22050"/>			
 		</mx:ArrayList>
 		
-		<mx:ArrayList id = "items">			
+		<mx:ArrayList id = "soundItems">			
+		</mx:ArrayList>
+		
+		<mx:ArrayList id = "layerItems">			
 		</mx:ArrayList>
 		
 		<mx:ArrayList id = "mixerlist">
@@ -1101,7 +1467,7 @@
 				<s:List id="soundList"
 						
 						width="170" height="100%"
-						itemRenderer="myComponents.EditableListItemRenderer" 
+						itemRenderer="myComponents.SoundListItemRenderer" 
 						contentBackgroundColor="#CCBDA1"
 					 	click="soundListSelectionChanged(event)"
 						 
@@ -1215,11 +1581,19 @@
 								  itemRenderer="myComponents.MixerRowRenderer"
 								   borderAlpha="0"
 								    dropEnabled="true"								 
-								 width="100%" height="100%">
+								 width="100%" height="344">
 								<s:layout>
 									<s:VerticalLayout horizontalAlign="justify" paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" gap="0"/>
 								</s:layout>
 							</s:List>
+							<s:List id="layerList"
+									
+									width="170" height="100%"
+									itemRenderer="myComponents.LayerListItemRenderer" 
+									contentBackgroundColor="#CCBDA1"
+								 	click="layerListSelectionChanged(event)"
+									 
+									/>
 						</s:VGroup>
 					</s:NavigatorContent>
 				</mx:TabNavigator>

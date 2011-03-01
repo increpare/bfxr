@@ -60,7 +60,7 @@
 				if (fieldlabel.enabled)
 				{
 					var app:sfxr_interface = this.parentApplication as sfxr_interface;
-					app.ResetParameterValue(data.tag);
+					app.ResetSoundParameterValue(data.tag);
 				}
 			}
 				

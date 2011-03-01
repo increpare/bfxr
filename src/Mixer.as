@@ -10,12 +10,13 @@ package
 	import flash.utils.Endian;
 	
 	public class Mixer extends EventDispatcher
-	{
+	{				
 		private var sourcesounds:Vector.<MixerSoundData>;		
 		
 		//sounds with offset added
 		private var preparedsounds:Vector.<ByteArray>;
 		
+		public var params:MixerParams;
 		public var _dirty:Boolean;
 		private var _trackcount:int;
 		private var _sound:Sound;
@@ -36,6 +37,7 @@ package
 			{
 				_zeros.writeFloat(0.0);
 			}
+			params = new MixerParams();
 		}
 		
 		public function Clear():void
@@ -158,6 +160,12 @@ package
 							}
 						}
 						
+						
+						if (val >= (1<<15))
+							val=1<<15;
+						if (val<= -(1<<15))
+							val=-(1<<15);
+						
 						_waveData.writeShort(val);
 					}
 					break;
@@ -165,17 +173,17 @@ package
 					while (added)
 					{
 						added=false;
-						val=0;
+						var valf:Number=0;
 						for (i=0;i<_trackcount;i++)
 						{
 							if (preparedsounds[i].position<preparedsounds[i].length-unitsize)
 							{
-								val+=preparedsounds[i].readFloat()*sourcesounds[i].amplitudemodifier;
+								valf+=preparedsounds[i].readFloat()*sourcesounds[i].amplitudemodifier;
 								added=true;
 							}
 						}
 						
-						_waveData.writeFloat(val);
+						_waveData.writeFloat(valf);
 					}
 					break;
 			}
@@ -330,6 +338,7 @@ package
 			
 			return wav;
 		}
+		
 		
 	}
 }

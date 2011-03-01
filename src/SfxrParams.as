@@ -19,7 +19,7 @@ package
 	 * 
 	 * @author Thomas Vian
 	 */
-	public class SfxrParams
+	public class SfxrParams implements ISerializable
 	{
 		//--------------------------------------------------------------------------
 		//

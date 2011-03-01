@@ -6,6 +6,7 @@ package
 	[Bindable]
 	public class MixerListEntryDat extends EventDispatcher
 	{
+		public var id:int=0;
 		public var bggroup:int		= 0;
 		public var label:String		= "";
 		public var data:String 		= "";
@@ -21,6 +22,13 @@ package
 		
 		public var onset:Number = 0 ;
 		public var amplitudemodifier:Number = 1;
+		//set in order to trigger the container to fill out its data when initialized with data from a mixeritem
+		public var preset:Boolean=false;
+		
+		public function MixerListEntryDat(id:int)
+		{
+			this.id=id;
+		}
 		
 	}
 }

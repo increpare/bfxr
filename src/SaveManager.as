@@ -24,9 +24,13 @@ package
 			return _saveDat.data.playonchange;
 		}
 		
-		public function get selectedItemID():int
+		public function get selectedSoundItemID():int
 		{
-			return _saveDat.data.selectedItemID;
+			return _saveDat.data.selectedSoundItemID;
+		}
+		public function get selectedLayerItemID():int
+		{
+			return _saveDat.data.selectedSoundItemID;
 		}
 		
 		public function SaveManager(parent:sfxr_interface)
@@ -35,13 +39,14 @@ package
 			_saveDat = null;		
 		}
 		
-		public function commitGlobal(samplerate:int,bitdepth:int,playonchange:Boolean, selectedItemID:int):void
+		public function commitGlobal(samplerate:int,bitdepth:int,playonchange:Boolean, selectedSoundItemID:int,selectedLayerItemID:int ):void
 		{
 			//don't need to worry about tripping over other people's values			
 			_saveDat.data.samplerate = samplerate;
 			_saveDat.data.bitdepth = bitdepth;
 			_saveDat.data.playonchange = playonchange;
-			_saveDat.data.selectedItemID = selectedItemID;			
+			_saveDat.data.selectedSoundItemID = selectedSoundItemID;	
+			_saveDat.data.selectedLayerItemID = selectedLayerItemID;			
 			OnChange();	
 		}
 		
@@ -54,6 +59,56 @@ package
 				var sd:SoundData = new SoundData(o.label,o.data,o.id);
 				soundList.addItem(sd);
 			}
+		}
+		
+		public function LoadSavedLayersFromSharedObject(layerList:ArrayList):void
+		{
+			layerList.removeAll();
+			for (var s:String in _saveDat.data.layerList)
+			{
+				var o:Object = _saveDat.data.layerList[s];
+				var ld:LayerData = new LayerData(o.label,o.data,o.id);
+				layerList.addItem(ld);
+			}
+		}
+		
+		/** updates the name only */
+		public function UpdateSoundName(sd:SoundData):void
+		{
+			var sl:Array = _saveDat.data.soundList as Array;
+			for (var i:int=0;i<sl.length;i++)
+			{
+				var o:Object  = sl[i];
+				if (o.id==sd.id)
+				{
+					o.label = sd.label;
+					OnChange();
+					return;
+				
+				}
+			}
+			
+			throw new Error("nothing found with id " + sd.id);
+		}
+		
+		
+		/** updates the name only */
+		public function UpdateLayerName(sd:LayerData):void
+		{
+			var sl:Array = _saveDat.data.layerList as Array;
+			for (var i:int=0;i<sl.length;i++)
+			{
+				var o:Object  = sl[i];
+				if (o.id==sd.id)
+				{
+					o.label = sd.label;
+					OnChange();
+					return;
+					
+				}
+			}
+			
+			throw new Error("nothing found with id " + sd.id);
 		}
 		
 		public function RemoveItemWithID(id:int):void
@@ -69,6 +124,8 @@ package
 					return;
 				}
 			}			
+			
+			throw new Error("nothing found with id " + id);
 		}
 		
 		//potentially quite dangerous?
@@ -83,10 +140,30 @@ package
 			OnChange();
 		}
 		
+		//potentially quite dangerous?
+		public function PushLayerList(items:ArrayList):void
+		{
+			_saveDat.data.layerList = new Array();
+			for (var i:int=0;i<items.length;i++)
+			{
+				var o:LayerData  = items.getItemAt(i) as LayerData;
+				_saveDat.data.layerList.push(o.Clone());
+			}
+			OnChange();
+		}
+		
 		//potentially dangerous
 		public function PushSound(sound:SoundData):void
 		{
 			_saveDat.data.soundList.push(sound.Clone());
+			
+			OnChange();
+		}
+		
+		//potentially dangerous
+		public function PushLayer(layer:LayerData):void
+		{
+			_saveDat.data.layerList.push(layer.Clone());
 			
 			OnChange();
 		}
@@ -124,34 +201,42 @@ package
 			throw new Error("couldn't find sound with id = " + id);			
 		}
 		
+		public function GetLayerDataWithID(id:int):LayerData
+		{
+			var layerarray:Array = _saveDat.data.layerList;
+			var curmax:int=0;
+			for(var s:String in layerarray)
+			{
+				var o:Object = layerarray[s];
+				var ld:LayerData = new LayerData(o.label,o.data,o.id);
+				
+				if (ld.id==id)
+				{					
+					return ld;
+				}
+			}
+			throw new Error("couldn't find layer with id = " + id);			
+		}
 		
 		//returns true if changes were made (if current version is out of date)
 		public function LoadData():void
 		{
 			if (_saveDat==null)
 			{
-				_saveDat = SharedObject.getLocal("com.increpare.as3sfxr-b2");
-				//_saveDat.clear();
+				_saveDat = SharedObject.getLocal("com.increpare.bfxr");
+				_saveDat.clear();
+				
 				if (_saveDat.data.version == undefined )
 				{			
 					//Default values
 					_saveDat.data.soundList = new Array();
-					_saveDat.data.selectedItemID = -1;
+					_saveDat.data.layerList = new Array();
+					_saveDat.data.selectedSoundItemID = -1;
+					_saveDat.data.selectedLayerItemID = -1;
 					_saveDat.data.version = SfxrSynth.version;
 					_saveDat.data.samplerate = 0;
 					_saveDat.data.bitdepth = 0;
 					_saveDat.data.playonchange = true;
-				}
-				else if (_saveDat.data.version == 103)
-				{
-					_saveDat.data.selectedItemID = -1;	
-					var itemlist:Array = _saveDat.data.soundList;
-					for (var s:String in itemlist)
-					{
-						trace("string id = " + s);
-						itemlist[s].id=s;
-					}
-					_saveDat.data.version = SfxrSynth.version;
 				}
 				
 				OnChange();	
@@ -182,7 +267,7 @@ package
 		}
 		
 		/** returns -1 if no object found */
-		public function UpdateItem(newdata:SoundData):Boolean
+		public function UpdateSoundItem(newdata:SoundData):Boolean
 		{
 			var soundarray:Array = _saveDat.data.soundList;
 			var curmax:int=0;
@@ -200,5 +285,23 @@ package
 			return false;
 		}
 		
+		/** returns -1 if no object found */
+		public function UpdateLayerItem(newdata:LayerData):Boolean
+		{
+			var layerarray:Array = _saveDat.data.layerList;
+			var curmax:int=0;
+			for(var s:String in layerarray)
+			{
+				if (layerarray[s].id==newdata.id)
+				{
+					layerarray[s] = newdata.Clone();
+					return true;
+				}
+			}
+			
+			OnChange();
+			
+			return false;
+		}
 	}
 }
