@@ -369,7 +369,7 @@
 		<s:fill><s:SolidColor color="{ ((data.bggroup=='0') ? 0xffccbda1 : 0xffe7d1a7)  }" /></s:fill>	
 	</s:Rect>
 	
-	<s:BorderContainer width="191" backgroundColor="0xccbda1" backgroundAlpha="1.0" height="74" y="0" right="0" mouseDown="sliderImageContainerClick(event)"  id="sliderimagecontainer" visible="false">		
+	<s:BorderContainer width="170" backgroundColor="0xccbda1" backgroundAlpha="1.0" height="74" y="0" right="0" mouseDown="sliderImageContainerClick(event)"  id="sliderimagecontainer" visible="false">		
 		<s:layout>
 			<s:BasicLayout/>
 		</s:layout>
