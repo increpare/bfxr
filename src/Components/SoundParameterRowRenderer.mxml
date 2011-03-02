@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- containers\spark\myComponents\MySimpleItemRendererCB.mxml -->
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				
+				 contentBackgroundColor="#FFFFFF" xmlns:local="*">
+	
+	<fx:Script>
+		<![CDATA[
+			import spark.skins.spark.CheckBoxSkin;
+			private function updateFields():void {
+				/*
+				// Check to see if the data property is null.
+				if (data == null)
+					return;
+				// If the data property is not null, 
+				// set the CheckBox control appropriately..
+				if (data.locked == "yes") {
+					locked.selected = true;
+				}
+				else {
+					locked.selected = false;              
+				}
+				
+				slider.value=data.slidervalue;*/			
+			}
+			
+			private function SliderValueChange(event:Event):void
+			{
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				app.synthInterface.sliderChanged(event);
+			}
+			
+			
+			private function OnLockButtonChanged(event:Event):void
+			{
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				app.synthInterface.lockChanged(data.tag,  locked.selected);
+			}
+			
+			private function CreationComplete(event:Event):void
+			{
+				slider.minimum= Number(data.min);
+				slider.maximum= Number(data.max);			
+				
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				app.synthInterface.RegisterParameterSlider(this);
+				app.synthInterface.RegisterLockableParam(data.tag,this.locked);
+				(slider.skin as TickedHSliderSkin).track.skin.invalidateDisplayList();
+				
+				if (data.square==true)
+				{
+					app.synthInterface.RegisterSquareSlider(fieldlabel, slider);
+				}			
+			}
+			
+			private function LabelClick():void
+			{				
+				if (fieldlabel.enabled)
+				{
+					var app:sfxr_interface = this.parentApplication as sfxr_interface;
+					app.synthInterface.ResetSoundParameterValue(data.tag);
+				}
+			}
+				
+		]]>
+	</fx:Script>
+	
+	<s:Rect width="100%" height="100%">
+		<s:fill><s:SolidColor color="{ ((data.bggroup=='0') ? 0xffccbda1 : 0xffe7d1a7)  }" /></s:fill>	
+	</s:Rect>
+	<s:Rect top="-1" bottom="0" left="-1" right="0">
+		<s:stroke>
+			<s:LinearGradientStroke rotation="90" weight="1">
+				<s:GradientEntry color="0"  />
+				<s:GradientEntry color="0"  />
+			</s:LinearGradientStroke>
+		</s:stroke>		
+	</s:Rect>
+	<s:HGroup 
+		verticalCenter="0" 
+		left="2" 
+		right="5" 
+		top="1" 
+		bottom="2" 
+		verticalAlign="top"
+		  creationComplete="CreationComplete(event)"
+		>    
+
+		<s:CheckBox 
+			id="locked" 
+			toolTip="Lock field during randomization/mutation?" 
+			verticalCenter="0" 
+			skinClass="spark.skins.spark.CheckBoxSkin"			 
+		 	change="OnLockButtonChanged(event)"
+			 height="17"
+			 />                
+		<s:Label 		
+			id = "fieldlabel" 
+			text="{data.label}" 
+			width="170" 
+			height="17"  
+			verticalAlign="middle"  
+			textAlign="right"
+			click="LabelClick()"
+			/>    
+		<s:HSlider
+			  skinClass="Components.TickedHSliderSkin"
+			id="slider" 
+			width="116" 
+			minimum="0" 
+			maximum="1" 
+			stepSize="0.005" 
+			valid="true" 
+			top="0" 
+			bottom="5"
+		 	changeEnd="SliderValueChange(event)"
+			/>
+	</s:HGroup>
+</s:ItemRenderer>

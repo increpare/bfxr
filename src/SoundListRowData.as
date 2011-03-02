@@ -10,6 +10,6 @@ package
 		public var min:Number;
 		public var max:Number;
 		public var tag:String;
-		public var descr:String;	
+		public var label:String;	
 	}
 }

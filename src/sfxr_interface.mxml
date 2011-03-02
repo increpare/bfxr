@@ -1,13 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
-			   xmlns:s="library://ns.adobe.com/flex/spark" 
-			   xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="662" minHeight="604" pageTitle="as3sfxr-b" backgroundColor="#CCBDA1" preloaderChromeColor="#CCBDA1"
-			   applicationComplete="init();" width="662" height="584"  keyDown="keyDown(event);" xmlns:local="*" >
-	<s:layout>
-		<s:BasicLayout/>
-	</s:layout>
-	<fx:Script>
-		<![CDATA[
+<s:Application 
+    width="662" height="584"
+    backgroundColor="#CCBDA1"
+    minHeight="604"
+    minWidth="662"
+    keyDown="keyDown(event);"
+    xmlns:fx="http://ns.adobe.com/mxml/2009"
+    xmlns:s="library://ns.adobe.com/flex/spark"
+    xmlns:mx="library://ns.adobe.com/flex/mx"
+    pageTitle="as3sfxr-b"
+    preloaderChromeColor="#CCBDA1"
+	preinitialize="onPreinitialize()"
+	initialize="onInitialize()"
+    applicationComplete="onCreationComplete();"
+    xmlns:local="*">
+    <s:layout>
+        <s:BasicLayout/>
+    </s:layout>
+    <fx:Script>
+        <![CDATA[
+			import Components.SoundParameterRowRenderer;
+			
+			import Synthesis.Mixer;
+			import Synthesis.MixerParams;
+			import Synthesis.MixerSoundData;
+			import Synthesis.SfxrParams;
+			import Synthesis.SfxrSynth;
+			
 			import mx.collections.ArrayList;
 			import mx.controls.sliderClasses.Slider;
 			import mx.core.UIComponent;
@@ -19,1775 +38,1613 @@
 			import mx.logging.LogEventLevel;
 			import mx.logging.targets.TraceTarget;
 			import mx.utils.URLUtil;
+
+            public var saveManager:SaveManager;
+			public var globalState:GlobalState;
+			public var synthInterface : SynthInterface;
+			public var mixerInterface : MixerInterface;
+
+			public var mixerlist : ArrayList;
 			
-			import myComponents.SoundParameterRowRenderer;
-			
-			
-			private var _synth:SfxrSynth;				// Synthesizer instance
-			
-			private var _saveManager:SaveManager;
-			
-			public function playOnChangeClick(e:Event):void
-			{
-				GlobalSettingCommit(e);
-			}
-			
-			/** returns -1 if nothing found */
-			private function GetSelectedSoundItemID():int
-			{
-				var index:int = soundList.selectedIndex;
-				if (index==-1)
-					return -1;
-				return soundItems.getItemAt(index).id;
-			}
-			
-			/** returns -1 if nothing found */
-			private function GetSelectedLayerItemID():int
-			{
-				var index:int = layerList.selectedIndex;
-				if (index==-1)
-					return -1;
-				return layerItems.getItemAt(index).id;
-			}
-			
-			public function GlobalSettingCommit(e:Event):void
-			{				
-				CommitGlobal();
-			}
-					
-			private function CommitGlobal():void
-			{
-				_saveManager.commitGlobal(samplerate.selectedIndex,bitdepth.selectedIndex,playonchange.selected,GetSelectedSoundItemID(),GetSelectedLayerItemID());			
-			}
-			
-			private var lockablecheckboxes:Object = new Object();
-			
-			public function RegisterLockableParam(tag:String,checkbox:CheckBox):void
-			{
-				lockablecheckboxes[tag]=checkbox;
-			}
-			
-			public function RegisterParameterSlider(c:SoundParameterRowRenderer):void
-			{
-				sliderList[c.data.tag]=c;
-			}
-			
-			public function RegisterSquareSlider(label:Label, s:HSlider):void
-			{
-				squareSlider.push(label);
-				squareSlider.push(s);
-			}			
-			
-			public function ResetSoundParameterValue(paramname:String):void
-			{
-				_synth.params.resetParams([paramname]);
-				OnSoundParameterChanged();
-				UIUpdateTrigger();
-			}
-			
-			private var sliderList:Array = new Array();
-			private var squareSlider:Array = new Array();
-			
-			private function UIUpdateTrigger():void
-			{
-				//#1 update all fields
-				
-				this.volumeslider.value=2*_synth.params.masterVolume;
-				
-				// waveform
-				for (var i:int=0;i<SfxrParams.WAVETYPECOUNT;i++)
-				{	
-					var tb:ToggleButton = this["W"+i] as ToggleButton;
-					tb.selected = _synth.params.waveType==i;					
-				}
-				
-				CalculateSquareSliderEnabledness();
-				
-				//update lockable checkboxes
-				for (var key:String in  lockablecheckboxes)
-				{
-					var checkbox:CheckBox = lockablecheckboxes[key] as CheckBox;
-					checkbox.selected = _synth.params.lockedParam(key);
-				}
-				
-				//parameter sliders
-				for(var tag:String in sliderList)
-				{
-					var cb:SoundParameterRowRenderer = sliderList[tag] as SoundParameterRowRenderer;
-					cb.slider.value = _synth.params[tag];
-				}		
-				
-				//layer pane
-				//might want to be conservative/smart about how the follow code gets called
-				if (tabs.selectedIndex==1)
-				{
-					
-					trace("refreshing layer pane");
-					this.mixerlist.removeAll();
-					//this.mixerList.addIte .removeAll();
-					for (i=0;i<_mixer.params.items.length;i++)
-					{
-						var item:MixerItemParams = _mixer.params.items[i];
-						var dat:MixerListEntryDat = new MixerListEntryDat(item.id);
-						dat.amplitudemodifier = item.amplitudemodifier;
-						dat.onset = item.onset;
-						dat.preset=true;
-						
-						this.mixerlist.addItemAt(dat,mixerlist.length);
-						
-						//layerItems.ad
-					}
-					
-				}
-			}
-			
-			// called when synth and visuals have been synced
-			// audible if we want to retrigger a play 
-			//(e.g. changing lock status of a field shouldn't trigger a replay)
-			public function OnSoundParameterChanged(audible:Boolean=true,underlyingModification:Boolean=true):void
-			{				
-				//apply applications to selected item's data
-				if (underlyingModification)
-				{
-					var sd:SoundData = soundItems.getItemAt(soundList.selectedIndex) as SoundData;
-					sd.data=_synth.params.getSettingsString();
-					
-					EnableApplyButton(true);
-				}
-				//_synth.params.wave
-				if (audible && playonchange.selected)
-				{
-					_synth.play();
-				}				
-			}
-			
-			// called when synth and visuals have been synced
-			// audible if we want to retrigger a play 
-			//(e.g. changing lock status of a field shouldn't trigger a replay)
-			public function OnLayerParameterChanged(audible:Boolean=true,underlyingModification:Boolean=true):void
-			{				
-				//apply applications to selected item's data
-				if (underlyingModification)
-				{
-					var ld:LayerData = layerItems.getItemAt(layerList.selectedIndex) as LayerData;
-					ld.data=_mixer.params.getSettingsString();
-					
-					EnableApplyButton(true);
-				}
-				
-				if (audible && playonchange.selected)
-				{
-					DoPlay();
-				}				
-			}
-			
-			private function CalculateSquareSliderEnabledness():void
-			{
-				for (var i:int=0;i<squareSlider.length;i++)
-				{
-					var sldr:Object = squareSlider[i];
-					var cmp:UIComponent = sldr as UIComponent;
-					cmp.enabled=_synth.params.waveType==0;
-				}
-		
-			}
-			
-			public function DoPlay():void
-			{
+            /** returns -1 if nothing found */
+            private function GetSelectedSoundItemID():int
+            {
+                var index:int = soundList.selectedIndex;
+                if (index == -1)
+                {
+                    return -1;
+                }
+                return soundItems.getItemAt(index).id;
+            }
+
+            /** returns -1 if nothing found */
+            private function GetSelectedLayerItemID():int
+            {
+                var index:int = layerList.selectedIndex;
+                if (index == -1)
+                {
+                    return -1;
+                }
+                return layerItems.getItemAt(index).id;
+            }
+
+            private function CommitGlobal():void
+            {
+				/*
+				globalState.bitDepth=int((bitdepth.selectedItem as GenericListEntry).data);
+				globalState.sampleRate=int((samplerate.selectedItem as GenericListEntry).data);
+				globalState.playOnChange=playonchange.selected;*/
+				globalState.selectedSoundItemID=GetSelectedSoundItemID();
+				globalState.selectedLayerItemID=GetSelectedLayerItemID();
+				saveManager.commitGlobal(globalState);
+            }
+
+            private function UIUpdateTrigger():void
+            {                
 				switch (tabs.selectedIndex)
 				{
 					case 0:
-						_synth.play();
+						synthInterface.UIUpdateTrigger();
 						break;
 					case 1:
-						MixerPlay();
-						break;
-				}
-			}
-			
-			private var _mixer: Mixer;
-			public function MixerPlay():void
-			{							
-				trace("mixerplay");
-				_mixer.Clear();
-				for (var i:int=0;i<mixerlist.length;i++)
-				{
-					var dat : MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
-					//synth.();
-					if (dat.synthset)
-					{
-						var msd:MixerSoundData = new MixerSoundData(dat.id, dat.synth.cachedWave,dat.onset,dat.amplitudemodifier);
-						_mixer.AddTrack(msd);
-					}
-				}				
-				
-				MixerPlayStart();
-				_mixer.Play(MixerPlayCallback);
-			}
-			
-			public function RecalcDilation():void
-			{
-				trace("recalcdilation");
-				var maxlength:Number = 0.1;
-				//step 1: find max dilation
-				for (var i:int=0;i<mixerlist.length;i++)
-				{
-					var mled:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
-					if (mled.CalcLengthCallback==null)
-					{
-						return;
-					}
-					
-					var cand:Number = mled.CalcLengthCallback();
-					if (cand>maxlength)
-					{
-						maxlength=cand;
-					}					
-				}
-				
-				//find the appropriate dilation value
-				const boxwidth:Number=191;//double-check, eh?
-				//dilation => 1 second = d pixels
-				var dilation:Number=boxwidth/(2*maxlength);
-				
-				//let all the data things know
-				for (i=0;i<mixerlist.length;i++)
-				{
-					mled = mixerlist.getItemAt(i) as MixerListEntryDat;
-					mled.SetDilationCallback(dilation);			
-				}
-				
-				
-				
-			}
-			
-			public function MixerPlayStart():void
-			{
-				trace("mixerplaystart");
-				for(var i:int=0;i<this.mixerlist.length;i++)
-				{
-					var mled:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
-					mled.PlayStartCallback();					
-				}
-			}
-			
-			public function MixerPlayCallback(n:Number):void
-			{
-				
-				for(var i:int=0;i<this.mixerlist.length;i++)
-				{
-					var mled:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
-					mled.absolutePlayCallback(n);
-				}
-			}
-			
-			public function MixerPlayStop(event:Event=null):void
-			{
-				
-				trace("mixerplaystop");
-				for(var i:int=0;i<this.mixerlist.length;i++)
-				{
-					var mled:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
-					mled.PlayStopCallback();
-				}
-			}
-			
-			public function sliderChanged(e:Event):void
-			{
-				var s:HSlider = e.target as HSlider;
-				var renderercb:SoundParameterRowRenderer = s.parent.parent as SoundParameterRowRenderer;
-				
-				_synth.params[renderercb.data.tag]=s.value;	
-				OnSoundParameterChanged();				
-			}
-			
-			public function mixer_volume_sliderChanged(e:Event=null):void
-			{
-				
-				trace("mixervolumesliderchanged");
-				///uch, just update all the volumes
-				for (var i:int=0;i<this.mixerlist.length;i++)
-				{
-					var msd:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
-					_mixer.params.items[i].amplitudemodifier = msd.amplitudemodifier;
-				}
-
-				OnLayerParameterChanged();	
-			}
-			
-			public function mixer_onset_sliderChanged(e:Event=null):void
-			{
-				trace("mixeronsetsliderchanged");
-				///uch, just update all the volumes
-				for (var i:int=0;i<this.mixerlist.length;i++)
-				{
-					var msd:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
-					_mixer.params.items[i].onset = msd.onset;
-				}
-				
-				OnLayerParameterChanged();	
-			}
-			
-			public function mixer_onset_soundidChanged(e:Event=null):void
-			{
-				trace("mixer_onset_soundidChanged");
-				///uch, just update all the volumes
-				for (var i:int=0;i<this.mixerlist.length;i++)
-				{
-					var msd:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
-					_mixer.params.items[i].id = msd.id;
-				}
-				
-				OnLayerParameterChanged(false);	
-			}
-			
-						
-			
-			public function lockChanged(tag:String, locked:Boolean):void
-			{
-				_synth.params.setParamLocked(tag,locked);
-				OnSoundParameterChanged(false);	
-				/*
-				var cb:CheckBox = e.target as CheckBox;
-				var renderercb:MySimpleItemRendererCB = cb.parent.parent as MySimpleItemRendererCB;
-				*/
-			}
-			
-		
-			
-			private var _time:Timer = new Timer(50);  
-			private var ba:ByteArray = new ByteArray();
-			private function timerHandler(event:TimerEvent):void
-			{
-				SoundMixer.computeSpectrum(ba, true);  	
-				var i:int;  
-				equalizer.graphics.clear();  	
-				equalizer.graphics.lineStyle(0, 0x938373);  	
-				equalizer.graphics.beginFill(0x938373);	  	
-				equalizer.graphics.moveTo(0, 0);  	
-				var w:int = 2;  	
-				var dy:Number = equalizer.height/512;
-				for (i=0; i<512; i+=w) {  		
-					var t:Number = ba.readFloat();  		
-					var n:Number = (t * (equalizer.width-10));  						
-					equalizer.graphics.drawRect(0, i*dy, Math.abs(n), w);  	
-				}  
-			}
-					
-			
-			private function keyDown(event:KeyboardEvent):void
-			{
-				if (event.ctrlKey)
-				{
-					switch (event.keyCode)
-					{
-						case 67://C
-							clickCopyButton();
-							break;
-						case 86://V
-							clickPasteButton();
-							break;
-					}
-				}
-				
-				//unmodified
-				switch(event.keyCode)
-				{
-					case 13://enter
-						DoPlay();
+	                   	mixerInterface.UIUpdateTrigger();
 						break;					
-				}
-			}
-			
-			
-			private function GeneratorPaneCreationComplete():void
-			{				
-			}
-			
-			private function MixerPaneCreationComplete():void
+                }
+            }
+
+            // called when synth and visuals have been synced
+            // audible if we want to retrigger a play 
+            //(e.g. changing lock status of a field shouldn't trigger a replay)
+            public function OnSoundParameterChanged(audible:Boolean = true, underlyingModification:Boolean = true):void
+            {
+				synthInterface.OnSoundParameterChanged(audible,underlyingModification);				
+            }
+
+			public function OnMixerParameterChanged(audible:Boolean = true, underlyingModification:Boolean = true):void
 			{
+				mixerInterface.OnMixerParameterChanged(audible,underlyingModification);				
+			}
+						
+			public function DoPlay():void
+            {
+                switch (tabs.selectedIndex)
+                {
+                    case 0:
+                    {
+                        synthInterface.Play();
+                        break;
+                    }
+                    case 1:
+                    {
+                        mixerInterface.Play();
+                        break;
+                    }
+                }
+            }
+                   
+
+            private var _time:Timer = new Timer(50);
+
+            private var ba:ByteArray = new ByteArray();
+
+            private function timerHandler(event:TimerEvent):void
+            {
+                SoundMixer.computeSpectrum(ba, true);
+                var i:int;
+                equalizer.graphics.clear();
+                equalizer.graphics.lineStyle(0, 0x938373);
+                equalizer.graphics.beginFill(0x938373);
+                equalizer.graphics.moveTo(0, 0);
+                var w:int = 2;
+                var dy:Number = equalizer.height / 512;
+                for (i = 0; i < 512; i += w)
+                {
+                    var t:Number = ba.readFloat();
+                    var n:Number = (t * (equalizer.width - 10));
+                    equalizer.graphics.drawRect(0, i * dy, Math.abs(n), w);
+                }
+            }
+
+            private function keyDown(event:KeyboardEvent):void
+            {
+                if (event.ctrlKey)
+                {
+                    switch (event.keyCode)
+                    {
+                        case 67: //C
+                        {
+                            clickCopyButton();
+                            break;
+                        }
+                        case 86: //V
+                        {
+                            clickPasteButton();
+                            break;
+                        }
+                    }
+                }
+
+                //unmodified
+                switch (event.keyCode)
+                {
+                    case 13: //enter
+                    {
+                        DoPlay();
+                        break;
+                    }
+                }
+            }
+
+			private function onPreinitialize():void
+			{
+				
+			}
+			
+			private function onInitialize():void
+			{				
+				
+				mixerlist = new ArrayList();
+				for(var i:int=0;i<MixerParams.CHANNELCOUNT;i++)
+				{
+					var msed:MixerListEntryDat = new MixerListEntryDat(-1);
+					mixerlist.addItem(msed);
+				}
+				
+				globalState = new GlobalState();
+				synthInterface = new SynthInterface(this,globalState,volumeslider);
+				mixerInterface = new MixerInterface(this,globalState,volumeslider,mixerlist);
+			}
+			
+            private function onCreationComplete():void
+            {												
+                _time.addEventListener(TimerEvent.TIMER, timerHandler);
+                _time.start();				
+				
 				mixerListComponent.dataProvider = mixerlist;
 				
-			}
-			
-			private function init():void 
-			{					
+                saveManager = new SaveManager(this);
+
+                saveManager.LoadData();
 				
-				/* Create a target. */
-				var logTarget:TraceTarget = new TraceTarget();
-				
-				/* Log only messages for the classes in the mx.rpc.* and 
-				mx.messaging packages. */
-				logTarget.filters=["*"];
-				
-				/* Log all log levels. */
-				logTarget.level = LogEventLevel.ALL;
-				
-				/* Add date, time, category, and log level to the output. */
-				logTarget.includeDate = true;
-				logTarget.includeTime = true;
-				logTarget.includeCategory = true;
-				logTarget.includeLevel = true;
+                samplerate.selectedIndex = saveManager.samplerate;
+                bitdepth.selectedIndex = saveManager.bitdepth;
+                playonchange.selected = saveManager.playonchange;//not sure why this isn't triggering OnPlayOnChangeChange :/
+				globalState.playOnChange=playonchange.selected;
 								
-				/* Begin logging. */
-				Log.addTarget(logTarget);
-
-				
-				
-				
-				
-				
-				trace("init");
-				_time.addEventListener(TimerEvent.TIMER, timerHandler);  
-				_time.start();  
-
-				_synth = new SfxrSynth();
-				_mixer = new Mixer();
-				_mixer.addEventListener(SfxrSynth.PLAY_COMPLETE,MixerPlayStop);
-				
-				_saveManager = new SaveManager(this);				
-				
-				_saveManager.LoadData();
-				
-				samplerate.selectedIndex = _saveManager.samplerate;
-				bitdepth.selectedIndex = _saveManager.bitdepth;
-				playonchange.selected =  _saveManager.playonchange;
-				
-				_saveManager.LoadSavedSoundsFromSharedObject(soundItems);
-				_saveManager.LoadSavedLayersFromSharedObject(layerItems);
-				
-				if (_saveManager.selectedSoundItemID>=0)
-				{
-					SelectItemInSoundListByID(_saveManager.selectedSoundItemID);	
-				}
-				else if (soundItems.length>0)
-				{
-					SelectItemInSoundListByID(0);						
-				}
-				
-				if (TryLoadFromURL())
-				{					
-					UIUpdateTrigger();
-					OnSoundParameterChanged(true,false);
-					AddToSoundList("Linked",true);
-				}
-				else
-				{
-					if (soundItems.length==0)
-					{
-						_synth.params.randomize();
-						AddToSoundList("Randomize",true);
-					}
-					
-				}			
-				
-				if (layerItems.length==0)
-				{
-					AddToLayerList("Default",true); 
-				}
-				
-				soundItems.addEventListener(CollectionEvent.COLLECTION_CHANGE, onCollectionChange, false, 0, true);
-				soundItems.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, onPropertyChange, false, 0, true);
-				
-				layerItems.addEventListener(CollectionEvent.COLLECTION_CHANGE, onCollectionChange, false, 0, true);
-				layerItems.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, onPropertyChange, false, 0, true);
-				
-				samplerate.dataProvider = samplerates;
-				samplerate.selectedIndex=0;				
-				
-				bitdepth.dataProvider = bitdepths;
-				bitdepth.selectedIndex=0;
-				
 				soundList.dataProvider = soundItems;
-				layerList.dataProvider = layerItems;	
+				layerList.dataProvider = layerItems;
 				
-				UIUpdateTrigger();
-				OnLayerParameterChanged(false);
-				OnSoundParameterChanged(false);	
-								
-				DisableApplyButton(true);
-			}						
-			
-			private function EnableApplyButton(changesMade:Boolean=false):void
-			{
-				applybutton.enabled=true;
-				revertbutton.enabled=true;	
+                saveManager.LoadSavedSoundsFromSharedObject(soundItems);
+                saveManager.LoadSavedLayersFromSharedObject(layerItems);
+
+                if (saveManager.selectedSoundItemID >= 0)
+                {
+                    SelectItemInSoundListByID(saveManager.selectedSoundItemID);
+                }
+                else if (soundItems.length > 0)
+                {
+                    SelectItemInSoundList(0);
+                }
+
+                if (TryLoadFromURL())
+                {
+                    UIUpdateTrigger();
+                    OnSoundParameterChanged(true, false);
+                    AddToSoundList("Linked", true);
+                }
+                else
+                {
+                    if (soundItems.length == 0)
+                    {
+                        AddToSoundList("Randomize", true);
+                    }
+
+                }
+
+                if (layerItems.length == 0)
+                {
+                    AddToLayerList("Default", true);
+                }
 				
-				if (changesMade)
+				if (saveManager.selectedLayerItemID>=0)
 				{
-					switch (tabs.selectedIndex)
+					SelectItemInLayerListByID(globalState.selectedLayerItemID,false);
+				}
+				else
+				{
+					SelectItemInLayerList(0,false);
+				}
+				
+                soundItems.addEventListener(CollectionEvent.COLLECTION_CHANGE, onCollectionChange, false, 0, true);
+                soundItems.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, onPropertyChange, false, 0, true);
+
+                layerItems.addEventListener(CollectionEvent.COLLECTION_CHANGE, onCollectionChange, false, 0, true);
+                layerItems.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, onPropertyChange, false, 0, true);
+
+                samplerate.dataProvider = samplerates;
+                samplerate.selectedIndex = 0;
+
+                bitdepth.dataProvider = bitdepths;
+                bitdepth.selectedIndex = 0;
+
+                UIUpdateTrigger();
+                OnMixerParameterChanged(false);
+                OnSoundParameterChanged(false);
+
+                DisableApplyButton(true);
+            }
+
+            public function EnableApplyButton(changesMade:Boolean = false):void
+            {
+                applybutton.enabled = true;
+                revertbutton.enabled = true;
+
+                if (changesMade)
+                {
+                    switch (tabs.selectedIndex)
+                    {
+                        case 0:
+                        {
+                            var index:int = soundList.selectedIndex;
+                            var sd:SoundData = soundItems.getItemAt(index) as SoundData;
+                            sd.dispatchEvent(new Event(FlexEvent.CHANGE_START));
+                            break;
+                        }
+                        case 1:
+                        {
+                            index = layerList.selectedIndex;
+                            var ld:LayerData = layerItems.getItemAt(index) as LayerData;
+                            ld.dispatchEvent(new Event(FlexEvent.CHANGE_START));
+                            break;
+                        }
+                    }
+                }
+            }
+
+            public function DisableApplyButton(changesMade:Boolean = false):void
+            {
+                applybutton.enabled = false;
+                revertbutton.enabled = false;
+                //remove star from next to name of item				
+
+                if (changesMade)
+                {
+                    switch (tabs.selectedIndex)
+                    {
+                        case 0:
+                        {
+                            var index:int = soundList.selectedIndex;
+                            var sd:SoundData = soundItems.getItemAt(index) as SoundData;
+                            sd.dispatchEvent(new Event(FlexEvent.CHANGE_END));
+                            break;
+                        }
+                        case 1:
+                        {
+                            index = layerList.selectedIndex;
+                            var ld:LayerData = layerItems.getItemAt(index) as LayerData;
+                            ld.dispatchEvent(new Event(FlexEvent.CHANGE_END));
+                            break;
+                        }
+                    }
+                }
+            }
+
+            private function TryLoadFromURL():Boolean
+            {
+
+                var base:String = ExternalInterface.call('window.location.href.toString');
+                var ar:Array = base.split("?");
+                if (ar.length != 2)
+                {
+                    return false;
+                }
+                try
+                {
+                    var tail:String = ar[1] as String;
+                    var sounddescr:String = unescape(tail.substr(2));
+                    return synthInterface.setSettingsString(sounddescr);
+				}
+                catch (e:Error)
+                {
+                    trace(e.message);
+                }
+
+                return true;
+            }
+
+            /* listen for generic list changes */
+            private function onCollectionChange(event:CollectionEvent):void
+            {
+                //statusTxt.appendText(event.type + " # of items: " + event.items.length + "\n");
+            }
+
+            /* listen for specific item changes in the list */
+            private function onPropertyChange(event:PropertyChangeEvent):void
+            {
+                //statusTxt.appendText(event.type + " prop:" + event.property + ", old:" + event.oldValue + ", new:" + event.newValue + "\n");
+            }
+
+            protected function PlayClick(event:MouseEvent):void
+            {
+                DoPlay();
+            }
+
+            public static function getLength(o:Object):uint
+            {
+                var len:uint = 0;
+                for (var item:* in o)
+                {
+                    if (item != "mx_internal_uid")
+                    {
+                        len++;
+                    }
+                }
+                return len;
+            }
+
+            public function RemoveFromSoundList(dat:Object):void
+            {
+                if (soundItems.length == 1)
+                {
+                    return;
+                }
+
+                var index:int = soundItems.getItemIndex(dat);
+                var sd:SoundData = soundItems.getItemAt(index) as SoundData;
+                soundItems.removeItemAt(index);
+                //items.dispatchEvent(FlexEvent.REMOVE);
+                saveManager.RemoveSoundItemWithID(sd.id);
+
+                var newindex:int = index;
+                if (newindex == soundItems.length)
+                {
+                    newindex--;
+                }
+                SelectItemInSoundList(newindex, index == soundItems.length);
+            }
+
+            public function RemoveFromLayerList(dat:Object):void
+            {
+                if (layerItems.length == 1)
+                {
+                    return;
+                }
+
+                var index:int = layerItems.getItemIndex(dat);
+                var ld:LayerData = layerItems.getItemAt(index) as LayerData;
+                layerItems.removeItemAt(index);
+                //items.dispatchEvent(FlexEvent.REMOVE);
+                saveManager.RemoveLayerItemWithID(ld.id);
+
+                var newindex:int = index;
+                if (newindex == layerItems.length)
+                {
+                    newindex--;
+                }
+                SelectItemInLayerList(newindex, index == layerItems.length);
+            }
+
+            public function RenameSoundData(sd:SoundData):void
+            {
+                //don't want to commit everything, just the name
+                saveManager.UpdateSoundName(sd);
+            }
+
+            public function RenameLayerData(ld:LayerData):void
+            {
+                //don't want to commit everything, just the name
+                saveManager.UpdateLayerName(ld);
+            }
+
+            public function RecalculateSaveDatSoundList():void
+            {
+                saveManager.PushSoundList(soundItems);
+            }
+
+            public function RecalculateSaveDatLayerList():void
+            {
+                saveManager.PushLayerList(layerItems);
+            }
+
+            public function AddToSoundList(_name:String, select:Boolean = false, triggerplay:Boolean = true, newID:int = -1):void
+            {
+                this.lastmanipulation = _name;
+                //loop through existing objects and see if name is already in use
+                var currentindex:int = 0;
+                var found:Boolean = true;
+                var suffix:String = "";
+                while (found)
+                {
+                    found = false;
+                    currentindex++;
+                    if (currentindex > 1)
+                    {
+                        suffix = currentindex.toString();
+                    }
+
+                    for (var i:int = 0; i < soundItems.length; i++)
+                    {
+                        var o:Object = soundItems.getItemAt(i);
+                        if (o.label == _name + suffix)
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                var entry:SoundData = new SoundData(_name + suffix, synthInterface.getSettingsString(), saveManager.GetID());
+
+                soundItems.addItem(entry);
+
+                if (newID == -1)
+                {
+                    newID = saveManager.GetID();
+                }
+
+                saveManager.PushSound(new SoundData(entry.label, entry.data, newID));
+
+                if (select)
+                {
+                    SelectItemInSoundList(soundItems.length - 1, triggerplay);
+                }
+            }
+
+            public function AddToLayerList(_name:String, select:Boolean = false):void
+            {
+                //moved this from a param to a variable for now - due to caching, don't see how it can work..
+                var triggerplay:Boolean = false;
+
+                this.lastmanipulation = _name;
+                //loop through existing objects and see if name is already in use
+                var currentindex:int = 0;
+                var found:Boolean = true;
+                var suffix:String = "";
+                while (found)
+                {
+                    found = false;
+                    currentindex++;
+                    if (currentindex > 1)
+                    {
+                        suffix = currentindex.toString();
+                    }
+
+                    for (var i:int = 0; i < layerItems.length; i++)
+                    {
+                        var o:Object = layerItems.getItemAt(i);
+                        if (o.label == _name + suffix)
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                var entry:LayerData = new LayerData(_name + suffix, mixerInterface.getSettingsString(), saveManager.GetID());
+
+                layerItems.addItem(entry);
+
+                saveManager.PushLayer(new LayerData(entry.label, entry.data, saveManager.GetID()));
+
+                if (select)
+                {
+                    SelectItemInLayerList(layerItems.length - 1, triggerplay,false);
+                }
+            }
+
+            private function SelectItemInSoundList(i:int, triggerplay:Boolean = true):void
+            {
+                soundList.selectedIndex = i;
+                soundListSelectionChanged(null, triggerplay);
+                callLater(function():void
+                {
+                    soundList.ensureIndexIsVisible(i);
+                });
+            }
+
+            private function SelectItemInLayerList(i:int, triggerplay:Boolean = true,updateUI:Boolean=true):void
+            {
+                layerList.selectedIndex = i;
+                layerListSelectionChanged(null, triggerplay,false);
+                callLater(function():void
+                {
+                    layerList.ensureIndexIsVisible(i);
+                });
+            }
+
+            private function SelectItemInSoundListByID(id:int):void
+            {
+                if (id == -1)
+                {
+                    soundList.selectedIndex = -1;
+                }
+
+                for (var i:int = 0; i < soundItems.length; i++)
+                {
+                    var o:Object = soundItems.getItemAt(i);
+                    if (o.id == id)
+                    {
+                        SelectItemInSoundList(i);
+                        return;
+                    }
+                }
+
+                SelectItemInSoundList(0);
+
+                throw new Error("error - couldn't select item with id " + id + "no such item exists");
+            }
+
+            private function SelectItemInLayerListByID(id:int, triggerplay:Boolean = true,updateUI:Boolean=true):void
+            {
+                if (id == -1)
+                {
+                    layerList.selectedIndex = -1;
+                }
+
+                for (var i:int = 0; i < layerItems.length; i++)
+                {
+                    var o:Object = layerItems.getItemAt(i);
+                    if (o.id == id)
+                    {
+                        SelectItemInLayerList(i,triggerplay,updateUI);
+                        return;
+                    }
+                }
+
+                SelectItemInLayerList(0,triggerplay,updateUI);
+
+                throw new Error("error - couldn't select item with id " + id + "no such item exists");
+            }
+
+            /** returns -1 if no item found */
+            public function GetIndexOfSoundItemWithID(id:int):int
+            {
+                for (var i:int = 0; i < soundItems.length; i++)
+                {
+                    var o:Object = soundItems.getItemAt(i);
+                    if (o.id == id)
+                    {
+                        return i;
+                    }
+                }
+                return -1;
+            }
+
+            /** returns -1 if no item found */
+            private function GetIndexOfLayerItemWithID(id:int):int
+            {
+                trace("get layer index with id" + id);
+                for (var i:int = 0; i < layerItems.length; i++)
+                {
+                    var o:Object = layerItems.getItemAt(i);
+                    if (o.id == id)
+                    {
+                        return i;
+                    }
+                }
+                return -1;
+            }
+
+            private var lastmanipulation:String = "Randomize";
+
+            protected function clickPreset(event:MouseEvent):void
+            {
+                var b:Button = event.target as Button;
+
+                if (tabs.selectedIndex == 1)
+                {
+                    AddToSoundList(b.label, true);
+                }
+				
+				synthInterface.GeneratePreset(b.id);
+				
+                lastmanipulation = b.label;
+
+                if (tabs.selectedIndex == 1)
+                {
+                    clickApplySound();
+                }
+
+                synthInterface.UIUpdateTrigger();
+                OnSoundParameterChanged();
+
+            }
+
+            protected function clickApply(event:MouseEvent):void
+            {
+                switch (tabs.selectedIndex)
+                {
+                    case 0:
+                    {
+                        clickApplySound();
+                        break;
+                    }
+                    case 1:
+                    {
+                        clickApplyLayer();
+                        break;
+                    }
+                }
+            }
+
+            protected function clickApplySound():void
+            {
+                //save changes
+                var index:int = this.soundList.selectedIndex;
+
+                var s:SoundData = soundItems.getItemAt(index) as SoundData;
+
+                //this is unnecessary, surely?
+                //s.data=_synth.params.getSettingsString();
+                saveManager.UpdateSoundItem(s);
+
+                DisableApplyButton(true);
+            }
+
+            protected function clickApplyLayer():void
+            {
+                //save changes
+                var index:int = this.layerList.selectedIndex;
+
+                var l:LayerData = layerItems.getItemAt(index) as LayerData;
+
+                //this is unnecessary, surely?
+                //s.data=_synth.params.getSettingsString();
+                saveManager.UpdateLayerItem(l);
+
+                DisableApplyButton(true);
+            }
+
+            protected function clickRevert(event:MouseEvent):void
+            {
+                switch (tabs.selectedIndex)
+                {
+                    case 0:
+                    {
+                        clickRevertSound();
+                        break;
+                    }
+                    case 1:
+                    {
+                        clickRevertLayer();
+                        break;
+                    }
+                }
+            }
+
+            private function clickRevertSound():void
+            {
+                //save changes
+                var index:int = this.soundList.selectedIndex;
+
+                var s:SoundData = soundItems.getItemAt(index) as SoundData;
+
+                var savedData:SoundData = saveManager.GetSoundDataWithID(s.id);
+                s.data = savedData.data;
+
+                synthInterface.setSettingsString(s.data);
+                UIUpdateTrigger();
+                OnSoundParameterChanged(true, true);
+                DisableApplyButton(true);
+            }
+
+            private function clickRevertLayer():void
+            {
+                trace("revert layer");
+                //save changes
+                var index:int = this.layerList.selectedIndex;
+
+                var l:LayerData = layerItems.getItemAt(index) as LayerData;
+
+                var savedData:LayerData = saveManager.GetLayerDataWithID(l.id);
+                l.data = savedData.data;
+
+                mixerInterface.setSettingsString(l.data);
+                ReformMixerData();
+
+                UIUpdateTrigger();
+                OnMixerParameterChanged(true, true);
+                DisableApplyButton(true);
+            }
+
+            private function ReformMixerData():void
+            {
+
+            }
+
+            protected function clickNew(event:MouseEvent):void
+            {
+
+                switch (tabs.selectedIndex)
+                {
+                    case 0:
+                    {
+                        AddToSoundList(lastmanipulation, true, false);
+                        DisableApplyButton(false);
+                        break;
+                    }
+                    case 1:
+                    {
+                        AddToLayerList("Composite", true);
+                        DisableApplyButton(false);
+                        break;
+                    }
+                }
+            }
+
+            private function soundListSelectionChanged(event:Event, triggerPlay:Boolean = true):void
+            {
+                if (soundList.selectedIndex == -1)
+                {
+                    if (soundItems.length == 0)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        SelectItemInSoundList(0);
+                    }
+                }
+
+                var row:SoundData = soundItems.getItemAt(soundList.selectedIndex) as SoundData;
+
+                synthInterface.setSettingsString(row.data);
+
+                CommitGlobal();
+				synthInterface.UIUpdateTrigger();
+                OnSoundParameterChanged(triggerPlay, false);
+
+                if (row.modified)
+                {
+                    EnableApplyButton(false);
+                }
+                else
+                {
+                    DisableApplyButton(false);
+                }
+            }
+
+            private function layerListSelectionChanged(event:Event, triggerPlay:Boolean = true,updateUI:Boolean=true):void
+            {
+                trace("layer list selection changed");
+                if (layerList.selectedIndex == -1)
+                {
+                    if (layerItems.length == 0)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        SelectItemInLayerList(0);
+                    }
+                }
+
+                var row:LayerData = layerItems.getItemAt(layerList.selectedIndex) as LayerData;
+
+                mixerInterface.setSettingsString(row.data);
+
+                CommitGlobal();
+                OnMixerParameterChanged(triggerPlay, false);
+				if (updateUI)
+				{
+                	UIUpdateTrigger();
+				}
+
+                if (row.modified)
+                {
+                    EnableApplyButton(false);
+                }
+                else
+                {
+                    DisableApplyButton(false);
+                }
+            }
+
+            private function VolumeChanged(event:Event):void
+            {
+				switch (tabs.selectedIndex)
+				{
+					case 0:
 					{
-						case 0:
-							var index:int = soundList.selectedIndex;				
-							var sd:SoundData = soundItems.getItemAt(index) as SoundData;
-							sd.dispatchEvent(new Event(FlexEvent.CHANGE_START));
-							break;
-						case 1:
-							index = layerList.selectedIndex;				
-							var ld:LayerData = layerItems.getItemAt(index) as LayerData;
-							ld.dispatchEvent(new Event(FlexEvent.CHANGE_START));
-							break;
+						synthInterface.VolumeChanged(event);						
+						break;
+					}
+					case 1:
+					{
+						//mixerInterface.VolumeChanged(event);
+						break;
 					}
 				}
-			}
-			
-			private function DisableApplyButton(changesMade:Boolean=false):void
-			{
-				applybutton.enabled=false;
-				revertbutton.enabled=false;
-				//remove star from next to name of item				
-				
-				if (changesMade)
-				{
-					switch (tabs.selectedIndex)
-					{
-						case 0:
-							var index:int = soundList.selectedIndex;				
-							var sd:SoundData = soundItems.getItemAt(index) as SoundData;
-							sd.dispatchEvent(new Event(FlexEvent.CHANGE_END));
-							break;
-						case 1:
-							index = layerList.selectedIndex;				
-							var ld:LayerData = layerItems.getItemAt(index) as LayerData;
-							ld.dispatchEvent(new Event(FlexEvent.CHANGE_END));
-							break;
-					}
-				}
-			}
-			
-			private function TryLoadFromURL():Boolean
-			{
+            }
 
-				var base:String = ExternalInterface.call('window.location.href.toString');
-				var ar:Array = base.split("?");
-				if (ar.length!=2)
-					return false;
-				try
-				{
-					var tail:String = ar[1] as String;
-					var sounddescr:String = unescape(tail.substr(2));
-					return _synth.params.setSettingsString(sounddescr);
-				}
-				catch (e:Error)
-				{
-					trace(e.message);
-				}
-						
-				return true;
-			}
-			
-			/* listen for generic list changes */
-			private function onCollectionChange(event:CollectionEvent):void 
-			{
-				//statusTxt.appendText(event.type + " # of items: " + event.items.length + "\n");
-			}
-			
-			/* listen for specific item changes in the list */
-			private function onPropertyChange(event:PropertyChangeEvent):void 
-			{
-				//statusTxt.appendText(event.type + " prop:" + event.property + ", old:" + event.oldValue + ", new:" + event.newValue + "\n");
-			}
+            private var _fileRef:FileReference; // File reference for loading in sfs file
 
-			protected function WaveformSelect(event:Event):void
-			{			
-				var tb:ToggleButton = event.target as ToggleButton;
-				
-				
-				var ind:int = parseInt(tb.id.charAt(1));
-				
-				//deselect other buttons
-				for (var i:int=0;i<SfxrParams.WAVETYPECOUNT;i++)
-				{
-					(this["W"+i] as ToggleButton).selected=i==ind;				
-				}
-				_synth.params.waveType=ind;
+            /**
+             * Opens a browse window to load a sound setting file
+             * @param	button	Button pressed
+             */
+            private function clickLoadSound():void
+            {
+                _fileRef = new FileReference();
+                _fileRef.addEventListener(Event.SELECT, onSelectSettings);
+                _fileRef.browse([ new FileFilter("SFX Sample Files (*.sfs)", "*.sfs")]);
+            }
 
+            /**
+             * When the user selects a file, begins loading it
+             * @param	e	Select event
+             */
+            private function onSelectSettings(e:Event):void
+            {
+                _fileRef.cancel();
+
+                _fileRef.removeEventListener(Event.SELECT, onSelectSettings);
+                _fileRef.addEventListener(Event.COMPLETE, onLoadSettings);
+                _fileRef.load();
+            }
+
+            /**
+             * Once loaded, passes the file to the synthesizer to parse
+             * @param	e	Complete event
+             */
+            private function onLoadSettings(e:Event):void
+            {
+                _fileRef.removeEventListener(Event.COMPLETE, onLoadSettings);
+
+                AddToSoundList("loaded");
+                synthInterface.setSettingsFile(_fileRef.data);
+                UIUpdateTrigger();
+                OnSoundParameterChanged(true, false);
+                this.DisableApplyButton(false);
+                _fileRef = null;
+            }
+
+            /**
+             * Saves out a sound settings file
+             * @param	button	Button pressed
+             */
+            private function clickSaveSound():void
+            {
+                var file:ByteArray = synthInterface.getSettingsFile();
+
+                new FileReference().save(file, "sfx.sfs");
+            }
+
+            private function SaveWave():void
+            {
+                switch (tabs.selectedIndex)
+                {
+                    case 0:
+                    {
+                        SaveSoundWave();
+                        break;
+                    }
+                    case 1:
+                    {
+                        SaveMixerWave();
+                        break;
+                    }
+                }
+            }
+
+            protected function SaveSoundWave():void
+            {
+				var file:ByteArray = synthInterface.getWavFile();					                
+
+                new FileReference().save(file, "sfx.wav");
+            }
+
+            private function SaveMixerWave():void
+            {	
+				var file:ByteArray = mixerInterface.getWavFile();	
 				
-				CalculateSquareSliderEnabledness();
-				
-				OnSoundParameterChanged();
-			}
+                new FileReference().save(file, "sfx.wav");
+            }
 
 
-			protected function PlayClick(event:MouseEvent):void
-			{
-				DoPlay();
-			}
-			
-			public static function getLength(o:Object):uint
-			{
-				var len:uint = 0;
-				for (var item:* in o)
-					if (item != "mx_internal_uid")
-						len++;
-				return len;
-			}
-						
-			public function RemoveFromSoundList(dat:Object):void
-			{
-				if (soundItems.length==1)
-					return;
-				
-				var index:int = soundItems.getItemIndex(dat);
-				var sd:SoundData = soundItems.getItemAt(index) as SoundData;
-				soundItems.removeItemAt(index);
-				//items.dispatchEvent(FlexEvent.REMOVE);
-				_saveManager.RemoveSoundItemWithID(sd.id);					
-				
-				var newindex:int=index;
-				if (newindex==soundItems.length)
-					newindex--;					
-				SelectItemInSoundList(newindex,index==soundItems.length);			
-			}
-			
-			public function RemoveFromLayerList(dat:Object):void
-			{
-				if (layerItems.length==1)
-					return;
-				
-				var index:int = layerItems.getItemIndex(dat);
-				var ld:LayerData = layerItems.getItemAt(index) as LayerData;
-				layerItems.removeItemAt(index);
-				//items.dispatchEvent(FlexEvent.REMOVE);
-				_saveManager.RemoveLayerItemWithID(ld.id);					
-				
-				var newindex:int=index;
-				if (newindex==layerItems.length)
-					newindex--;					
-				SelectItemInLayerList(newindex,index==layerItems.length);			
-			}
-			
-			public function RenameSoundData(sd:SoundData):void
-			{
-				//don't want to commit everything, just the name
-				_saveManager.UpdateSoundName(sd);
-			}
-			
-			public function RenameLayerData(ld:LayerData):void
-			{
-				//don't want to commit everything, just the name
-				_saveManager.UpdateLayerName(ld);
-			}
-			
-			public function RecalculateSaveDatSoundList():void
-			{
-				_saveManager.PushSoundList(soundItems);
-			}
-			
-			public function RecalculateSaveDatLayerList():void
-			{
-				_saveManager.PushLayerList(layerItems);
-			}
-			
-			private function AddToSoundList(_name:String,select:Boolean=false,triggerplay:Boolean=true,newID:int=-1):void
-			{
-				this.lastmanipulation=_name;
-				//loop through existing objects and see if name is already in use
-				var currentindex:int=0;
-				var found:Boolean=true;
-				var suffix:String="";
-				while (found)
-				{
-					found=false;
-					currentindex++;
-					if (currentindex>1)
-					{
-						suffix = currentindex.toString();
-					}
-					
-					for (var i:int =0;i<soundItems.length;i++)
-					{
-						var o:Object = soundItems.getItemAt(i);
-						if (o.label==_name + suffix)
+            public function LoadSavedSoundsFromSharedObject():void
+            {
+                saveManager.LoadSavedSoundsFromSharedObject(soundItems);
+
+                soundListSelectionChanged(null);
+            }
+
+            public function LoadSavedLayersFromSharedObject():void
+            {
+                saveManager.LoadSavedLayersFromSharedObject(layerItems);
+
+                soundListSelectionChanged(null);
+            }
+
+            protected function clickCopyButton():void
+            {
+                switch (tabs.selectedIndex)
+                {
+                    case 0:
+                    {
+                        System.setClipboard(synthInterface.getSettingsString());
+                        break;
+                    }
+                    case 1:
+                    {
+						System.setClipboard(mixerInterface.getClipboardString());
+                        break;
+                    }
+                }
+            }
+
+            protected function clickPasteButton():void
+            {
+                var pasted:String = ExternalInterface.call('function(){return prompt();}');
+                if (pasted.indexOf("|") == -1)
+                {
+                    AddToSoundList("Paste", true);
+                    synthInterface.setSettingsString(pasted);
+                    UIUpdateTrigger();
+                    OnSoundParameterChanged(true, false);
+                    tabs.selectedIndex = 0;
+                }
+                else
+                {
+					mixerInterface.setClipboardString(pasted);
+                    tabs.selectedIndex = 1;
+                }
+            }
+
+            private function OnTabChanged(event:Event):void
+            {
+                switch (tabs.selectedIndex)
+                {
+                    case 0:
+                    {
+						var sd:SoundData = this.soundItems.getItemAt(soundList.selectedIndex) as SoundData;
+						if (sd.modified)
 						{
-							found=true;
-							break;
+							EnableApplyButton(false);
 						}
-					}
-				}
-				
-				var entry:SoundData = new SoundData(
-					_name+suffix,
-					_synth.params.getSettingsString(),
-					_saveManager.GetID()
-					);
-
-				soundItems.addItem(entry);				
-				
-				if (newID==-1)
-					newID=_saveManager.GetID();
-				
-				_saveManager.PushSound(new SoundData(entry.label,entry.data,newID));
-
-				if (select)
-				{
-					SelectItemInSoundList(soundItems.length-1,triggerplay);
-				}
-			}
-
-			
-			private function AddToLayerList(_name:String,select:Boolean=false):void
-			{
-				trace("addtolayerlist");
-				//moved this from a param to a variable for now - due to caching, don't see how it can work..
-				var triggerplay:Boolean=false;
-				
-				this.lastmanipulation=_name;
-				//loop through existing objects and see if name is already in use
-				var currentindex:int=0;
-				var found:Boolean=true;
-				var suffix:String="";
-				while (found)
-				{
-					found=false;
-					currentindex++;
-					if (currentindex>1)
-					{
-						suffix = currentindex.toString();
-					}
-					
-					for (var i:int =0;i<layerItems.length;i++)
-					{
-						var o:Object = layerItems.getItemAt(i);
-						if (o.label==_name + suffix)
+						else
 						{
-							found=true;
-							break;
+							DisableApplyButton(false);							
 						}
-					}
-				}
-				
-				var entry:LayerData = new LayerData(
-					_name+suffix,
-					_mixer.params.getSettingsString(),
-					_saveManager.GetID()
-				);
-				
-				layerItems.addItem(entry);				
-				
-				_saveManager.PushLayer(new LayerData(entry.label,entry.data,_saveManager.GetID()));
-				
-				if (select)
-				{
-					SelectItemInLayerList(layerItems.length-1,triggerplay);
-				}
-			}
-			
-			private function SelectItemInSoundList(i:int,triggerplay:Boolean=true):void
-			{				
-				soundList.selectedIndex=i;
-				soundListSelectionChanged(null,triggerplay);
-				callLater(function():void { soundList.ensureIndexIsVisible(i); });
-			}
-			
-			private function SelectItemInLayerList(i:int,triggerplay:Boolean=true):void
-			{				
-				trace("selecting item in layer list " + i);
-				layerList.selectedIndex=i;
-				layerListSelectionChanged(null,triggerplay);
-				callLater(function():void { layerList.ensureIndexIsVisible(i); });
-			}
-			
-			
-			private function SelectItemInSoundListByID(id:int):void
-			{				
-				if (id==-1)
-					soundList.selectedIndex=-1;
-				
-				for (var i:int=0;i<soundItems.length;i++)
-				{
-					var o:Object = soundItems.getItemAt(i);
-					if (o.id==id)
-					{
-						SelectItemInSoundList(i);
-						return;
-					}
-				}
-				
-				SelectItemInSoundList(0);
-				
-				throw new Error("error - couldn't select item with id " + id + "no such item exists");
-			}
-			
-			private function SelectItemInLayerListByID(id:int):void
-			{				
-				trace("selecting item in layer list by id" + i);
-				if (id==-1)
-					layerList.selectedIndex=-1;
-				
-				for (var i:int=0;i<layerItems.length;i++)
-				{
-					var o:Object = layerItems.getItemAt(i);
-					if (o.id==id)
-					{
-						SelectItemInLayerList(i);
-						return;
-					}
-				}
-				
-				SelectItemInLayerList(0);
-				
-				throw new Error("error - couldn't select item with id " + id + "no such item exists");
-			}
-			
-			/** returns -1 if no item found */
-			private function GetIndexOfSoundItemWithID(id:int):int
-			{
-				for (var i:int=0;i<soundItems.length;i++)
-				{
-					var o:Object = soundItems.getItemAt(i);
-					if (o.id==id)
-						return i;
-				}
-				return -1;
-			}
-			
-			/** returns -1 if no item found */
-			private function GetIndexOfLayerItemWithID(id:int):int
-			{
-				trace("get layer index with id" + id);
-				for (var i:int=0;i<layerItems.length;i++)
-				{
-					var o:Object = layerItems.getItemAt(i);
-					if (o.id==id)
-						return i;
-				}
-				return -1;
-			}
-			
-			private var lastmanipulation:String= "Randomize";
-			protected function clickPreset(event:MouseEvent):void
-			{
-				var b:Button = event.target as Button;
-				
-				if (tabs.selectedIndex==1)
-				{
-					AddToSoundList(b.label,true);
-				}
-				_synth.params[b.id]();
-				lastmanipulation=b.label;
-				
-				if (tabs.selectedIndex==1)
-				{
-					clickApplySound();
-				}
-				
-				UIUpdateTrigger();
-				OnSoundParameterChanged();
-							
-			}
-			
-			protected function clickApply(event:MouseEvent):void
-			{				
-				switch (tabs.selectedIndex)
-				{
-					case 0:
-						clickApplySound();
-						break;
-					case 1:
-						clickApplyLayer();
-						break;
-				}
-			}
-			
-			protected function clickApplySound():void
-			{				
-				//save changes
-				var index:int = this.soundList.selectedIndex;
-			
-				var s:SoundData = soundItems.getItemAt(index) as SoundData;
+                        break;
+                    }
+                    case 1:
+                    {
+						var ld:LayerData = this.layerItems.getItemAt(layerList.selectedIndex) as LayerData;
+						if (ld.modified)
+						{
+							EnableApplyButton(false);
+						}
+						else
+						{
+							DisableApplyButton(false);							
+						}
+                        break;
+                    }
+                }
+            }
 
-				//this is unnecessary, surely?
-				//s.data=_synth.params.getSettingsString();
-				_saveManager.UpdateSoundItem(s);
-			
-				DisableApplyButton(true);			
-			}
-			
-			protected function clickApplyLayer():void
-			{				
-				//save changes
-				var index:int = this.layerList.selectedIndex;
-				
-				var l:LayerData = layerItems.getItemAt(index) as LayerData;
-				
-				//this is unnecessary, surely?
-				//s.data=_synth.params.getSettingsString();
-				_saveManager.UpdateLayerItem(l);
-				
-				DisableApplyButton(true);			
-			}
-			
-			protected function clickRevert(event:MouseEvent):void
-			{				
-				switch (tabs.selectedIndex)
-				{
-					case 0:
-						clickRevertSound();
-						break;
-					case 1:
-						clickRevertLayer();
-						break;
-				}
-			}
-			
-			private function clickRevertSound():void
-			{
-				//save changes
-				var index:int = this.soundList.selectedIndex;
+            protected function clickLinkButton():void
+            {
+                var base:String = ExternalInterface.call('window.location.href.toString');
+                base = base.split("?")[0];
 
-				var s:SoundData = soundItems.getItemAt(index) as SoundData;
-				
-				var savedData:SoundData = _saveManager.GetSoundDataWithID(s.id);						
-				s.data=savedData.data;
-				
-				_synth.params.setSettingsString(s.data);
-				UIUpdateTrigger();
-				OnSoundParameterChanged(true,true);
-				DisableApplyButton(true);									
-			}
-			
-			
-			private function clickRevertLayer():void
-			{
-				trace("revert layer");
-				//save changes
-				var index:int = this.soundList.selectedIndex;
-				
-				var l:LayerData = layerItems.getItemAt(index) as LayerData;
-				
-				var savedData:LayerData = _saveManager.GetLayerDataWithID(l.id);						
-				l.data=savedData.data;
-				
-				_mixer.params.setSettingsString(l.data);
-				ReformMixerData();
-				
-				UIUpdateTrigger();
-				OnLayerParameterChanged(true,true);
-				DisableApplyButton(true);									
-			}
-			
-			private function ReformMixerData():void
-			{
-				
-			}
-			
-			protected function clickNew(event:MouseEvent):void
-			{
-				
-				switch (tabs.selectedIndex)
-				{
-					case 0:
-						AddToSoundList(lastmanipulation,true,false);
-						DisableApplyButton(false);
-						break;
-					case 1:
-						AddToLayerList("Composite",true);
-						DisableApplyButton(false);
-						break;
-				}
-			}
+                var myurl:String = base + "?d=" + escape(synthInterface.getSettingsString());
+
+                System.setClipboard(myurl);
+            }
+      
+        ]]>
+    </fx:Script>
+
+
+    <fx:Declarations>
+        <mx:ArrayList id="samplerates">
+            <local:GenericListEntry 
+                data="44100"
+                label="44100 Hz"/>
+            <local:GenericListEntry 
+                data="22050"
+                label="22050 Hz"/>
+        </mx:ArrayList>
+
+        <mx:ArrayList id="soundItems">
+        </mx:ArrayList>
+
+        <mx:ArrayList id="layerItems">
+        </mx:ArrayList>
 		
-			
-			private function soundListSelectionChanged(event:Event, triggerPlay:Boolean=true):void
-			{
-				if (soundList.selectedIndex==-1)
-				{					
-					if (soundItems.length==0)
-					{
-						return;
-					}
-					else
-					{
-						SelectItemInSoundList(0);
-					}
-				}
-				
-				var row:SoundData = soundItems.getItemAt(soundList.selectedIndex) as SoundData;
-				
-				_synth.params.setSettingsString(row.data);
-				
-				CommitGlobal();
-				UIUpdateTrigger();
-				OnSoundParameterChanged(triggerPlay,false);
-				
-				if (row.modified)
-				{
-					EnableApplyButton(false);
-				}
-				else
-				{
-					DisableApplyButton(false);	
-				}
-			}
-
-			
-			private function layerListSelectionChanged(event:Event, triggerPlay:Boolean=true):void
-			{
-				trace("layer list selection changed");
-				if (layerList.selectedIndex==-1)
-				{					
-					if (layerItems.length==0)
-					{
-						return;
-					}
-					else
-					{
-						SelectItemInLayerList(0);
-					}
-				}
-				
-				var row:LayerData = layerItems.getItemAt(layerList.selectedIndex) as LayerData;
-				
-				_mixer.params.setSettingsString(row.data);
-				
-				CommitGlobal();
-				OnLayerParameterChanged(triggerPlay,false);
-				UIUpdateTrigger();
-				
-				if (row.modified)
-				{
-					EnableApplyButton(false);
-				}
-				else
-				{
-					DisableApplyButton(false);	
-				}
-			}
-			
-			private function VolumeChanged(event:Event):void
-			{
-				_synth.params.masterVolume = volumeslider.value/2;
-				OnSoundParameterChanged();
-			}			
-			
-			private var _fileRef:FileReference;			// File reference for loading in sfs file
-			
-			/**
-			 * Opens a browse window to load a sound setting file
-			 * @param	button	Button pressed
-			 */
-			private function clickLoadSound():void
-			{
-				_fileRef = new FileReference();
-				_fileRef.addEventListener(Event.SELECT, onSelectSettings);
-				_fileRef.browse([new FileFilter("SFX Sample Files (*.sfs)", "*.sfs")]);
-			}
-			
-			/**
-			 * When the user selects a file, begins loading it
-			 * @param	e	Select event
-			 */
-			private function onSelectSettings(e:Event):void
-			{
-				_fileRef.cancel();
-				
-				_fileRef.removeEventListener(Event.SELECT, onSelectSettings);
-				_fileRef.addEventListener(Event.COMPLETE, onLoadSettings);
-				_fileRef.load();
-			}
-			
-			/**
-			 * Once loaded, passes the file to the synthesizer to parse
-			 * @param	e	Complete event
-			 */
-			private function onLoadSettings(e:Event):void
-			{
-				_fileRef.removeEventListener(Event.COMPLETE, onLoadSettings);
-							
-				AddToSoundList("loaded");
-				setSettingsFile(_fileRef.data);
-				UIUpdateTrigger();
-				OnSoundParameterChanged(true,false);
-				this.DisableApplyButton(false);				
-				_fileRef = null;
-			}
-			
-			/**
-			 * Saves out a sound settings file
-			 * @param	button	Button pressed
-			 */
-			private function clickSaveSound():void
-			{
-				var file:ByteArray = getSettingsFile();
-				
-				new FileReference().save(file, "sfx.sfs");
-			}
-			
-			private function SaveWave():void
-			{
-				switch (tabs.selectedIndex)
-				{
-					case 0:
-						SaveSoundWave();
-						break;
-					case 1:
-						SaveMixerWave();
-						break;
-				}
-			}
-			
-			protected function SaveSoundWave():void
-			{
-				var _sampleRate:int = parseInt(samplerates.getItemAt(samplerate.selectedIndex).data);
-				
-				var _bitDepth:int = parseInt(bitdepths.getItemAt(bitdepth.selectedIndex).data);
-				
-				var file:ByteArray = _synth.getWavFile(_sampleRate, _bitDepth);
-				
-				new FileReference().save(file, "sfx.wav");			
-			}
-			
-			
-			private function SaveMixerWave():void
-			{				
-				var _sampleRate:int = parseInt(samplerates.getItemAt(samplerate.selectedIndex).data);
-				
-				var _bitDepth:int = parseInt(bitdepths.getItemAt(bitdepth.selectedIndex).data);
-								
-				_mixer.Clear();
-				for (var i:int=0;i<mixerlist.length;i++)
-				{
-					var dat : MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
-					//synth.();
-					if (dat.synthset)
-					{
-						var msd:MixerSoundData = new MixerSoundData(dat.id, dat.synth.getWavFile(_sampleRate, _bitDepth),dat.onset,dat.amplitudemodifier);
-						_mixer.AddTrack(msd);
-					}
-				}				
-				
-				new FileReference().save(_mixer.getWavFile(_sampleRate,_bitDepth));
-			}
-			
-			
-			
-			
-			
-			/**
-			 * Writes the current parameters to a ByteArray and returns it
-			 * Compatible with the original Sfxr files
-			 * @return	ByteArray of settings data
-			 */
-			public function getSettingsFile():ByteArray
-			{
-				var file:ByteArray = new ByteArray();
-				file.endian = Endian.LITTLE_ENDIAN;
-				
-				file.writeInt(SfxrSynth.version);
-				file.writeInt(_synth.params.waveType);
-				file.writeFloat(_synth.params.masterVolume);
-				
-				file.writeFloat(_synth.params.startFrequency);
-				file.writeFloat(_synth.params.minFrequency);
-				file.writeFloat(_synth.params.slide);
-				file.writeFloat(_synth.params.deltaSlide);
-				
-				file.writeFloat(_synth.params.squareDuty);
-				file.writeFloat(_synth.params.dutySweep);
-				
-				file.writeFloat(_synth.params.vibratoDepth);
-				file.writeFloat(_synth.params.vibratoSpeed);
-				file.writeFloat(0);
-				
-				file.writeFloat(_synth.params.attackTime);
-				file.writeFloat(_synth.params.sustainTime);
-				file.writeFloat(_synth.params.decayTime);
-				file.writeFloat(_synth.params.sustainPunch);
-				
-				file.writeBoolean(false);
-				file.writeFloat(_synth.params.lpFilterResonance);
-				file.writeFloat(_synth.params.lpFilterCutoff);
-				file.writeFloat(_synth.params.lpFilterCutoffSweep);
-				file.writeFloat(_synth.params.hpFilterCutoff);
-				file.writeFloat(_synth.params.hpFilterCutoffSweep);
-				
-				file.writeFloat(_synth.params.phaserOffset);
-				file.writeFloat(_synth.params.phaserSweep);
-				
-				file.writeFloat(_synth.params.repeatSpeed);
-				
-				file.writeFloat(_synth.params.changePeriod);
-				file.writeFloat(_synth.params.changeSpeed);
-				file.writeFloat(_synth.params.changeAmount);
-				file.writeFloat(_synth.params.changeSpeed2);
-				file.writeFloat(_synth.params.changeAmount2);
-				
-				file.writeFloat(_synth.params.overtones);
-				file.writeFloat(_synth.params.overtoneFalloff);
-				
-				file.writeBoolean(_synth.params.lockedParam("waveType"));
-				file.writeBoolean(_synth.params.lockedParam("startFrequency"));
-														
-				file.writeBoolean(_synth.params.lockedParam("minFrequency"));
-				file.writeBoolean(_synth.params.lockedParam("slide"));
-				file.writeBoolean(_synth.params.lockedParam("deltaSlide"));
-				
-				file.writeBoolean(_synth.params.lockedParam("squareDuty"));
-				file.writeBoolean(_synth.params.lockedParam("dutySweep"));
-				
-				file.writeBoolean(_synth.params.lockedParam("vibratoDepth"));
-				file.writeBoolean(_synth.params.lockedParam("vibratoSpeed"));
-				
-				file.writeBoolean(_synth.params.lockedParam("attackTime"));
-				file.writeBoolean(_synth.params.lockedParam("sustainTime"));
-				file.writeBoolean(_synth.params.lockedParam("decayTime"));
-				file.writeBoolean(_synth.params.lockedParam("sustainPunch"));
-				
-				file.writeBoolean(_synth.params.lockedParam("lpFilterResonance"));
-				file.writeBoolean(_synth.params.lockedParam("lpFilterCutoff"));
-				file.writeBoolean(_synth.params.lockedParam("lpFilterCutoffSweep"));
-				file.writeBoolean(_synth.params.lockedParam("hpFilterCutoff"));
-				file.writeBoolean(_synth.params.lockedParam("hpFilterCutoffSweep"));
-				
-				file.writeBoolean(_synth.params.lockedParam("phaserOffset"));
-				file.writeBoolean(_synth.params.lockedParam("phaserSweep"));
-				
-				file.writeBoolean(_synth.params.lockedParam("repeatSpeed"));
-				
-				file.writeBoolean(_synth.params.lockedParam("changePeriod"));
-				file.writeBoolean(_synth.params.lockedParam("changeSpeed"));
-				file.writeBoolean(_synth.params.lockedParam("changeAmount"));
-				file.writeBoolean(_synth.params.lockedParam("changeSpeed2"));
-				file.writeBoolean(_synth.params.lockedParam("changeAmount2"));
-				
-				file.writeBoolean(_synth.params.lockedParam("overtones"));
-				file.writeBoolean(_synth.params.lockedParam("overtoneFalloff"));
-				
-				return file;
-			}
-			
-			/**
-			 * Reads parameters from a ByteArray file
-			 * Compatible with the original Sfxr files
-			 * @param	file	ByteArray of settings data
-			 */
-			public function setSettingsFile(file:ByteArray):void
-			{
-				file.position = 0;
-				file.endian = Endian.LITTLE_ENDIAN;
-				
-				var version:int = file.readInt();
-				
-				if(version != 100 && version != 101 && version != 102 && version !=103) return;
-				
-				_synth.params.waveType = file.readInt();
-				_synth.params.masterVolume = (version >= 102) ? file.readFloat() : 0.5;
-				
-				_synth.params.startFrequency = file.readFloat();
-				_synth.params.minFrequency = file.readFloat();
-				_synth.params.slide = file.readFloat();
-				_synth.params.deltaSlide = (version >= 101) ? file.readFloat() : 0.0;
-				
-				_synth.params.squareDuty = file.readFloat();
-				_synth.params.dutySweep = file.readFloat();
-				
-				_synth.params.vibratoDepth = file.readFloat();
-				_synth.params.vibratoSpeed = file.readFloat();
-				var unusedVibratoDelay:Number = file.readFloat();
-				
-				_synth.params.attackTime = file.readFloat();
-				_synth.params.sustainTime = file.readFloat();
-				_synth.params.decayTime = file.readFloat();
-				_synth.params.sustainPunch = file.readFloat();
-				
-				var unusedFilterOn:Boolean = file.readBoolean();
-				_synth.params.lpFilterResonance = file.readFloat();
-				_synth.params.lpFilterCutoff = file.readFloat();
-				_synth.params.lpFilterCutoffSweep = file.readFloat();
-				_synth.params.hpFilterCutoff = file.readFloat();
-				_synth.params.hpFilterCutoffSweep = file.readFloat();
-				
-				_synth.params.phaserOffset = file.readFloat();
-				_synth.params.phaserSweep = file.readFloat();
-				
-				_synth.params.repeatSpeed = file.readFloat();
-				
-				_synth.params.changePeriod = (version >= 103) ? file.readFloat() : 1.0;
-				
-				_synth.params.changeSpeed = (version >= 101) ? file.readFloat() : 0.0;
-				_synth.params.changeAmount = (version >= 101) ? file.readFloat() : 0.0;
-				_synth.params.changeSpeed2 = (version >= 103) ? file.readFloat() : 0.0;
-				_synth.params.changeAmount2 = (version >= 103) ? file.readFloat() : 0.0;
-				_synth.params.overtones = (version >= 103) ? file.readFloat() : 0.0;
-				_synth.params.overtoneFalloff = (version >= 103) ? file.readFloat() : 0.0;
-				
-				if (version>=103)
-				{
-					_synth.params.setParamLocked("waveType",file.readBoolean());
-					_synth.params.setParamLocked("startFrequency",file.readBoolean());
-					
-					_synth.params.setParamLocked("minFrequency",file.readBoolean());
-					_synth.params.setParamLocked("slide",file.readBoolean());
-					_synth.params.setParamLocked("deltaSlide",file.readBoolean());
-					
-					_synth.params.setParamLocked("squareDuty",file.readBoolean());
-					_synth.params.setParamLocked("dutySweep",file.readBoolean());
-					
-					_synth.params.setParamLocked("vibratoDepth",file.readBoolean());
-					_synth.params.setParamLocked("vibratoSpeed",file.readBoolean());
-					
-					_synth.params.setParamLocked("attackTime",file.readBoolean());
-					_synth.params.setParamLocked("sustainTime",file.readBoolean());
-					_synth.params.setParamLocked("decayTime",file.readBoolean());
-					_synth.params.setParamLocked("sustainPunch",file.readBoolean());
-					
-					_synth.params.setParamLocked("lpFilterResonance",file.readBoolean());
-					_synth.params.setParamLocked("lpFilterCutoff",file.readBoolean());
-					_synth.params.setParamLocked("lpFilterCutoffSweep",file.readBoolean());
-					_synth.params.setParamLocked("hpFilterCutoff",file.readBoolean());
-					_synth.params.setParamLocked("hpFilterCutoffSweep",file.readBoolean());
-					
-					_synth.params.setParamLocked("phaserOffset",file.readBoolean());
-					_synth.params.setParamLocked("phaserSweep",file.readBoolean());
-					
-					_synth.params.setParamLocked("repeatSpeed",file.readBoolean());
-					
-					_synth.params.setParamLocked("changePeriod",file.readBoolean());
-					_synth.params.setParamLocked("changeSpeed",file.readBoolean());
-					_synth.params.setParamLocked("changeAmount",file.readBoolean());
-					_synth.params.setParamLocked("changeSpeed2",file.readBoolean());
-					_synth.params.setParamLocked("changeAmount2",file.readBoolean());
-					
-					_synth.params.setParamLocked("overtones",file.readBoolean());
-					_synth.params.setParamLocked("overtoneFalloff",file.readBoolean());
-				}
-			}
-			
-			
-						
-			public function LoadSavedSoundsFromSharedObject():void
-			{
-				_saveManager.LoadSavedSoundsFromSharedObject(soundItems);
-
-				soundListSelectionChanged(null);
-			}
-			
-			
-			public function LoadSavedLayersFromSharedObject():void
-			{
-				_saveManager.LoadSavedLayersFromSharedObject(layerItems);
-				
-				soundListSelectionChanged(null);
-			}
-			
-			
-			protected function clickCopyButton():void
-			{
-				switch (tabs.selectedIndex)
-				{
-					case 0:
-						System.setClipboard(_synth.params.getSettingsString());
-						break;
-					case 1:
-						CopyFromMixer();
-						break;
-				}
-			}
-			
-			protected function CopyFromMixer():void
-			{
-				var result:String = "";
-				//mixer string first
-				result = _mixer.params.getSettingsString();
-				
-				var o:Array  = new Array();
-				for (var i:int =0;i<_mixer.params.items.length;i++)
-				{
-					var mpi:MixerItemParams = _mixer.params.items[i];
-					
-					if (mpi.id in o == false)
-					{
-						var soundindex:int =  GetIndexOfSoundItemWithID(mpi.id);
-						o[mpi.id]=(soundItems.getItemAt(soundindex) as SoundData).data;
-					}
-				}
-				
-				for (var s:String in o)
-				{
-					result+="|"+s+","+ o[s];
-				}
-				
-				System.setClipboard(result);
-			}
-			
-			protected function clickPasteButton():void
-			{
-				var pasted:String = ExternalInterface.call('function(){return prompt();}');
-				if (pasted.indexOf("|")==-1)
-				{
-					AddToSoundList("Paste",true);
-					_synth.params.setSettingsString(pasted);
-					UIUpdateTrigger();
-					OnSoundParameterChanged(true,false);
-					tabs.selectedIndex=0;
-				}
-				else
-				{
-					PasteLayer(pasted);
-					tabs.selectedIndex=1;
-				}
-			}
-			
-			private function PasteLayer(data:String):void
-			{
-				var chunks:Array = data.split("|");
-				//first part is layer data itself
-				_mixer.params.items = new Vector.<MixerItemParams>();
-				
-				trace(" mix description  = "+chunks[0]);
-				//will need to update the IDs here as I read the other strings in, in case there're clashes
-				_mixer.params.setSettingsString(chunks[0]);
-				
-				for (var i:int=1;i<chunks.length;i++)
-				{
-					var chunk:String = chunks[i];
-					var firstcomma:int = chunk.indexOf(",");
-					var idpart:int = int(chunk.substr(0,firstcomma));
-					var descriptionpart:String = chunk.substr(firstcomma+1);
-					if (GetIndexOfSoundItemWithID(idpart))
-					{
-						var newid:int = _saveManager.GetID();
-						//rename id in mixer
-						for (var j:int=0;j<_mixer.params.items.length;j++)
-						{
-							if (_mixer.params.items[j].id==idpart)
-							{
-								_mixer.params.items[j].id=newid;
-								//there could be several uses of this id, so shouldn't break;
-							}
-						}
-						idpart=newid;
-					}
-
-					//now that everything's added, can paste sound in as normal(?)
-					
-					
-					AddToSoundList("Sound",true,true,idpart);
-					trace(" sound description  = "+descriptionpart); 
-					_synth.params.setSettingsString(descriptionpart);
-					
-					OnSoundParameterChanged(false,false);
-					
-				}
-				
-				//now push the  mixer settings and load them as if you had clicked on them
-				AddToLayerList("Pasted",true);
-				
-				
-				UIUpdateTrigger();
-				
-				DisableApplyButton(false);	
-				
-			}
-			
-			private function OnTabChanged(event:Event):void
-			{
-				switch (tabs.selectedIndex)
-				{
-					case 0:
-						trace("tab 0");
-						this.soundList.dragEnabled=false;
-						this.soundList.dragMoveEnabled=false;
-						break;
-					case 1:
-						trace("tab 1");
-						this.soundList.dragEnabled=true;
-						this.soundList.dragMoveEnabled=true;
-						break;
-				}
-			}
+        <mx:ArrayList id="bitdepths">
+            <local:GenericListEntry 
+                data="16"
+                label="16-bit"/>
+            <local:GenericListEntry 
+                data="8"
+                label="8-bit"/>
+        </mx:ArrayList>
+    </fx:Declarations>
 
 
-			protected function clickLinkButton():void
-			{				
-				var base:String = ExternalInterface.call('window.location.href.toString');
-				base = base.split("?")[0];
-				
-				var myurl:String = base + "?d="+escape(_synth.params.getSettingsString());
-				
-				System.setClipboard(myurl);
-			}
-			
-			private function WaveTypeLockClicked():void
-			{
-				_synth.params.setParamLocked("waveType",lockwave.selected);
-			}
-			private function RegisterWaveTypeLock():void
-			{
-				this.RegisterLockableParam("waveType",lockwave);
-			}
+    <s:HGroup 
+        left="0" right="-0" top="0" bottom="0"
+        horizontalCenter="0"
+        verticalAlign="justify"
+        verticalCenter="0">
+        <s:VGroup 
+            width="160" height="591"
+            horizontalAlign="justify"
+            paddingBottom="1"
+            paddingLeft="1"
+            paddingRight="1"
+            paddingTop="1">
+            <s:BorderContainer 
+                width="200" height="243"
+                backgroundColor="#CCBDA1">
+                <s:layout>
+                    <s:VerticalLayout 
+                        horizontalAlign="justify"
+                        paddingBottom="1"
+                        paddingLeft="1"
+                        paddingRight="1"
+                        paddingTop="1"
+                        gap="6"/>
+                </s:layout>
+                <s:Button id="generatePickupCoin"
+                    label="Pickup/coin"
+                    click="clickPreset(event)"/>
+                <s:Button id="generateLaserShoot"
+                    label="Laser/shoot"
+                    click="clickPreset(event)"/>
+                <s:Button id="generateExplosion"
+                    label="Explosion"
+                    click="clickPreset(event)"/>
+                <s:Button id="generatePowerup"
+                    label="Powerup"
+                    click="clickPreset(event)"/>
+                <s:Button id="generateHitHurt"
+                    label="Hit/hurt"
+                    click="clickPreset(event)"/>
+                <s:Button id="generateJump"
+                    label="Jump"
+                    click="clickPreset(event)"/>
+                <s:Button id="generateBlipSelect"
+                    label="Blip/Select"
+                    click="clickPreset(event)"/>
+                <s:Button id="randomize"
+                    label="Randomize"
+                    click="clickPreset(event)"/>
+                <s:Button id="mutate"
+                    label="Mutate"
+                    click="clickPreset(event)"/>
+            </s:BorderContainer>
+            <s:BorderContainer 
+                width="200" height="85"
+                backgroundColor="#CCBDA1"
+                contentBackgroundColor="#CCBDA1">
+                <s:layout>
+                    <s:VerticalLayout 
+                        horizontalAlign="justify"
+                        paddingBottom="1"
+                        paddingLeft="1"
+                        paddingRight="1"
+                        paddingTop="1"
+                        gap="6"/>
+                </s:layout>
+                <s:Button id="applybutton"
+                    enabled="false"
+                    label="Apply"
+                    click="clickApply(event)"/>
+                <s:Button id="revertbutton"
+                    enabled="false"
+                    label="Revert"
+                    click="clickRevert(event)"/>
+                <s:Button id="duplicatebutton"
+                    label="New"
+                    click="clickNew(event)"/>
+            </s:BorderContainer>
+            <s:BorderContainer 
+                width="200" height="100%"
+                backgroundColor="#CCBDA1"
+                borderVisible="false">
+                <s:layout>
+                    <s:VerticalLayout 
+                        horizontalAlign="justify"
+                        paddingBottom="0"
+                        paddingLeft="0"
+                        paddingRight="0"
+                        paddingTop="0"
+                        gap="0"/>
+                </s:layout>
 
+                <s:List id="soundList"
+                    width="170" height="100%"
+                    click="soundListSelectionChanged(event)"
+                    itemRenderer="Components.SoundListItemRenderer"
+					valueCommit="this.globalState.OnSoundListSelectionChanged(event)"
+                    contentBackgroundColor="#CCBDA1"
+                    requireSelection="true"/>
 
-			protected function AddNewMixerLayer(event:MouseEvent):void
-			{				
-				this.mixerlist.addItemAt(new MixerListEntryDat(-1),0);
-				_mixer.params.items.splice(0,0,new MixerItemParams(-1,0,1));
-				
-				
-				OnLayerParameterChanged(false);	
-			}
-			
-			public function mixer_on_item_removed(audible:Boolean,dat:Object):void
-			{							
-				//if (mixerlist.length==1)
-				//	return;
-				
-				var index:int =  mixerlist.getItemIndex(dat);
-				var mled:MixerListEntryDat = mixerlist.getItemAt(index) as MixerListEntryDat;
-				mixerlist.removeItemAt(index);
-				//items.dispatchEvent(FlexEvent.REMOVE);
+            </s:BorderContainer>
+        </s:VGroup>
+        <mx:ViewStack id="viewstack1"
+            width="343" height="100%">
+            <s:NavigatorContent 
+                width="100%" height="100%"
+                label="View 1">
+                <mx:TabNavigator id="tabs"
+                    left="0" right="0" top="0" bottom="0"
+                    backgroundColor="#CCBDA1"
+                    horizontalCenter="0"
+                    verticalCenter="0"
+                    creationPolicy="all"
+					change="OnTabChanged(event)"
+					contentBackgroundColor="#CCBDA1">
+                    <s:NavigatorContent 
+                        width="100%" height="100%"
+                        label="Make"						
+                        contentBackgroundColor="#CCBDA1">
+                        <s:layout>
+                            <s:HorizontalLayout verticalAlign="justify"/>
+                        </s:layout>
+                        <s:VGroup id="square"
+                            width="100%" height="100%"
+                            horizontalAlign="justify"
+                            paddingBottom="1"
+                            paddingLeft="1"
+                            paddingRight="1"
+                            paddingTop="1">
+                            <s:BorderContainer 
+                                width="293" height="73"
+                                backgroundColor="#CCBDA1">
+                                <s:layout>
+                                    <s:BasicLayout/>
+                                </s:layout>
+                                <s:HGroup 
+                                    x="0" y="0" width="100%" height="100%" paddingLeft="2">
+                                    <s:CheckBox id="lockwave"
+                                        toolTip="Lock field during randomization/mutation?"
+                                        change="synthInterface.WaveTypeLockClicked()"
+                                        creationComplete="synthInterface.RegisterWaveTypeLock(lockwave)"/>
+                                    <s:TileGroup 
+                                        width="100%" height="100%"
+                                        verticalGap="1"
+                                        requestedRowCount="2"
+                                        requestedColumnCount="3"
+                                        columnWidth="98">
+                                        <s:ToggleButton id="W4"
+                                            width="65"
+                                            label="Triangle"
+                                            change="synthInterface.WaveformSelect(event)"/>
+                                        <s:ToggleButton id="W2"
+                                            x="37.9" y="40.9" width="65"
+                                            label="Sin"
+                                            change="synthInterface.WaveformSelect(event)"/>
+                                        <s:ToggleButton id="W0"
+                                            width="65"
+                                            label="Square"
+                                            change="synthInterface.WaveformSelect(event)"/>
+                                        <s:ToggleButton id="W1"
+                                            width="65"
+                                            label="Saw"
+                                            change="synthInterface.WaveformSelect(event)"/>
+                                        <s:ToggleButton id="W8"
+                                            width="65"
+                                            label="Up"
+                                            change="synthInterface.WaveformSelect(event)"/>
+                                        <s:ToggleButton id="W6"
+                                            width="65"
+                                            label="Steep"
+                                            change="synthInterface.WaveformSelect(event)"/>
+                                        <s:ToggleButton id="W7"
+                                            width="65"
+                                            label="Whistle"
+                                            change="synthInterface.WaveformSelect(event)"/>
+                                        <s:ToggleButton id="W3"
+                                            x="32.35" y="61.6" width="65"
+                                            label="White"
+                                            change="synthInterface.WaveformSelect(event)"/>
+                                        <s:ToggleButton id="W5"
+                                            x="95.9" y="62.05" width="65"
+                                            label="Pink "
+                                            change="synthInterface.WaveformSelect(event)"/>
+                                    </s:TileGroup>
+                                </s:HGroup>
+                            </s:BorderContainer>
+                            <s:HGroup 
+                                width="100%" height="100%"
+                                paddingBottom="0"
+                                paddingLeft="0"
+                                paddingRight="0"
+                                paddingTop="0"
+                                verticalAlign="justify"
+                                gap="0">
+                                <s:VGroup 
+                                    width="100%" height="100%"
+                                    paddingBottom="0"
+                                    paddingLeft="0"
+                                    paddingRight="0"
+                                    paddingTop="0">
+                                    <s:BorderContainer 
+                                        width="100%" height="100%"
+                                        backgroundColor="#CCBDA1"
+                                        borderVisible="false"
+                                        dropShadowVisible="false">
+                                        <s:layout>
+                                            <s:VerticalLayout 
+                                                paddingBottom="0"
+                                                paddingLeft="0"
+                                                paddingRight="0"
+                                                paddingTop="0"/>
+                                        </s:layout>
+                                        <s:DataGroup id="SoundParameterGroup"
+                                            width="100%" height="100%"
+                                            itemRenderer="Components.SoundParameterRowRenderer"
+                                            clipAndEnableScrolling="true">
+                                            <s:layout>
+                                                <s:VerticalLayout 
+                                                    paddingBottom="0"
+                                                    paddingLeft="1"
+                                                    paddingRight="0"
+                                                    paddingTop="1"
+                                                    useVirtualLayout="true"
+                                                    gap="0"/>
+                                            </s:layout>
+                                            <mx:ArrayList>
+                                                <local:SoundListRowData 
+                                                    label="Attack time"
+                                                    odd="0"
+                                                    square="false"
+                                                    bggroup="0"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="attackTime"/>
+                                                <local:SoundListRowData 
+                                                    label="Sustain time"
+                                                    odd="1"
+                                                    square="false"
+                                                    bggroup="0"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="sustainTime"/>
+                                                <local:SoundListRowData 
+                                                    label="Sustain punch"
+                                                    odd="0"
+                                                    square="false"
+                                                    bggroup="0"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="sustainPunch"/>
+                                                <local:SoundListRowData 
+                                                    label="Decay time"
+                                                    odd="1"
+                                                    square="false"
+                                                    bggroup="0"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="decayTime"/>
+                                                <local:SoundListRowData 
+                                                    label="Start frequency"
+                                                    odd="0"
+                                                    square="false"
+                                                    bggroup="1"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="startFrequency"/>
+                                                <local:SoundListRowData 
+                                                    label="Min frequency cutoff"
+                                                    odd="1"
+                                                    square="false"
+                                                    bggroup="1"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="minFrequency"/>
+                                                <local:SoundListRowData 
+                                                    label="Slide"
+                                                    odd="0"
+                                                    square="false"
+                                                    bggroup="1"
+                                                    min="-1"
+                                                    max="1"
+                                                    tag="slide"/>
+                                                <local:SoundListRowData 
+                                                    label="Delta slide"
+                                                    odd="1"
+                                                    square="false"
+                                                    bggroup="1"
+                                                    min="-1"
+                                                    max="1"
+                                                    tag="deltaSlide"/>
+                                                <local:SoundListRowData 
+                                                    label="Vibrato depth"
+                                                    odd="0"
+                                                    square="false"
+                                                    bggroup="1"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="vibratoDepth"/>
+                                                <local:SoundListRowData 
+                                                    label="Vibrato speed"
+                                                    odd="1"
+                                                    square="false"
+                                                    bggroup="1"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="vibratoSpeed"/>
+                                                <local:SoundListRowData 
+                                                    label="Change period"
+                                                    odd="0"
+                                                    square="false"
+                                                    bggroup="0"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="changePeriod"/>
+                                                <local:SoundListRowData 
+                                                    label="Change amount"
+                                                    odd="1"
+                                                    square="false"
+                                                    bggroup="0"
+                                                    min="-1"
+                                                    max="1"
+                                                    tag="changeAmount"/>
+                                                <local:SoundListRowData 
+                                                    label="Change speed"
+                                                    odd="0"
+                                                    square="false"
+                                                    bggroup="0"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="changeSpeed"/>
+                                                <local:SoundListRowData 
+                                                    label="Change amount2"
+                                                    odd="1"
+                                                    square="false"
+                                                    bggroup="0"
+                                                    min="-1"
+                                                    max="1"
+                                                    tag="changeAmount2"/>
+                                                <local:SoundListRowData 
+                                                    label="Change speed2"
+                                                    odd="0"
+                                                    square="false"
+                                                    bggroup="0"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="changeSpeed2"/>
+                                                <local:SoundListRowData 
+                                                    label="Square duty"
+                                                    odd="1"
+                                                    square="true"
+                                                    bggroup="1"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="squareDuty"/>
+                                                <local:SoundListRowData 
+                                                    label="Duty sweep"
+                                                    odd="0"
+                                                    square="true"
+                                                    bggroup="1"
+                                                    min="-1"
+                                                    max="1"
+                                                    tag="dutySweep"/>
+                                                <local:SoundListRowData 
+                                                    label="Overtones"
+                                                    odd="1"
+                                                    square="false"
+                                                    bggroup="0"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="overtones"/>
+                                                <local:SoundListRowData 
+                                                    label="Overtone falloff"
+                                                    odd="0"
+                                                    square="false"
+                                                    bggroup="0"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="overtoneFalloff"/>
+                                                <local:SoundListRowData 
+                                                    label="Repeat speed"
+                                                    odd="1"
+                                                    square="false"
+                                                    bggroup="1"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="repeatSpeed"/>
 												
-				this.OnLayerParameterChanged(true,true);
-				
-			/* 	var index:int = layerItems.getItemIndex(dat);
-				
-				layerItems.removeItemAt(index);
-				_mixer.params.items.splice(index,1);
-				
-				OnLayerParameterChanged(audible,true); */
-			}
+												<local:SoundListRowData 
+													label="Pre-amp ratio"
+													odd="0"
+													square="false"
+													bggroup="0"
+													min="0"
+													max="100"
+													tag="preAmpRatio"/>
+                                                <local:SoundListRowData 
+                                                    label="Phaser offset"
+                                                    odd="0"
+                                                    square="false"
+                                                    bggroup="1"
+                                                    min="-1"
+                                                    max="1"
+                                                    tag="phaserOffset"/>
+                                                <local:SoundListRowData 
+                                                    label="Phaser sweep"
+                                                    odd="1"
+                                                    square="false"
+                                                    bggroup="1"
+                                                    min="-1"
+                                                    max="1"
+                                                    tag="phaserSweep"/>
+                                                <local:SoundListRowData 
+                                                    label="Low-pass filter cutoff"
+                                                    odd="0"
+                                                    square="false"
+                                                    bggroup="0"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="lpFilterCutoff"/>
+                                                <local:SoundListRowData 
+                                                    label="Low-pass filter cutoff sweep"
+                                                    odd="1"
+                                                    square="false"
+                                                    bggroup="0"
+                                                    min="-1"
+                                                    max="1"
+                                                    tag="lpFilterCutoffSweep"/>
+                                                <local:SoundListRowData 
+                                                    label="Low-pass filter resonance"
+                                                    odd="0"
+                                                    square="false"
+                                                    bggroup="0"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="lpFilterResonance"/>
+                                                <local:SoundListRowData 
+                                                    label="High-pass filter cutoff"
+                                                    odd="1"
+                                                    square="false"
+                                                    bggroup="0"
+                                                    min="0"
+                                                    max="1"
+                                                    tag="hpFilterCutoff"/>
+                                                <local:SoundListRowData 
+                                                    label="High-pass filter cutoff sweep"
+                                                    odd="0"
+                                                    square="false"
+                                                    bggroup="0"
+                                                    min="-1"
+                                                    max="1"
+                                                    tag="hpFilterCutoffSweep"/>
+                                            </mx:ArrayList>
+                                        </s:DataGroup>
+                                    </s:BorderContainer>
+                                </s:VGroup>
+                                <s:VScrollBar 
+                                    height="100"
+                                    viewport="{SoundParameterGroup}"/>
 
-		]]>
-	</fx:Script>
+                            </s:HGroup>
+                        </s:VGroup>
+                    </s:NavigatorContent>
+                    <s:NavigatorContent 
+                        width="100%" height="100%"
+                        label="Layer">
+                        <s:layout>
+                            <s:BasicLayout/>
+                        </s:layout>
+                        <s:VGroup id="Random"
+                            left="0" right="0" top="0" bottom="0"
+                            horizontalAlign="justify"
+                            horizontalCenter="0"
+                            verticalCenter="0"
+                            gap="0">
+                            <s:DataGroup id="mixerListComponent"
+                                width="100%" height="372"
+                                itemRenderer="Components.MixerRowRenderer">
+                                <s:layout>
+                                    <s:VerticalLayout 
+                                        horizontalAlign="justify"
+                                        paddingBottom="0"
+                                        paddingLeft="0"
+                                        paddingRight="0"
+                                        paddingTop="0"
+                                        gap="0"/>
+                                </s:layout>
+                            </s:DataGroup>
+                            <s:List id="layerList"
+                                width="170" height="100%"
+                                change="layerListSelectionChanged(event)"
+                                requireSelection="true"
+                                itemRenderer="Components.LayerListItemRenderer"
+                                contentBackgroundColor="#CCBDA1"								
+								valueCommit="globalState.OnLayerListSelectionChanged(event)"
+								/>
+                        </s:VGroup>
+                    </s:NavigatorContent>
+                </mx:TabNavigator>
+            </s:NavigatorContent>
+        </mx:ViewStack>
 
-	
-	<fx:Declarations>
-		<mx:ArrayList id = "samplerates">
-			<local:GenericListEntry label="44100 Hz" data="44100"/>
-			<local:GenericListEntry label="22050 Hz" data="22050"/>			
-		</mx:ArrayList>
-		
-		<mx:ArrayList id = "soundItems">			
-		</mx:ArrayList>
-		
-		<mx:ArrayList id = "layerItems">			
-		</mx:ArrayList>
-		
-		<mx:ArrayList id = "mixerlist">
-		</mx:ArrayList>
-		
-		<mx:ArrayList id = "bitdepths">
-			<local:GenericListEntry label="16-bit" data="16"/>
-			<local:GenericListEntry label="8-bit" data="8"/>			
-		</mx:ArrayList>
-	</fx:Declarations>
-	
-	
-	<s:HGroup verticalAlign="justify" left="0" horizontalCenter="0" right="-0" bottom="0" verticalCenter="0" top="0">
-		<s:VGroup width="160" height="591" horizontalAlign="justify" paddingLeft="1" paddingRight="1" paddingBottom="1" paddingTop="1">
-			<s:BorderContainer width="200" height="243" backgroundColor="#CCBDA1">
-				<s:layout>
-					<s:VerticalLayout horizontalAlign="justify" paddingLeft="1" paddingRight="1" paddingBottom="1" paddingTop="1" gap="6"/>
-				</s:layout>
-				<s:Button label="Pickup/coin" click="clickPreset(event)" id="generatePickupCoin"/>
-				<s:Button label="Laser/shoot" click="clickPreset(event)" id="generateLaserShoot"/>
-				<s:Button label="Explosion" click="clickPreset(event)" id="generateExplosion"/>
-				<s:Button label="Powerup" click="clickPreset(event)" id="generatePowerup"/>
-				<s:Button label="Hit/hurt" click="clickPreset(event)" id="generateHitHurt"/>
-				<s:Button label="Jump" click="clickPreset(event)" id="generateJump"/>
-				<s:Button label="Blip/Select" click="clickPreset(event)" id="generateBlipSelect"/>
-				<s:Button label="Randomize" click="clickPreset(event)" id="randomize"/>
-				<s:Button label="Mutate" click="clickPreset(event)" id="mutate"/>
-			</s:BorderContainer>
-			<s:BorderContainer width="200" height="85" backgroundColor="#CCBDA1" contentBackgroundColor="#CCBDA1">
-				<s:layout>
-					<s:VerticalLayout horizontalAlign="justify" paddingLeft="1" paddingTop="1" paddingBottom="1" paddingRight="1" gap="6"/>
-				</s:layout>
-				<s:Button label="Apply" click="clickApply(event)" id="applybutton" enabled="false" />
-				<s:Button label="Revert" click="clickRevert(event)" id="revertbutton" enabled="false" />
-				<s:Button label="New" click="clickNew(event)" id="duplicatebutton"/>
-			</s:BorderContainer>
-			<s:BorderContainer width="200" height="100%" backgroundColor="#CCBDA1" borderVisible="false">
-				<s:layout>
-					<s:VerticalLayout horizontalAlign="justify" paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0" gap="0"/>
-				</s:layout>
-				
-				<fx:Script>
-				<![CDATA[            
-					import spark.skins.spark.DefaultComplexItemRenderer;
-					import spark.skins.spark.DefaultItemRenderer;
-
-					[Bindable]
-					public var typicalObj:Object = {
-						bggroup:"0",
-						tag:"thingy",
-						descr:"High-pass filter cutoff sweep"
-					};
-					
-					
-				]]>
-			</fx:Script>
-				
-				
-				
-				<s:List id="soundList"
-						
-						width="170" height="100%"
-						itemRenderer="myComponents.SoundListItemRenderer" 
-						contentBackgroundColor="#CCBDA1"
-					 	click="soundListSelectionChanged(event)"
-						requireSelection="true"
-						/>
-							
-				
-				
-				
-				
-				
-			</s:BorderContainer>
-		</s:VGroup>
-		<mx:ViewStack id="viewstack1" height="100%" width="343">
-			<s:NavigatorContent label="View 1" width="100%" height="100%">
-				<mx:TabNavigator id="tabs" left="0" horizontalCenter="0" right="0" top="0" verticalCenter="0" bottom="0" backgroundColor="#CCBDA1" contentBackgroundColor="#CCBDA1" creationPolicy="all">
-					<s:NavigatorContent label="Make" width="100%" height="100%" contentBackgroundColor="#CCBDA1" tabIndexChange="OnTabChanged(event);">
-						<s:layout>
-							<s:HorizontalLayout verticalAlign="justify"/>
-						</s:layout>
-							<s:VGroup width="100%" height="100%" paddingLeft="1" paddingRight="1" paddingBottom="1" paddingTop="1" id="square" horizontalAlign="justify">
-								<s:BorderContainer width="293" height="73" backgroundColor="#CCBDA1">
-									<s:layout>
-										<s:BasicLayout/>
-									</s:layout>
-									<s:HGroup x="0" y="0" width="100%" height="100%">
-										<s:CheckBox 
-											id="lockwave" 
-											 change="WaveTypeLockClicked()"
-											toolTip="Lock field during randomization/mutation?" 
-											creationComplete="RegisterWaveTypeLock()"
-											/>
-										<s:TileGroup width="100%" height="100%" requestedRowCount="2" requestedColumnCount="3" columnWidth="98" verticalGap="1">
-											<s:ToggleButton label="Triangle" change="WaveformSelect(event)" id="W4" width="65"/>
-											<s:ToggleButton label="Sin" change="WaveformSelect(event)" id="W2" width="65" x="37.9" y="40.9"/>
-											<s:ToggleButton label="Square"  change="WaveformSelect(event)" id="W0" width="65"/>
-											<s:ToggleButton label="Saw" change="WaveformSelect(event)" id="W1" width="65"/>
-											<s:ToggleButton label="Up" change="WaveformSelect(event)" id="W8" width="65"/>
-											<s:ToggleButton label="Steep" change="WaveformSelect(event)" id="W6" width="65"/>
-											<s:ToggleButton label="Whistle" change="WaveformSelect(event)" id="W7" width="65"/>
-											<s:ToggleButton label="White" change="WaveformSelect(event)" id="W3" width="65" x="32.35" y="61.6"/>
-											<s:ToggleButton label="Pink " change="WaveformSelect(event)" id="W5" width="65" x="95.9" y="62.05"/>
-										</s:TileGroup>
-									</s:HGroup>
-								</s:BorderContainer>
-								<s:HGroup width="100%" height="100%" paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0" verticalAlign="justify" gap="0">
-									<s:VGroup width="100%" height="100%" paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0">
-										<s:BorderContainer width="100%" height="100%" backgroundColor="#CCBDA1" borderVisible="false" dropShadowVisible="false">
-											<s:layout>
-												<s:VerticalLayout paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0"/>
-											</s:layout>
-											<s:DataGroup id = "SoundParameterGroup"
-														 itemRenderer="myComponents.SoundParameterRowRenderer" 
-														 height="100%"								 
-														  width="100%"
-														   clipAndEnableScrolling="true"														    
-														    > 
-												<s:layout>
-													<s:VerticalLayout useVirtualLayout="true" 
-													paddingLeft="1" paddingTop="1" paddingRight="0" paddingBottom="0" gap="0"/> 
-												</s:layout>
-												<mx:ArrayList>
-													<local:SoundListRowData odd="0" square="false" bggroup="0" min="0" max="1" tag="attackTime" descr="Attack time"/>
-													<local:SoundListRowData odd="1" square="false" bggroup="0" min="0" max="1" tag="sustainTime" descr="Sustain time"/>
-													<local:SoundListRowData odd="0" square="false" bggroup="0" min="0" max="1" tag="sustainPunch" descr="Sustain punch"/>
-													<local:SoundListRowData odd="1" square="false" bggroup="0" min="0" max="1" tag="decayTime" descr="Decay time"/>
-													<local:SoundListRowData odd="0" square="false" bggroup="1" min="0" max="1" tag="startFrequency" descr="Start frequency"/>
-													<local:SoundListRowData odd="1" square="false" bggroup="1" min="0" max="1" tag="minFrequency" descr="Min frequency cutoff"/>
-													<local:SoundListRowData odd="0" square="false" bggroup="1" min="-1" max="1" tag="slide" descr="Slide"/>
-													<local:SoundListRowData odd="1" square="false" bggroup="1" min="-1" max="1" tag="deltaSlide" descr="Delta slide"/>
-													<local:SoundListRowData odd="0" square="false" bggroup="1" min="0" max="1" tag="vibratoDepth" descr="Vibrato depth"/>
-													<local:SoundListRowData odd="1" square="false" bggroup="1" min="0" max="1" tag="vibratoSpeed" descr="Vibrato speed"/>
-													<local:SoundListRowData odd="0" square="false" bggroup="0" min="0" max="1" tag="changePeriod" descr="Change period"/>
-													<local:SoundListRowData odd="1" square="false" bggroup="0" min="-1" max="1" tag="changeAmount" descr="Change amount"/>
-													<local:SoundListRowData odd="0" square="false" bggroup="0" min="0" max="1" tag="changeSpeed" descr="Change speed"/>
-													<local:SoundListRowData odd="1" square="false" bggroup="0" min="-1" max="1" tag="changeAmount2" descr="Change amount2"/>
-													<local:SoundListRowData odd="0" square="false" bggroup="0" min="0" max="1" tag="changeSpeed2" descr="Change speed2"/>
-													<local:SoundListRowData odd="1" square="true" bggroup="1" min="0" max="1" tag="squareDuty" descr="Square duty"/>
-													<local:SoundListRowData odd="0" square="true" bggroup="1" min="-1" max="1" tag="dutySweep" descr="Duty sweep"/>
-													<local:SoundListRowData odd="1" square="false" bggroup="0" min="0" max="1" tag="overtones" descr="Overtones"/>
-													<local:SoundListRowData odd="0" square="false" bggroup="0" min="0" max="1" tag="overtoneFalloff" descr="Overtone falloff"/>
-													<local:SoundListRowData odd="1" square="false" bggroup="1" min="0" max="1" tag="repeatSpeed" descr="Repeat speed"/>
-													<local:SoundListRowData odd="0" square="false" bggroup="0" min="-1" max="1" tag="phaserOffset" descr="Phaser offset"/>
-													<local:SoundListRowData odd="1" square="false" bggroup="0" min="-1" max="1" tag="phaserSweep" descr="Phaser sweep"/>
-													<local:SoundListRowData odd="0" square="false" bggroup="1" min="0" max="1" tag="lpFilterCutoff" descr="Low-pass filter cutoff"/>
-													<local:SoundListRowData odd="1" square="false" bggroup="1" min="-1" max="1" tag="lpFilterCutoffSweep" descr="Low-pass filter cutoff sweep"/>
-													<local:SoundListRowData odd="0" square="false" bggroup="1" min="0" max="1" tag="lpFilterResonance" descr="Low-pass filter resonance"/>
-													<local:SoundListRowData odd="1" square="false" bggroup="1" min="0" max="1" tag="hpFilterCutoff" descr="High-pass filter cutoff"/>
-													<local:SoundListRowData odd="0" square="false" bggroup="1" min="-1" max="1" tag="hpFilterCutoffSweep" descr="High-pass filter cutoff sweep"/>
-												</mx:ArrayList>            
-											</s:DataGroup>
-										</s:BorderContainer>
-									</s:VGroup>	
-									<s:VScrollBar viewport="{SoundParameterGroup}" height="100"/>
-
-								</s:HGroup>
-							</s:VGroup>
-					</s:NavigatorContent>
-					<s:NavigatorContent initialize="MixerPaneCreationComplete()" label="Layer" width="100%" height="100%">
-						<s:layout>
-							<s:BasicLayout/>
-						</s:layout>
-						<s:VGroup horizontalAlign="justify" bottom="0" top="0" verticalCenter="0" left="0" horizontalCenter="0" right="0" gap="0" id="Random">
-							<s:HGroup width="200" height="31" paddingTop="1" paddingLeft="1">
-								<s:Button label="Random"/>
-								<s:Button label="Mutate"/>
-								<mx:Spacer height="10" width="151"/>
-								<s:Button label="+" width="28" height="28" click="AddNewMixerLayer(event)"/>
-							</s:HGroup>
-							<s:List 
-								id="mixerListComponent"
-								  itemRenderer="myComponents.MixerRowRenderer"
-								   borderAlpha="0"
-								    dropEnabled="true"								 
-								 width="100%" height="344">
-								<s:layout>
-									<s:VerticalLayout horizontalAlign="justify" paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" gap="0"/>
-								</s:layout>
-							</s:List>
-							<s:List id="layerList"
-									requireSelection="true"
-									width="170" height="100%"
-									itemRenderer="myComponents.LayerListItemRenderer" 
-									contentBackgroundColor="#CCBDA1"
-								 	click="layerListSelectionChanged(event)"
-									 
-									/>
-						</s:VGroup>
-					</s:NavigatorContent>
-				</mx:TabNavigator>
-			</s:NavigatorContent>
-		</mx:ViewStack>
-		
-		<s:VGroup width="124" height="740" horizontalAlign="justify" paddingRight="5" paddingLeft="5" paddingTop="0" paddingBottom="5" y="-55">
-			<s:BorderContainer width="112" height="200" backgroundColor="#CCBDA1" contentBackgroundColor="#CCBDA1" backgroundImage="@Embed(source='resources/logo.png')">
-				<s:layout>
-					<s:VerticalLayout paddingLeft="0" paddingRight="29" paddingTop="0" paddingBottom="0" horizontalAlign="justify"/>
-				</s:layout>
-				<mx:Image height="197" id="equalizer"  width="83"/>
-			</s:BorderContainer>
-			<s:CheckBox label="Play On Change" id="playonchange" click="playOnChangeClick(event)" selected="true"/>
-			<s:Button label="Play" click="PlayClick(event)"/>
-			<s:HSlider		
-				id="volumeslider"
-				changeEnd="VolumeChanged(event)"
-				minimum="0"
-				maximum="2"
-				stepSize="0.01" 
+        <s:VGroup 
+            y="-55" width="124" height="740"
+            horizontalAlign="justify"
+            paddingBottom="5"
+            paddingLeft="5"
+            paddingRight="5"
+            paddingTop="0">
+            <s:BorderContainer 
+                width="112" height="200"
+                backgroundColor="#CCBDA1"
+                backgroundImage="@Embed(source='resources/logo.png')"
+                contentBackgroundColor="#CCBDA1">
+                <s:layout>
+                    <s:VerticalLayout 
+                        horizontalAlign="justify"
+                        paddingBottom="0"
+                        paddingLeft="0"
+                        paddingRight="29"
+                        paddingTop="0"/>
+                </s:layout>
+                <mx:Image id="equalizer"
+                    width="83" height="197"/>
+            </s:BorderContainer>
+            <s:CheckBox id="playonchange"
+                label="Play On Change"
+                selected="true"
+				valueCommit="globalState.OnPlayOnChangeChange(event)"
+				change="CommitGlobal()"
 				/>
-			<s:Label text="Playback Volume"/>
-			<mx:Spacer height="25"/>
-			<s:Button label="Export Wav" id="exportwav" click="SaveWave()"/>
-			<s:BorderContainer width="193" height="62" backgroundColor="#CCBDA1">
-				<s:layout>
-					<s:VerticalLayout paddingLeft="5" paddingRight="5" paddingBottom="5" paddingTop="5" horizontalAlign="justify" gap="5"/>
-				</s:layout>
-				<s:DropDownList id="samplerate" change="GlobalSettingCommit(event)"></s:DropDownList>
-				<s:DropDownList id="bitdepth" change="GlobalSettingCommit(event)"></s:DropDownList>
-			</s:BorderContainer>
-			<s:Button label="Load from disk" id="import_sfxr" click="clickLoadSound()"/>
-			<s:Button label="Save to disk" id="export_sfxr" click="clickSaveSound()"/>
-			<s:Button label="Copy" id="linkbutton" click="clickCopyButton()"/>
-			<s:Button label="Paste" id="linkbutton0" click="clickPasteButton()"/>
-			<s:Button label="Copy Link" id="linkbutton1" click="clickLinkButton()"/>
-		</s:VGroup>
-	</s:HGroup>
+            <s:Button 
+                label="Play"
+                click="PlayClick(event)"/>
+            <s:HSlider id="volumeslider"
+                maximum="2"
+                minimum="0"
+                stepSize="0.01"
+                changeEnd="VolumeChanged(event)"/>
+            <s:Label text="Playback Volume"/>
+            <mx:Spacer height="25"/>
+            <s:Button id="exportwav"
+                label="Export Wav"
+                click="SaveWave()"/>
+            <s:BorderContainer 
+                width="193" height="62"
+                backgroundColor="#CCBDA1">
+                <s:layout>
+                    <s:VerticalLayout 
+                        horizontalAlign="justify"
+                        paddingBottom="5"
+                        paddingLeft="5"
+                        paddingRight="5"
+                        paddingTop="5"
+                        gap="5"/>
+                </s:layout>
+                <s:DropDownList id="samplerate"
+					valueCommit="globalState.OnSampleRateChange(event)"
+					change="CommitGlobal()"
+					requireSelection="true">
+                </s:DropDownList>
+                <s:DropDownList id="bitdepth"
+					valueCommit="globalState.OnBitDepthChange(event)"
+					change="CommitGlobal()"
+					requireSelection="true">
+                </s:DropDownList>
+            </s:BorderContainer>
+            <s:Button id="import_sfxr"
+                label="Load from disk"
+                click="clickLoadSound()"/>
+            <s:Button id="export_sfxr"
+                label="Save to disk"
+                click="clickSaveSound()"/>
+            <s:Button id="linkbutton"
+                label="Copy"
+                click="clickCopyButton()"/>
+            <s:Button id="linkbutton0"
+                label="Paste"
+                click="clickPasteButton()"/>
+            <s:Button id="linkbutton1"
+                label="Copy Link"
+                click="clickLinkButton()"/>
+        </s:VGroup>
+    </s:HGroup>
 </s:Application>

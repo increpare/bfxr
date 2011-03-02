@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				
+				 contentBackgroundColor="#CCBDA1" height="74" width="340"
+				  removedFromStage="OnRemoved(event)"				  
+				  creationComplete="CreationComplete(event)"
+				  dataChange="DataChanged(event)"
+				  symbolColor="#CCBDA1">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			import Synthesis.SfxrSynth;
+			
+			import mx.events.FlexEvent;
+			import mx.events.SandboxMouseEvent;
+			
+			import spark.components.List;
+			import spark.skins.spark.CheckBoxSkin;
+			
+			private function updateFields():void {
+		
+			}
+			
+			private function OnRemoved(event:Event):void
+			{
+				if (data!=null)
+				{
+					var synth:SfxrSynth = data.synth as SfxrSynth;
+					synth.stop();
+				}
+			}
+			
+			private function SliderValueChange(event:Event):void
+			{
+				/*
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				app.sliderChanged(event);
+				*/
+			}
+			
+			
+			private function OnLockButtonChanged(event:Event):void
+			{
+				/*
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				app.lockChanged(data.tag,  locked.selected);
+				*/
+			}
+			
+			private function PlayClick():void
+			{
+				if (dropdown.selectedIndex>=0)
+				{					
+					PlayStart();
+					data.synth.play(PlayCallback);
+				}
+			}			
+			
+			private function CreationComplete(event:Event):void
+			{
+				if (dropdown.dataProvider==null)
+				{
+					var app:sfxr_interface = this.parentApplication as sfxr_interface;
+					dropdown.dataProvider=app.soundItems;															
+					TryUpdateDropdown(false,false);
+				}
+			}
+			
+			
+			private function DataChanged(event:Event = null):void
+			{	
+				if (this.data ==null)
+					return;
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				
+				//not sure I need both undefined && null here, but whatever
+				if (this.data.synth == undefined || this.data.synth==null)
+				{
+					this.data.synth = new SfxrSynth();
+					
+					this.data.synth.addEventListener(SfxrSynth.PLAY_COMPLETE,PlayStop,false,0,true);				
+					this.data.synth.addEventListener(SfxrSynth.CACHED,OnSynthCached,false,0,true);	
+					
+					
+					this.data.absolutePlayCallback= this.PlayCallbackAbsolute;
+					this.data.PlayStartCallback = this.PlayStart;
+					this.data.PlayStopCallback = this.PlayStop;
+					this.data.SetDilationCallback = this.SetDilation;
+					this.data.CalcLengthCallback = this.CalcLength;
+						
+				}
+								
+				onsetSliderPosition = data.onset;
+				volumeslider.value=data.amplitudemodifier;
+				
+				if (dropdown.dataProvider!=null)
+				{
+					TryUpdateDropdown();
+				}
+				
+				/*
+				slider.minimum= Number(data.min);
+				slider.maximum= Number(data.max);			
+				
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				app.RegisterParameterSlider(this);
+				app.RegisterLockableParam(data.tag,this.locked);
+				(slider.skin as TickedHSliderSkin).track.skin.invalidateDisplayList();
+				
+				if (data.square==true)
+				{
+				app.RegisterSquareSlider(fieldlabel, slider);
+				}
+				*/
+				
+			}
+			
+			
+			private function TryUpdateDropdown(play:Boolean = true, modified:Boolean = false):void
+			{				
+				if (data==null)
+					return;
+				
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				
+				for (var i:int=0;i<app.soundItems.length;i++)
+				{
+					var o:Object = app.soundItems.getItemAt(i);
+					if (o.id==this.data.id)
+					{
+						if (dropdown.selectedIndex!=i)
+						{
+							dropdown.selectedIndex=i;
+							DropdownChange(null,play,modified);
+						}
+						break;
+					}
+				}					
+			}
+			private function LabelClick():void
+			{			
+				/*
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				app.ResetParameterValue(data.tag);
+				*/
+			}			
+			
+			private function DropdownChange(event:Event = null,play:Boolean=true, modified:Boolean=true):void
+			{
+				Deselect.enabled = dropdown.selectedIndex>=0;
+				
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				
+				var synth:SfxrSynth = data.synth;
+				
+				if (dropdown.selectedIndex>=0)
+				{
+					var row:Object = dropdown.dataProvider.getItemAt(dropdown.selectedIndex);
+					
+					data.synth.params.setSettingsString(row.data);
+					
+					
+					data.id=row.id;
+					data.cached=false;
+					cachingtext.visible=true;
+					sliderimagecontainer.visible=false;
+					
+					data.synthset=true;
+				}//otherwise, clear the sound
+				else
+				{
+					data.id=-1;
+					data.cached=false;
+					sliderimagecontainer.visible=false;
+					data.synthset=false;
+				}
+					
+				if (play && app.playonchange.selected)
+				{
+					PlayStart();
+					synth.play(PlayCallback);
+				}
+				else
+				{
+					synth.cacheSound()
+				}
+				
+				if (modified)
+				{
+					app.mixerInterface.mixer_id_soundChanged(null);
+				}
+			}
+			
+			private var dilation:Number=15;
+			
+			/** returns -1 if still buffering, &c. */
+			private function CalcLength():Number
+			{
+				var synth:SfxrSynth = data.synth;
+				if (synth.Dirty())
+					return -1;
+				var length:Number = synth.cachedWave.length/(4*44100.0);
+				return length;
+			}
+			
+			public function SetDilation(newDilation:Number):void
+			{
+				dilation=newDilation;
+				var synth:SfxrSynth = data.synth;
+				if (!synth.Dirty())
+				{
+					DrawSynthImage();
+				}
+			}
+			
+			private function DeselectClick():void
+			{
+				dropdown.selectedIndex=-1;
+				DropdownChange();
+			}
+			
+			private function OnSynthCached(event:Event):void
+			{
+				if (data==null)
+					return;
+				
+				data.cached=true;
+				this.cachingtext.visible=false;
+				sliderimagecontainer.visible=true;
+				
+				DrawSynthImage();
+				
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				app.mixerInterface.RecalcDilation();
+			}
+			
+			private function DrawSynthImage():void
+			{
+				trace("drawing synth image");
+				//200 points should be enuff
+				//sliderimage.width=synth.
+				var synth:SfxrSynth = data.synth;
+				var cachedWave:ByteArray = synth.cachedWave;
+				var length:Number = cachedWave.length/(4*44100.0);
+				
+				sliderimage.width=length*dilation;//let's just say this is the case for now
+				var d:int = int(cachedWave.length/(4*sliderimage.width))*4;
+				var points : Vector.<Number> = new Vector.<Number>();
+				var amplitudemodifier:Number =  data.amplitudemodifier;
+				for (var i:int=0;i<sliderimage.width-1;i++)
+				{
+					//sample fivepoints in this range, and take the max
+					
+					cachedWave.position = int(cachedWave.length/(sliderimage.width*4))*i*4; 
+					
+					var curmax:Number=0;
+					for (var j:int=0;j<10;j++)
+					{
+						var cand:Number = Math.abs(cachedWave.readFloat());
+						if (cand>curmax)
+							curmax=cand;
+						cachedWave.position=cachedWave.position+int(d/(4*10))*4-4;
+					}
+					//scale + clamp
+					curmax=Math.min(curmax*amplitudemodifier,1);
+					points.push(curmax);
+				}
+				
+				/*				
+				var rightmostzero:int=points.length;
+				//find rightmost non-zero value
+				for (i=points.length-1;i>=0;i--)
+				{
+					if (Math.abs(points[i])>0.0001)
+					{
+						rightmostzero=Math.min(i+1,points.length);
+						break;
+					}
+				}*/
+				
+				sliderimage.width=points.length;
+				sliderimage.graphics.clear();
+				sliderimage.graphics.beginFill(0xe7d1a7,1.0);
+				sliderimage.graphics.drawRect(0,0,sliderimage.width,sliderimage.height);
+				sliderimage.graphics.beginFill(0x000000,1.0);
+				for (i=0;i<sliderimage.width;i++)
+				{					
+					sliderimage.graphics.drawRect(i,sliderimage.height/2-points[i]*sliderimage.height/2,1,2*points[i]*sliderimage.height/2);
+				}
+
+			}
+			
+			private function SynthRefresh():void
+			{
+				var synth:SfxrSynth = data.synth;
+				if (!synth.Dirty())
+					return; // dont' need to do anything
+				
+				//otherwise, need to cache
+				
+				data.cached=false;
+				this.cachingtext.visible=true;
+				sliderimagecontainer.visible=false;
+				
+				
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				if (app.playonchange.selected)
+				{					
+					PlayStart();
+					synth.play(PlayCallback);
+				}
+				else
+				{
+					synth.cacheSound(function():void{},150)
+				}				
+			}
+			
+			private function volumechanged(event:Event):void
+			{
+				data.amplitudemodifier=volumeslider.value;
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;								
+				app.mixerInterface.mixer_volume_sliderChanged(event);
+				DrawSynthImage();
+			}						
+			
+			private var sliderClickPosition:Point;
+			
+			private function sliderImageClick(event:MouseEvent):void
+			{
+				sliderClickPosition = sliderimage.globalToLocal(new Point(event.stageX,event.stageY));
+				
+				
+				systemManager.getSandboxRoot().addEventListener(MouseEvent.MOUSE_MOVE, 
+					system_SliderMouseMoveHandler, true);
+				systemManager.getSandboxRoot().addEventListener(MouseEvent.MOUSE_UP, 
+					system_SliderMouseUpHandler, true);
+				systemManager.getSandboxRoot().addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, 
+					system_SliderMouseUpHandler);				
+			}
+			
+			private function sliderImageContainerClick(event:MouseEvent):void
+			{
+				sliderClickPosition = new Point(sliderimage.width/2);
+				
+				systemManager.getSandboxRoot().addEventListener(MouseEvent.MOUSE_MOVE, 
+					system_SliderMouseMoveHandler, true);
+				systemManager.getSandboxRoot().addEventListener(MouseEvent.MOUSE_UP, 
+					system_SliderMouseUpHandler, true);
+				systemManager.getSandboxRoot().addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, 
+					system_SliderMouseUpHandler);
+				
+				system_SliderMouseMoveHandler(event);
+			}
+			
+			private function system_SliderMouseMoveHandler(event:MouseEvent):void
+			{
+				var pos:Point = new Point(event.stageX,event.stageY);
+				
+				var targetPoint:Point = new Point(pos.x-sliderClickPosition.x,pos.y-sliderClickPosition.y);
+				
+				var containerPosGlobal:Point = sliderimagecontainer.parent.localToGlobal(new Point(sliderimagecontainer.x,sliderimagecontainer.y));
+				
+				//clamp targetPoint
+				if (targetPoint.x < containerPosGlobal.x)
+				{
+					targetPoint.x = containerPosGlobal.x;
+				}
+				if (targetPoint.x+sliderimage.width >= containerPosGlobal.x+sliderimagecontainer.width-1)
+				{
+					targetPoint.x = containerPosGlobal.x+sliderimagecontainer.width-sliderimage.width-2;
+				}
+			
+				targetPoint = sliderimagecontainer.globalToLocal(targetPoint);
+			
+				sliderimage.x=int(targetPoint.x);
+			}
+			
+			private function system_SliderMouseUpHandler(event:MouseEvent):void
+			{
+				systemManager.getSandboxRoot().removeEventListener(MouseEvent.MOUSE_MOVE, 
+					system_SliderMouseMoveHandler, true);
+				systemManager.getSandboxRoot().removeEventListener(MouseEvent.MOUSE_UP, 
+					system_SliderMouseUpHandler, true);
+				systemManager.getSandboxRoot().removeEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, 
+					system_SliderMouseUpHandler);
+				
+				SliderImageChangeEnd();		
+			}
+			
+			private function PlayCallback(playingtime:Number):void
+			{
+				playline.x=sliderimage.x+int(playingtime*dilation);
+			}
+			
+			public function PlayCallbackAbsolute(playingtime:Number):void
+			{
+				playline.x=int(playingtime*dilation);
+			}
+			
+			public function PlayStart():void
+			{
+				playline.visible=true;
+			}
+			
+			public function PlayStop(event:Event = null):void
+			{
+				playline.visible=false;
+			}
+			
+			private function SliderImageChangeEnd():void
+			{				
+				data.onset=onsetSliderPosition;		
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;				
+				app.mixerInterface.mixer_onset_sliderChanged();
+			}
+			
+			public var onsettimescale:Number=1;
+			
+			public function get onsetSliderPosition():Number
+			{
+				var left:Number = 0;
+				var right:Number = (this.sliderimagecontainer.width-this.sliderimage.width);
+				
+				return this.sliderimage.x*onsettimescale/(dilation);
+			}
+			
+			public function set onsetSliderPosition(n:Number):void
+			{			
+				var left:Number = 0;
+				var right:Number = (this.sliderimagecontainer.width-this.sliderimage.width);
+				
+				sliderimage.x = n/(onsettimescale/(dilation));
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:Rect top="0" verticalCenter="0" bottom="0" left="0" horizontalCenter="0" right="0">
+		<s:fill><s:SolidColor color="{ ((data.bggroup=='0') ? 0xffccbda1 : 0xffe7d1a7)  }" /></s:fill>	
+	</s:Rect>
+	
+	<s:BorderContainer width="191" backgroundColor="0xccbda1" backgroundAlpha="1.0" height="74" y="0" right="0" mouseDown="sliderImageContainerClick(event)"  id="sliderimagecontainer" visible="false">		
+		<s:layout>
+			<s:BasicLayout/>
+		</s:layout>
+		<mx:Image x="0" y="0"  mouseDown="sliderImageClick(event)" scaleContent="false" width="76" height="100%" id="sliderimage"/>
+		
+		
+		
+		<s:Rect top="-1" bottom="-2" left="-1" right="-1">
+			<s:stroke>
+				<mx:SolidColorStroke color="0"/>
+			</s:stroke>		
+		</s:Rect>	
+		
+		<s:Line id="playline" top="0" xFrom="0" yFrom="0" xTo="0"  yTo="71"  x="0" visible="false">
+			<s:stroke>
+				<mx:SolidColorStroke color="0" alpha="1.0"/>			
+			</s:stroke>
+		</s:Line>
+	</s:BorderContainer>
+	
+	
+	<s:Rect top="0" bottom="-1" left="0" right="0">
+		<s:stroke>
+			<mx:SolidColorStroke color="0"/>
+		</s:stroke>		
+	</s:Rect>	
+	<s:VSlider x="130" y="10" height="54" id="volumeslider" value="1" minimum="0" maximum="2" changeEnd="volumechanged(event)" stepSize=".01"/>
+	<s:DropDownList id="dropdown" x="14" y="10" change="DropdownChange(event)" requireSelection="false"></s:DropDownList>
+	<s:Button x="14" y="43" label="Play" click="PlayClick()"/>
+	<s:Button x="92" y="43" id="Deselect" label="X" click="DeselectClick()" width="30" enabled="false"/>
+	<s:Label x="207" y="10" text="Caching" id="cachingtext" width="94" height="54" verticalAlign="middle" visible="false"/>
+
+</s:ItemRenderer>

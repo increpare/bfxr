@@ -2,6 +2,7 @@ package
 {
 	import flash.events.EventDispatcher;
 	import flash.utils.ByteArray;
+	import Synthesis.SfxrSynth;
 
 	//class mainly to stop warning messages about being unable to bind properties
 	[Bindable]

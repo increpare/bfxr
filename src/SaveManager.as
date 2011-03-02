@@ -3,6 +3,7 @@ package
 	import flash.net.SharedObject;
 	
 	import mx.collections.ArrayList;
+	import Synthesis.SfxrSynth;
 	
 	public class SaveManager
 	{
@@ -39,14 +40,14 @@ package
 			_saveDat = null;		
 		}
 		
-		public function commitGlobal(samplerate:int,bitdepth:int,playonchange:Boolean, selectedSoundItemID:int,selectedLayerItemID:int ):void
+		public function commitGlobal(gs:GlobalState ):void
 		{
 			//don't need to worry about tripping over other people's values			
-			_saveDat.data.samplerate = samplerate;
-			_saveDat.data.bitdepth = bitdepth;
-			_saveDat.data.playonchange = playonchange;
-			_saveDat.data.selectedSoundItemID = selectedSoundItemID;	
-			_saveDat.data.selectedLayerItemID = selectedLayerItemID;			
+			_saveDat.data.samplerate = gs.sampleRate;
+			_saveDat.data.bitdepth = gs.bitDepth;
+			_saveDat.data.playonchange = gs.playOnChange;
+			_saveDat.data.selectedSoundItemID = gs.selectedSoundItemID;	
+			_saveDat.data.selectedLayerItemID = gs.selectedLayerItemID;			
 			OnChange();	
 		}
 		
