@@ -111,7 +111,7 @@ package
 			throw new Error("nothing found with id " + sd.id);
 		}
 		
-		public function RemoveItemWithID(id:int):void
+		public function RemoveSoundItemWithID(id:int):void
 		{
 			var sl:Array = _saveDat.data.soundList as Array;
 			for (var i:int=0;i<sl.length;i++)
@@ -120,6 +120,23 @@ package
 				if (o.id==id)
 				{
 					sl.splice(i,1);
+					OnChange();
+					return;
+				}
+			}			
+			
+			throw new Error("nothing found with id " + id);
+		}
+		
+		public function RemoveLayerItemWithID(id:int):void
+		{
+			var ll:Array = _saveDat.data.layerList as Array;
+			for (var i:int=0;i<ll.length;i++)
+			{
+				var o:Object  = ll[i];
+				if (o.id==id)
+				{
+					ll.splice(i,1);
 					OnChange();
 					return;
 				}
@@ -178,6 +195,15 @@ package
 				if (soundarray[s].id>curmax)
 				{
 					curmax=soundarray[s].id;
+				}
+			}
+			
+			var layerarray:Array = _saveDat.data.layerList;
+			for(s in layerarray)
+			{
+				if (layerarray[s].id>curmax)
+				{
+					curmax=layerarray[s].id;
 				}
 			}
 			

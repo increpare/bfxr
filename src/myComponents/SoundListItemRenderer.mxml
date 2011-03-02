@@ -96,8 +96,6 @@
 			
 			protected function removeItem(event:Event):void
 			{
-				var list:ListBase = this.owner as ListBase;
-				
 				var app:sfxr_interface = parentApplication as sfxr_interface;
 				app.RemoveFromSoundList(data);
 				event.stopImmediatePropagation();

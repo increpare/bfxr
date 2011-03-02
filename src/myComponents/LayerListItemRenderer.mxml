@@ -3,7 +3,8 @@
 				xmlns:s="library://ns.adobe.com/flex/spark" 
 				xmlns:mx="library://ns.adobe.com/flex/mx" 
 				autoDrawBackground="true"
-				creationComplete="onCreationComplete()">
+				creationComplete="onCreationComplete()"
+				>
 	
 	<fx:Script>
 		<![CDATA[
@@ -103,7 +104,7 @@
 				var list:ListBase = this.owner as ListBase;
 				
 				var app:sfxr_interface = parentApplication as sfxr_interface;
-				app.RemoveFromSoundList(data);
+				app.RemoveFromLayerList(data);
 				event.stopImmediatePropagation();
 			}	
 			

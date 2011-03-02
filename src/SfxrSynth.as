@@ -374,6 +374,7 @@
 							_cachingNormal = false;							
 							
 							this.dispatchEvent(new Event(SfxrSynth.CACHED));
+							dispatchEvent(new Event(SfxrSynth.PLAY_COMPLETE));
 						}
 						
 						_waveDataBytes = _cachedWave.length - _waveDataPos;
@@ -460,6 +461,7 @@
 				}
 				
 				this.dispatchEvent(new Event(SfxrSynth.CACHED));
+				dispatchEvent(new Event(SfxrSynth.PLAY_COMPLETE));
 			}
 		}
 		
@@ -556,6 +558,9 @@
 							_cachedCallback = null;
 							_cacheTicker.removeEventListener(Event.ENTER_FRAME, cacheSection);
 							
+							this.dispatchEvent(new Event(SfxrSynth.CACHED));
+							dispatchEvent(new Event(SfxrSynth.PLAY_COMPLETE));
+							
 							return;
 						}
 					}
@@ -574,6 +579,7 @@
 						_cacheTicker.removeEventListener(Event.ENTER_FRAME, cacheSection);
 						
 						this.dispatchEvent(new Event(SfxrSynth.CACHED));
+						dispatchEvent(new Event(SfxrSynth.PLAY_COMPLETE));
 						
 						return;
 					}
@@ -927,7 +933,7 @@
 								_sample += overtonestrength*(_pinkNoiseBuffer[uint(tempphase * 32 / int(_periodTemp))%32]);
 								break;
 							}
-							case 6: // Low-res Noise
+							case 6: // lolo
 							{
 								amp = tempphase/_periodTemp;								
 								_sample += overtonestrength*(Math.abs(1-amp*amp*amp*2)-1);

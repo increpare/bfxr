@@ -48,6 +48,7 @@ package
 		
 		public function AddTrack(b:MixerSoundData):void
 		{
+			trace("adding track to mixer w/ id " + b.id);
 			sourcesounds.push(b);
 			_dirty=true;
 		}

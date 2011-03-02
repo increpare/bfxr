@@ -15,6 +15,9 @@
 			import mx.events.CollectionEventKind;
 			import mx.events.FlexEvent;
 			import mx.events.PropertyChangeEvent;
+			import mx.logging.Log;
+			import mx.logging.LogEventLevel;
+			import mx.logging.targets.TraceTarget;
 			import mx.utils.URLUtil;
 			
 			import myComponents.SoundParameterRowRenderer;
@@ -118,6 +121,8 @@
 				//might want to be conservative/smart about how the follow code gets called
 				if (tabs.selectedIndex==1)
 				{
+					
+					trace("refreshing layer pane");
 					this.mixerlist.removeAll();
 					//this.mixerList.addIte .removeAll();
 					for (i=0;i<_mixer.params.items.length;i++)
@@ -132,6 +137,7 @@
 						
 						//layerItems.ad
 					}
+					
 				}
 			}
 			
@@ -201,7 +207,8 @@
 			
 			private var _mixer: Mixer;
 			public function MixerPlay():void
-			{				
+			{							
+				trace("mixerplay");
 				_mixer.Clear();
 				for (var i:int=0;i<mixerlist.length;i++)
 				{
@@ -220,6 +227,7 @@
 			
 			public function RecalcDilation():void
 			{
+				trace("recalcdilation");
 				var maxlength:Number = 0.1;
 				//step 1: find max dilation
 				for (var i:int=0;i<mixerlist.length;i++)
@@ -255,16 +263,17 @@
 			
 			public function MixerPlayStart():void
 			{
+				trace("mixerplaystart");
 				for(var i:int=0;i<this.mixerlist.length;i++)
 				{
 					var mled:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
-					mled.PlayStartCallback();
-					
+					mled.PlayStartCallback();					
 				}
 			}
 			
 			public function MixerPlayCallback(n:Number):void
 			{
+				
 				for(var i:int=0;i<this.mixerlist.length;i++)
 				{
 					var mled:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
@@ -274,6 +283,8 @@
 			
 			public function MixerPlayStop(event:Event=null):void
 			{
+				
+				trace("mixerplaystop");
 				for(var i:int=0;i<this.mixerlist.length;i++)
 				{
 					var mled:MixerListEntryDat = mixerlist.getItemAt(i) as MixerListEntryDat;
@@ -292,6 +303,8 @@
 			
 			public function mixer_volume_sliderChanged(e:Event=null):void
 			{
+				
+				trace("mixervolumesliderchanged");
 				///uch, just update all the volumes
 				for (var i:int=0;i<this.mixerlist.length;i++)
 				{
@@ -304,6 +317,7 @@
 			
 			public function mixer_onset_sliderChanged(e:Event=null):void
 			{
+				trace("mixeronsetsliderchanged");
 				///uch, just update all the volumes
 				for (var i:int=0;i<this.mixerlist.length;i++)
 				{
@@ -316,6 +330,7 @@
 			
 			public function mixer_onset_soundidChanged(e:Event=null):void
 			{
+				trace("mixer_onset_soundidChanged");
 				///uch, just update all the volumes
 				for (var i:int=0;i<this.mixerlist.length;i++)
 				{
@@ -396,7 +411,33 @@
 			}
 			
 			private function init():void 
-			{		
+			{					
+				
+				/* Create a target. */
+				var logTarget:TraceTarget = new TraceTarget();
+				
+				/* Log only messages for the classes in the mx.rpc.* and 
+				mx.messaging packages. */
+				logTarget.filters=["*"];
+				
+				/* Log all log levels. */
+				logTarget.level = LogEventLevel.ALL;
+				
+				/* Add date, time, category, and log level to the output. */
+				logTarget.includeDate = true;
+				logTarget.includeTime = true;
+				logTarget.includeCategory = true;
+				logTarget.includeLevel = true;
+								
+				/* Begin logging. */
+				Log.addTarget(logTarget);
+
+				
+				
+				
+				
+				
+				trace("init");
 				_time.addEventListener(TimerEvent.TIMER, timerHandler);  
 				_time.start();  
 
@@ -591,7 +632,7 @@
 				var sd:SoundData = soundItems.getItemAt(index) as SoundData;
 				soundItems.removeItemAt(index);
 				//items.dispatchEvent(FlexEvent.REMOVE);
-				_saveManager.RemoveItemWithID(sd.id);					
+				_saveManager.RemoveSoundItemWithID(sd.id);					
 				
 				var newindex:int=index;
 				if (newindex==soundItems.length)
@@ -605,15 +646,15 @@
 					return;
 				
 				var index:int = layerItems.getItemIndex(dat);
-				var sd:SoundData = layerItems.getItemAt(index) as SoundData;
+				var ld:LayerData = layerItems.getItemAt(index) as LayerData;
 				layerItems.removeItemAt(index);
 				//items.dispatchEvent(FlexEvent.REMOVE);
-				_saveManager.RemoveItemWithID(sd.id);					
+				_saveManager.RemoveLayerItemWithID(ld.id);					
 				
 				var newindex:int=index;
 				if (newindex==layerItems.length)
 					newindex--;					
-				SelectItemInSoundList(newindex,index==layerItems.length);			
+				SelectItemInLayerList(newindex,index==layerItems.length);			
 			}
 			
 			public function RenameSoundData(sd:SoundData):void
@@ -638,7 +679,7 @@
 				_saveManager.PushLayerList(layerItems);
 			}
 			
-			private function AddToSoundList(_name:String,select:Boolean=false,triggerplay:Boolean=true):void
+			private function AddToSoundList(_name:String,select:Boolean=false,triggerplay:Boolean=true,newID:int=-1):void
 			{
 				this.lastmanipulation=_name;
 				//loop through existing objects and see if name is already in use
@@ -673,7 +714,10 @@
 
 				soundItems.addItem(entry);				
 				
-				_saveManager.PushSound(new SoundData(entry.label,entry.data,_saveManager.GetID()));
+				if (newID==-1)
+					newID=_saveManager.GetID();
+				
+				_saveManager.PushSound(new SoundData(entry.label,entry.data,newID));
 
 				if (select)
 				{
@@ -682,8 +726,12 @@
 			}
 
 			
-			private function AddToLayerList(_name:String,select:Boolean=false,triggerplay:Boolean=true):void
+			private function AddToLayerList(_name:String,select:Boolean=false):void
 			{
+				trace("addtolayerlist");
+				//moved this from a param to a variable for now - due to caching, don't see how it can work..
+				var triggerplay:Boolean=false;
+				
 				this.lastmanipulation=_name;
 				//loop through existing objects and see if name is already in use
 				var currentindex:int=0;
@@ -734,6 +782,7 @@
 			
 			private function SelectItemInLayerList(i:int,triggerplay:Boolean=true):void
 			{				
+				trace("selecting item in layer list " + i);
 				layerList.selectedIndex=i;
 				layerListSelectionChanged(null,triggerplay);
 				callLater(function():void { layerList.ensureIndexIsVisible(i); });
@@ -762,6 +811,7 @@
 			
 			private function SelectItemInLayerListByID(id:int):void
 			{				
+				trace("selecting item in layer list by id" + i);
 				if (id==-1)
 					layerList.selectedIndex=-1;
 				
@@ -795,6 +845,7 @@
 			/** returns -1 if no item found */
 			private function GetIndexOfLayerItemWithID(id:int):int
 			{
+				trace("get layer index with id" + id);
 				for (var i:int=0;i<layerItems.length;i++)
 				{
 					var o:Object = layerItems.getItemAt(i);
@@ -811,7 +862,7 @@
 				
 				if (tabs.selectedIndex==1)
 				{
-					AddToSoundList(b.label);
+					AddToSoundList(b.label,true);
 				}
 				_synth.params[b.id]();
 				lastmanipulation=b.label;
@@ -899,6 +950,7 @@
 			
 			private function clickRevertLayer():void
 			{
+				trace("revert layer");
 				//save changes
 				var index:int = this.soundList.selectedIndex;
 				
@@ -930,7 +982,7 @@
 						DisableApplyButton(false);
 						break;
 					case 1:
-						AddToLayerList("Composite",true,false);
+						AddToLayerList("Composite",true);
 						DisableApplyButton(false);
 						break;
 				}
@@ -972,6 +1024,7 @@
 			
 			private function layerListSelectionChanged(event:Event, triggerPlay:Boolean=true):void
 			{
+				trace("layer list selection changed");
 				if (layerList.selectedIndex==-1)
 				{					
 					if (layerItems.length==0)
@@ -1321,17 +1374,111 @@
 			
 			protected function clickCopyButton():void
 			{
-				System.setClipboard(_synth.params.getSettingsString());
+				switch (tabs.selectedIndex)
+				{
+					case 0:
+						System.setClipboard(_synth.params.getSettingsString());
+						break;
+					case 1:
+						CopyFromMixer();
+						break;
+				}
 			}
 			
+			protected function CopyFromMixer():void
+			{
+				var result:String = "";
+				//mixer string first
+				result = _mixer.params.getSettingsString();
+				
+				var o:Array  = new Array();
+				for (var i:int =0;i<_mixer.params.items.length;i++)
+				{
+					var mpi:MixerItemParams = _mixer.params.items[i];
+					
+					if (mpi.id in o == false)
+					{
+						var soundindex:int =  GetIndexOfSoundItemWithID(mpi.id);
+						o[mpi.id]=(soundItems.getItemAt(soundindex) as SoundData).data;
+					}
+				}
+				
+				for (var s:String in o)
+				{
+					result+="|"+s+","+ o[s];
+				}
+				
+				System.setClipboard(result);
+			}
 			
 			protected function clickPasteButton():void
 			{
 				var pasted:String = ExternalInterface.call('function(){return prompt();}');
-				AddToSoundList("Paste",true);
-				_synth.params.setSettingsString(pasted);
+				if (pasted.indexOf("|")==-1)
+				{
+					AddToSoundList("Paste",true);
+					_synth.params.setSettingsString(pasted);
+					UIUpdateTrigger();
+					OnSoundParameterChanged(true,false);
+					tabs.selectedIndex=0;
+				}
+				else
+				{
+					PasteLayer(pasted);
+					tabs.selectedIndex=1;
+				}
+			}
+			
+			private function PasteLayer(data:String):void
+			{
+				var chunks:Array = data.split("|");
+				//first part is layer data itself
+				_mixer.params.items = new Vector.<MixerItemParams>();
+				
+				trace(" mix description  = "+chunks[0]);
+				//will need to update the IDs here as I read the other strings in, in case there're clashes
+				_mixer.params.setSettingsString(chunks[0]);
+				
+				for (var i:int=1;i<chunks.length;i++)
+				{
+					var chunk:String = chunks[i];
+					var firstcomma:int = chunk.indexOf(",");
+					var idpart:int = int(chunk.substr(0,firstcomma));
+					var descriptionpart:String = chunk.substr(firstcomma+1);
+					if (GetIndexOfSoundItemWithID(idpart))
+					{
+						var newid:int = _saveManager.GetID();
+						//rename id in mixer
+						for (var j:int=0;j<_mixer.params.items.length;j++)
+						{
+							if (_mixer.params.items[j].id==idpart)
+							{
+								_mixer.params.items[j].id=newid;
+								//there could be several uses of this id, so shouldn't break;
+							}
+						}
+						idpart=newid;
+					}
+
+					//now that everything's added, can paste sound in as normal(?)
+					
+					
+					AddToSoundList("Sound",true,true,idpart);
+					trace(" sound description  = "+descriptionpart); 
+					_synth.params.setSettingsString(descriptionpart);
+					
+					OnSoundParameterChanged(false,false);
+					
+				}
+				
+				//now push the  mixer settings and load them as if you had clicked on them
+				AddToLayerList("Pasted",true);
+				
+				
 				UIUpdateTrigger();
-				OnSoundParameterChanged(true,false);
+				
+				DisableApplyButton(false);	
+				
 			}
 			
 			private function OnTabChanged(event:Event):void
@@ -1375,20 +1522,30 @@
 			protected function AddNewMixerLayer(event:MouseEvent):void
 			{				
 				this.mixerlist.addItemAt(new MixerListEntryDat(-1),0);
-				_mixer.params.items.splice(0,0,new MixerItemParams(-1,0,0));
+				_mixer.params.items.splice(0,0,new MixerItemParams(-1,0,1));
 				
 				
 				OnLayerParameterChanged(false);	
 			}
 			
 			public function mixer_on_item_removed(audible:Boolean,dat:Object):void
-			{				
-				var index:int = layerItems.getItemIndex(dat);
+			{							
+				//if (mixerlist.length==1)
+				//	return;
+				
+				var index:int =  mixerlist.getItemIndex(dat);
+				var mled:MixerListEntryDat = mixerlist.getItemAt(index) as MixerListEntryDat;
+				mixerlist.removeItemAt(index);
+				//items.dispatchEvent(FlexEvent.REMOVE);
+												
+				this.OnLayerParameterChanged(true,true);
+				
+			/* 	var index:int = layerItems.getItemIndex(dat);
 				
 				layerItems.removeItemAt(index);
 				_mixer.params.items.splice(index,1);
 				
-				OnLayerParameterChanged(audible,true);
+				OnLayerParameterChanged(audible,true); */
 			}
 
 		]]>
@@ -1470,7 +1627,7 @@
 						itemRenderer="myComponents.SoundListItemRenderer" 
 						contentBackgroundColor="#CCBDA1"
 					 	click="soundListSelectionChanged(event)"
-						 
+						requireSelection="true"
 						/>
 							
 				
@@ -1565,7 +1722,7 @@
 								</s:HGroup>
 							</s:VGroup>
 					</s:NavigatorContent>
-					<s:NavigatorContent creationComplete="MixerPaneCreationComplete()" label="Layer" width="100%" height="100%">
+					<s:NavigatorContent initialize="MixerPaneCreationComplete()" label="Layer" width="100%" height="100%">
 						<s:layout>
 							<s:BasicLayout/>
 						</s:layout>
@@ -1587,7 +1744,7 @@
 								</s:layout>
 							</s:List>
 							<s:List id="layerList"
-									
+									requireSelection="true"
 									width="170" height="100%"
 									itemRenderer="myComponents.LayerListItemRenderer" 
 									contentBackgroundColor="#CCBDA1"

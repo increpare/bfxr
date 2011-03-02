@@ -13,6 +13,7 @@ package
 		
 		public function getSettingsString():String
 		{
+			trace("get mixer settings string");
 			var result:String = "";
 			for (var i:int=0;i<this.items.length;i++)
 			{
@@ -26,6 +27,7 @@ package
 		
 		public function setSettingsString(settings:String):Boolean
 		{
+			trace("set mixer settings string");
 			//stop all caching
 			
 			//remove everything
