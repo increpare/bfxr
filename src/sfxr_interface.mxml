@@ -791,8 +791,8 @@
                 synthInterface.setSettingsString(row.data);
 
                 CommitGlobal();
+				OnSoundParameterChanged(triggerPlay, false);
 				synthInterface.UIUpdateTrigger();
-                OnSoundParameterChanged(triggerPlay, false);
 
                 if (row.modified)
                 {
@@ -976,6 +976,9 @@
             protected function clickPasteButton():void
             {
                 var pasted:String = ExternalInterface.call('function(){return prompt();}');
+				if (pasted==null)
+					return;
+				
                 if (pasted.indexOf("|") == -1)
                 {
                     AddToSoundList("Paste", true);
@@ -1203,8 +1206,7 @@
                                     x="0" y="0" width="100%" height="100%" paddingLeft="2">
                                     <s:CheckBox id="lockwave"
                                         toolTip="Lock field during randomization/mutation?"
-                                        change="synthInterface.WaveTypeLockClicked()"
-                                        creationComplete="synthInterface.RegisterWaveTypeLock(lockwave)"/>
+                                        change="synthInterface.WaveTypeLockClicked()"/>
                                     <s:TileGroup 
                                         width="100%" height="100%"
                                         verticalGap="1"
@@ -1289,7 +1291,7 @@
                                                     useVirtualLayout="true"
                                                     gap="0"/>
                                             </s:layout>
-                                            <mx:ArrayList>
+                                            <mx:ArrayList id="SoundParameterList">
                                                 <local:SoundListRowData 
                                                     label="Attack time"
                                                     odd="0"
@@ -1451,14 +1453,6 @@
                                                     max="1"
                                                     tag="repeatSpeed"/>
 												
-												<local:SoundListRowData 
-													label="Pre-amp ratio"
-													odd="0"
-													square="false"
-													bggroup="0"
-													min="0"
-													max="100"
-													tag="preAmpRatio"/>
                                                 <local:SoundListRowData 
                                                     label="Phaser offset"
                                                     odd="0"
@@ -1514,7 +1508,34 @@
                                                     bggroup="0"
                                                     min="-1"
                                                     max="1"
-                                                    tag="hpFilterCutoffSweep"/>
+                                                    tag="hpFilterCutoffSweep"/>												
+												
+												<local:SoundListRowData 
+													label="Bitcrush frequency"
+													odd="0"
+													square="false"
+													bggroup="1"
+													min="0.001"
+													max="1"
+													tag="bitcrush_freq"/>
+												
+												<local:SoundListRowData 
+													label="Bitcrush frequency sweep"
+													odd="0"
+													square="false"
+													bggroup="1"
+													min="-1"
+													max="1"
+													tag="bitcrush_freq_sweep"/>
+												
+												<local:SoundListRowData 
+													label="Compression Amount"
+													odd="0"
+													square="false"
+													bggroup="0"
+													min="1"
+													max="8"
+													tag="compression_amount"/>
                                             </mx:ArrayList>
                                         </s:DataGroup>
                                     </s:BorderContainer>
@@ -1528,7 +1549,7 @@
                     </s:NavigatorContent>
                     <s:NavigatorContent 
                         width="100%" height="100%"
-                        label="Layer">
+                        label="Mixer">
                         <s:layout>
                             <s:BasicLayout/>
                         </s:layout>
@@ -1598,12 +1619,12 @@
                 label="Play"
                 click="PlayClick(event)"/>
             <s:HSlider id="volumeslider"
-                maximum="2"
-                minimum="0"
+				minimum="0"
+                maximum="1"
                 stepSize="0.01"
                 changeEnd="VolumeChanged(event)"/>
             <s:Label text="Playback Volume"/>
-            <mx:Spacer height="25"/>
+            <mx:Spacer height="10"/>
             <s:Button id="exportwav"
                 label="Export Wav"
                 click="SaveWave()"/>
@@ -1629,7 +1650,7 @@
 					change="CommitGlobal()"
 					requireSelection="true">
                 </s:DropDownList>
-            </s:BorderContainer>
+            </s:BorderContainer>      
             <s:Button id="import_sfxr"
                 label="Load from disk"
                 click="clickLoadSound()"/>
@@ -1644,7 +1665,7 @@
                 click="clickPasteButton()"/>
             <s:Button id="linkbutton1"
                 label="Copy Link"
-                click="clickLinkButton()"/>
+                click="clickLinkButton()"/>	
         </s:VGroup>
     </s:HGroup>
 </s:Application>

@@ -79,8 +79,7 @@
 		
 		private var _finished:Boolean;						// If the sound has finished
 		
-		private var _masterVolume:Number;					// masterVolume * masterVolume ^ (1-preamp) (for quick calculations)
-		private var _preAmp:Number;							// masterVolume * masterVolume ^ preamp
+		private var _masterVolume:Number;					// masterVolume * masterVolume (for quick calculations)
 		
 		private var _waveType:uint;							// The type of wave to generate
 		
@@ -166,6 +165,13 @@
 		private var _sample:Number;							// Sub-sample calculated 8 times per actual sample, averaged out to get the super sample
 		private var _sampleCount:uint;						// Number of samples added to the buffer sample
 		private var _bufferSample:Number;					// Another supersample used to create a 22050Hz wave
+		
+		private var _bitcrush_freq:Number;
+		private var _bitcrush_freq_sweep:Number;
+		private var _bitcrush_phase:Number;
+		private var _bitcrush_last:Number;
+		
+		private var _compression_amount:Number;
 		
 		//--------------------------------------------------------------------------
 		//	
@@ -649,8 +655,7 @@
 			{
 				p.paramsDirty = false;
 				
-				_masterVolume = Math.pow( p.masterVolume * p.masterVolume , 1-p.preAmpRatio);
-				_preAmp = Math.pow ( p.masterVolume * p.masterVolume, p.preAmpRatio);
+				_masterVolume = p.masterVolume * p.masterVolume;
 				
 				_waveType = p.waveType;
 				
@@ -672,7 +677,15 @@
 				_minFreqency = p.minFrequency;
 				_overtones = p.overtones*10;
 				_overtoneFalloff = p.overtoneFalloff;
-				_filters = p.lpFilterCutoff != 1.0 || p.hpFilterCutoff != 0.0;
+								
+				_bitcrush_freq = p.bitcrush_freq;				
+				_bitcrush_freq_sweep = p.bitcrush_freq_sweep* 0.0001;
+				_bitcrush_phase=0;
+				_bitcrush_last=0;				
+				
+				_compression_amount = Math.max(0.0001,p.compression_amount);
+				
+				_filters = p.lpFilterCutoff != 1.0 || p.hpFilterCutoff != 0.0;				
 				
 				_lpFilterPos = 0.0;
 				_lpFilterDeltaPos = 0.0;
@@ -967,9 +980,7 @@
 						}
 						overtonestrength*=(1-_overtoneFalloff);
 						
-					}
-					
-					_sample *= _preAmp;
+					}					
 					
 					// Applies the low and high pass filters
 					if (_filters)
@@ -1009,12 +1020,37 @@
 				}
 				
 				// Averages out the super samples and applies volumes
-				_superSample = _masterVolume * _envelopeVolume * _superSample * 0.125;
+				_superSample = _masterVolume * _envelopeVolume * _superSample * 0.125;				
 				
+				
+				//BIT CRUSH				
+				_bitcrush_phase+=_bitcrush_freq;
+				if (_bitcrush_phase>1)
+				{
+					_bitcrush_phase=0;
+					_bitcrush_last=_superSample;	 
+				}
+				_bitcrush_freq= Math.max(Math.min(_bitcrush_freq+_bitcrush_freq_sweep,1),0);
+				
+				_superSample=_bitcrush_last; 				
+			
 				// Clipping if too loud
 					 if(_superSample > 1.0) 	_superSample = 1.0;
-				else if(_superSample < -1.0) 	_superSample = -1.0;
-				
+				else if(_superSample < -1.0) 	_superSample = -1.0;					 				 
+				 
+					 
+					 
+				 //compressor
+					 
+				 if (_superSample>0)
+				 {
+					 _superSample = Math.pow(_superSample,1/(_compression_amount));
+				 }
+				 else
+				 {
+					 _superSample = -Math.pow(-_superSample,1/(_compression_amount));
+				 }
+				 
 				if(waveData)
 				{
 					// Writes same value to left and right channels

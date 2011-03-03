@@ -33,7 +33,6 @@ package Synthesis
 		private var _waveType			:uint = 	0;		// Shape of the wave (0:square, 1:saw, 2:sin or 3:noise)
 		
 		private var _masterVolume		:Number = 	0.5;	// Overall volume of the sound (0 to 1)
-		private var _preAmpRatio		:Number = 	0.0;	// How much to amp the volume by before vs after filtering (0 to 4)
 		private var _attackTime			:Number =	0.0;	// Length of the volume envelope attack (0 to 1)
 		private var _sustainTime		:Number = 	0.0;	// Length of the volume envelope sustain (0 to 1)
 		private var _sustainPunch		:Number = 	0.0;	// Tilts the sustain envelope for more 'pop' (0 to 1)
@@ -74,6 +73,11 @@ package Synthesis
 		private var _overtones		:Number = 	0.0;	// Frequency at which the high-pass filter starts attenuating lower frequencies (0 to 1)
 		private var _overtoneFalloff:Number = 	0.0;	// Sweeps the high-pass cutoff up or down (0 to 1)
 		
+		private var _bitcrush_freq : Number = 0.0;
+		private var _bitcrush_freq_sweep : Number = 0.0;
+		
+		private var _compression_amount:Number = 0.0; // amplitues above this get reduced
+		
 		private var _lockedParams : Vector.<String> = new Vector.<String>(); // stores list of strings, these strings represent parameters that will be locked during randomization/mutation
 		
 		//--------------------------------------------------------------------------
@@ -91,11 +95,7 @@ package Synthesis
 		/** Overall volume of the sound (0 to 1) */
 		public function get masterVolume():Number { return _masterVolume; }
 		public function set masterVolume(value:Number):void { _masterVolume = clamp1(value); paramsDirty = true; }
-		
-		/** Ratio of preamp volume to master volume (0 to 4) */
-		public function get preAmpRatio():Number { return _preAmpRatio; }
-		public function set preAmpRatio(value:Number):void { _preAmpRatio = clamp(value,0,100); paramsDirty = true; }
-		
+				
 		/** Length of the volume envelope attack (0 to 1) */
 		public function get attackTime():Number { return _attackTime; }
 		public function set attackTime(value:Number):void { _attackTime = clamp1(value); paramsDirty = true; }
@@ -197,13 +197,25 @@ package Synthesis
 		public function get hpFilterCutoffSweep():Number { return _hpFilterCutoffSweep; }
 		public function set hpFilterCutoffSweep(value:Number):void { _hpFilterCutoffSweep = clamp2(value); paramsDirty = true; }
 		
-		/** generates overtones adds harmonics 0 to 10 */
+		/** generates overtones adds harmonics 0 to 1 */
 		public function get overtones():Number { return _overtones; }
-		public function set overtones(value:Number):void { _overtones = clamp2(value); paramsDirty = true; }
+		public function set overtones(value:Number):void { _overtones = clamp1(value); paramsDirty = true; }
 		
 		public function get overtoneFalloff():Number { return _overtoneFalloff; }
-		public function set overtoneFalloff(value:Number):void { _overtoneFalloff = clamp2(value); paramsDirty = true; }
+		public function set overtoneFalloff(value:Number):void { _overtoneFalloff = clamp2(value); paramsDirty = true; }		
 		
+		/** generates overtones adds harmonics 0 to 1 */
+		public function get bitcrush_freq():Number { return _bitcrush_freq; }
+		public function set bitcrush_freq(value:Number):void { _bitcrush_freq = clamp1(value); paramsDirty = true; }
+		
+		/** generates overtones adds harmonics -1 to 1 */
+		public function get bitcrush_freq_sweep():Number { return _bitcrush_freq_sweep; }
+		public function set bitcrush_freq_sweep(value:Number):void { _bitcrush_freq_sweep = clamp2(value); paramsDirty = true; }
+		
+		/** generates overtones adds harmonics 0 to 1 */
+		public function get compression_amount():Number { return _compression_amount; }
+		public function set compression_amount(value:Number):void { _compression_amount = clamp(value,1,8); paramsDirty = true; }
+				
 		/** Returns true if this parameter is locked */
 		public function lockedParam(param:String):Boolean
 		{
@@ -442,6 +454,8 @@ package Synthesis
 		{
 			paramsDirty = true;
 			
+			if (paramsToReset==null || paramsToReset.indexOf("masterVolume")>=0)
+				_masterVolume = 0.5;
 			if (paramsToReset==null || paramsToReset.indexOf("waveType")>=0)
 				_waveType = 0;
 			if (paramsToReset==null || paramsToReset.indexOf("startFrequency")>=0)
@@ -507,10 +521,15 @@ package Synthesis
 				_overtoneFalloff=0;
 			if (paramsToReset==null || paramsToReset.indexOf("overtones")>=0)
 				_overtones=0;
+						
+			if (paramsToReset==null || paramsToReset.indexOf("bitcrush_freq")>=0)
+				_bitcrush_freq=1;
+			if (paramsToReset==null || paramsToReset.indexOf("bitcrush_freq_sweep")>=0)
+				_bitcrush_freq_sweep=0;			
 			
-			if (paramsToReset==null || paramsToReset.indexOf("preAmpRatio")>=0)
-				_preAmpRatio = 0;
-			
+			if (paramsToReset==null || paramsToReset.indexOf("compression_amount")>=0)
+				_compression_amount=1;
+						
 			if (paramsToReset==null || paramsToReset.indexOf("lockedParams")>=0)
 				_lockedParams = new Vector.<String>();
 			
@@ -582,8 +601,12 @@ package Synthesis
 				if (Math.random() < 0.5) overtoneFalloff += 	Math.random() * mutation*2 - mutation;
 			if (!lockedParam("overtones"))
 				if (Math.random() < 0.5) overtones += 			Math.random() * mutation*2 - mutation;
-			if (!lockedParam("preAmpRatio"))
-				if (Math.random() < 0.5) preAmpRatio += 		Math.random() * mutation*2 - mutation;
+			if (!lockedParam("bitcrush_freq"))
+				if (Math.random() < 0.5) bitcrush_freq += 	Math.random() * mutation*2 - mutation;
+			if (!lockedParam("bitcrush_freq_sweep"))
+				if (Math.random() < 0.5) bitcrush_freq_sweep += 	Math.random() * mutation*2 - mutation;
+			if (!lockedParam("compression_amount"))
+				if (Math.random() < 0.5) compression_amount += 	Math.random() * mutation*2 - mutation;
 		}
 		
 		/**
@@ -670,8 +693,13 @@ package Synthesis
 			if (!lockedParam("overtoneFalloff"))
 				_overtoneFalloff = Math.random();
 			
-			if (!lockedParam("preAmpRatio"))
-				_preAmpRatio = Math.random();
+			if (!lockedParam("bitcrush_freq"))
+				_bitcrush_freq = pow(Math.random(), 5);
+			if (!lockedParam("bitcrush_freq_sweep"))
+				_bitcrush_freq_sweep = pow(Math.random()*2-1, 3);
+						
+			if (!lockedParam("compression_amount"))
+				_compression_amount = 1+Math.random()*7;
 			
 			if ((!lockedParam("sustainTime")) && (!lockedParam("decayTime")))
 			{
@@ -727,7 +755,8 @@ package Synthesis
 					+ "," + to4DP(_lpFilterCutoffSweep) + 	"," + to4DP(_lpFilterResonance)
 					+ "," + to4DP(_hpFilterCutoff)+ 		"," + to4DP(_hpFilterCutoffSweep)
 					+ "," + to4DP(_overtones) + 			"," + to4DP(_overtoneFalloff)
-					+ "," + to4DP(_preAmpRatio)
+					+ "," + to4DP(_bitcrush_freq) + 	 	"," + to4DP(_bitcrush_freq_sweep)
+				 	+ "," + to4DP(_compression_amount)
 					+ "," + to4DP(_masterVolume);
 			
 			for (var i:int=0;i<this._lockedParams.length;i++)
@@ -750,7 +779,7 @@ package Synthesis
 			
 			var values:Array = string.split(",");
 			
-			if (values.length < 29) return false;
+			if (values.length < 31) return false;
 			
 			waveType = 				uint(values[0]) || 0;
 			attackTime =  			Number(values[1]) || 0;
@@ -780,11 +809,13 @@ package Synthesis
 			hpFilterCutoffSweep =  	Number(values[25]) || 0;
 			overtones =  			Number(values[26]) || 0;
 			overtoneFalloff =  		Number(values[27]) || 0;
-			preAmpRatio =  			Number(values[28]) || 0;
-			masterVolume = 			Number(values[29]) || 0;
+			bitcrush_freq =  		Number(values[28]) || 0;
+			bitcrush_freq_sweep =  	Number(values[29]) || 0;
+			compression_amount =  	Number(values[30]) || 0;
+			masterVolume = 			Number(values[31]) || 0;
 						
 			_lockedParams = new Vector.<String>();
-			for (var i:int=29;i<values.length;i++)
+			for (var i:int=36;i<values.length;i++)
 			{
 				_lockedParams.push(values[i]);
 			}
@@ -845,7 +876,9 @@ package Synthesis
 			_hpFilterCutoffSweep = 	params.hpFilterCutoffSweep;
 			_overtones = 			params.overtones;
 			_overtoneFalloff = 		params.overtoneFalloff;
-			_preAmpRatio = 			params.preAmpRatio;
+			_bitcrush_freq = 		params.bitcrush_freq;
+			_bitcrush_freq_sweep = 	params.bitcrush_freq_sweep;
+			_compression_amount = 	params.compression_amount;
 			_masterVolume = 		params.masterVolume;
 			
 			if (makeDirty) paramsDirty = true;

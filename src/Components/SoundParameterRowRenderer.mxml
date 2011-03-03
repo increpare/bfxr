@@ -28,6 +28,7 @@
 			
 			private function SliderValueChange(event:Event):void
 			{
+				data.value=this.slider.value;
 				var app:sfxr_interface = this.parentApplication as sfxr_interface;
 				app.synthInterface.sliderChanged(event);
 			}
@@ -35,24 +36,16 @@
 			
 			private function OnLockButtonChanged(event:Event):void
 			{
+				data.locked = locked.selected;
 				var app:sfxr_interface = this.parentApplication as sfxr_interface;
 				app.synthInterface.lockChanged(data.tag,  locked.selected);
 			}
 			
 			private function CreationComplete(event:Event):void
-			{
-				slider.minimum= Number(data.min);
-				slider.maximum= Number(data.max);			
+			{			
 				
 				var app:sfxr_interface = this.parentApplication as sfxr_interface;
-				app.synthInterface.RegisterParameterSlider(this);
-				app.synthInterface.RegisterLockableParam(data.tag,this.locked);
-				(slider.skin as TickedHSliderSkin).track.skin.invalidateDisplayList();
-				
-				if (data.square==true)
-				{
-					app.synthInterface.RegisterSquareSlider(fieldlabel, slider);
-				}			
+				(slider.skin as TickedHSliderSkin).track.skin.invalidateDisplayList();				
 			}
 			
 			private function LabelClick():void
@@ -87,13 +80,13 @@
 		verticalAlign="top"
 		  creationComplete="CreationComplete(event)"
 		>    
-
 		<s:CheckBox 
 			id="locked" 
 			toolTip="Lock field during randomization/mutation?" 
 			verticalCenter="0" 
 			skinClass="spark.skins.spark.CheckBoxSkin"			 
 		 	change="OnLockButtonChanged(event)"
+			selected="{data.locked?true:false}"
 			 height="17"
 			 />                
 		<s:Label 		
@@ -101,7 +94,8 @@
 			text="{data.label}" 
 			width="170" 
 			height="17"  
-			verticalAlign="middle"  
+			verticalAlign="middle" 
+			enabled="{data.enabled}" 
 			textAlign="right"
 			click="LabelClick()"
 			/>    
@@ -109,9 +103,11 @@
 			  skinClass="Components.TickedHSliderSkin"
 			id="slider" 
 			width="116" 
-			minimum="0" 
-			maximum="1" 
+			minimum="{data.min}" 
+			maximum="{data.max}" 
+			value="{data.value}"
 			stepSize="0.005" 
+			enabled="{data.enabled}"
 			valid="true" 
 			top="0" 
 			bottom="5"

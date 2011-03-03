@@ -103,21 +103,6 @@
 					TryUpdateDropdown();
 				}
 				
-				/*
-				slider.minimum= Number(data.min);
-				slider.maximum= Number(data.max);			
-				
-				var app:sfxr_interface = this.parentApplication as sfxr_interface;
-				app.RegisterParameterSlider(this);
-				app.RegisterLockableParam(data.tag,this.locked);
-				(slider.skin as TickedHSliderSkin).track.skin.invalidateDisplayList();
-				
-				if (data.square==true)
-				{
-				app.RegisterSquareSlider(fieldlabel, slider);
-				}
-				*/
-				
 			}
 			
 			
@@ -171,6 +156,16 @@
 					sliderimagecontainer.visible=false;
 					
 					data.synthset=true;
+					
+					if (play && app.playonchange.selected)
+					{
+						PlayStart();
+						synth.play(PlayCallback);
+					}
+					else
+					{
+						synth.cacheSound()
+					}
 				}//otherwise, clear the sound
 				else
 				{
@@ -178,16 +173,6 @@
 					data.cached=false;
 					sliderimagecontainer.visible=false;
 					data.synthset=false;
-				}
-					
-				if (play && app.playonchange.selected)
-				{
-					PlayStart();
-					synth.play(PlayCallback);
-				}
-				else
-				{
-					synth.cacheSound()
 				}
 				
 				if (modified)
@@ -340,7 +325,9 @@
 				systemManager.getSandboxRoot().addEventListener(MouseEvent.MOUSE_UP, 
 					system_SliderMouseUpHandler, true);
 				systemManager.getSandboxRoot().addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, 
-					system_SliderMouseUpHandler);				
+					system_SliderMouseUpHandler);	
+				
+				event.stopImmediatePropagation();
 			}
 			
 			private function sliderImageContainerClick(event:MouseEvent):void

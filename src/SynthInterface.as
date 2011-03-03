@@ -9,6 +9,7 @@ package
     import flash.utils.ByteArray;
     import flash.utils.Endian;
     
+    import mx.collections.ArrayList;
     import mx.core.UIComponent;
     
     import spark.components.CheckBox;
@@ -20,10 +21,6 @@ package
     {
 
         private var _synth:SfxrSynth; // Synthesizer instance
-
-        private var _sliderList:Array = new Array();
-
-        private var _squareSlider:Array = new Array();
 
 		private var _globalState:GlobalState;
 		
@@ -39,7 +36,7 @@ package
 			_globalState = globalState;
 			_volumeSlider = volumeSlider;
             _synth = new SfxrSynth();
-			_synth.params.randomize();
+			_synth.params.randomize();	
         }
 
 		public function Play():void
@@ -63,34 +60,11 @@ package
 			OnSoundParameterChanged(false);
 		}
 		
-        private var lockablecheckboxes:Object = new Object();
-
-        public function RegisterLockableParam(tag:String, checkbox:CheckBox):void
-        {
-            lockablecheckboxes[tag] = checkbox;
-        }
 
         public function WaveTypeLockClicked():void
         {
             _synth.params.setParamLocked("waveType", _lockWave.selected);
 			OnSoundParameterChanged(false,true);
-        }
-
-        public function RegisterWaveTypeLock(lockwave:CheckBox):void
-        {
-			_lockWave=lockwave;
-            RegisterLockableParam("waveType", lockwave);
-        }
-
-        public function RegisterParameterSlider(c:SoundParameterRowRenderer):void
-        {
-            _sliderList[c.data.tag] = c;
-        }
-
-        public function RegisterSquareSlider(label:Label, s:HSlider):void
-        {
-            _squareSlider.push(label);
-            _squareSlider.push(s);
         }
 
         public function ResetSoundParameterValue(paramname:String):void
@@ -154,7 +128,7 @@ package
 		{
 			//#1 update all fields
 			
-			_volumeSlider.value = 2 * _synth.params.masterVolume;
+			_volumeSlider.value = _synth.params.masterVolume;
 			
 			// waveform
 			for (var i:int = 0; i < SfxrParams.WAVETYPECOUNT; i++)
@@ -166,18 +140,22 @@ package
 			CalculateSquareSliderEnabledness();
 			
 			//update lockable checkboxes
-			for (var key:String in lockablecheckboxes)
+			for (i=0;i<_app.SoundParameterList.length;i++)
 			{
-				var checkbox:CheckBox = lockablecheckboxes[key] as CheckBox;
-				checkbox.selected = _synth.params.lockedParam(key);
+				var slrd:SoundListRowData = _app.SoundParameterList.getItemAt(i) as SoundListRowData;
+				slrd.locked = _synth.params.lockedParam(slrd.tag);
 			}
+			_app.lockwave.selected = _synth.params.lockedParam("waveType");
 			
 			//parameter sliders
-			for (var tag:String in _sliderList)
+			for (i=0;i<_app.SoundParameterList.length;i++)
 			{
-				var cb:SoundParameterRowRenderer = _sliderList[tag] as SoundParameterRowRenderer;
-				cb.slider.value = _synth.params[tag];
+				slrd = _app.SoundParameterList.getItemAt(i) as SoundListRowData;
+				slrd.value = _synth.params[slrd.tag];
 			}
+			
+			//volume slider
+			_app.volumeslider.value = _synth.params["masterVolume"];
 			
 			//where are the waveforms update?
 		}
@@ -185,8 +163,9 @@ package
 		
 		public function VolumeChanged(event:Event):void
 		{
-			_synth.params.masterVolume = _volumeSlider.value / 2;
-			OnSoundParameterChanged();
+			_synth.params.masterVolume = _volumeSlider.value;
+			OnSoundParameterChanged(true,true);
+			UIUpdateTrigger();
 		}
 		
 		public function GeneratePreset(tag:String):void
@@ -196,12 +175,16 @@ package
 		
 		private function CalculateSquareSliderEnabledness():void
 		{
-			for (var i:int = 0; i < _squareSlider.length; i++)
+			
+			for (var i:int=0;i<_app.SoundParameterList.length;i++)
 			{
-				var sldr:Object = _squareSlider[i];
-				var cmp:UIComponent = sldr as UIComponent;
-				cmp.enabled = _synth.params.waveType == 0;
+				var slrd:SoundListRowData = _app.SoundParameterList.getItemAt(i) as SoundListRowData;
+				if (slrd.square)
+				{
+					slrd.enabled=_synth.params.waveType == 0;
+				}
 			}
+			
 			
 		}
 		
