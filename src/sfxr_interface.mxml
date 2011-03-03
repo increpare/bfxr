@@ -1235,7 +1235,7 @@
                                             change="synthInterface.WaveformSelect(event)"/>
                                         <s:ToggleButton id="W6"
                                             width="65"
-                                            label="Steep"
+                                            label="Bipolar"
                                             change="synthInterface.WaveformSelect(event)"/>
                                         <s:ToggleButton id="W7"
                                             width="65"

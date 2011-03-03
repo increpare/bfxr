@@ -30,9 +30,13 @@ package Synthesis
 		/** If the parameters have been changed since last time (shouldn't used cached sound) */
 		public var paramsDirty:Boolean;			
 		
-		private var _waveType			:uint = 	0;		// Shape of the wave (0:square, 1:saw, 2:sin or 3:noise)
+		private static var paramData = [
+		["waveType",0,6],// Shape of the wave (0:square, 1:saw, 2:sin or 3:noise)
+		["masterVolume",0,1],// Overall volume of the sound (0 to 1)
+		];
+		private var _waveType			:uint = 	0;		
 		
-		private var _masterVolume		:Number = 	0.5;	// Overall volume of the sound (0 to 1)
+		private var _masterVolume		:Number = 	0.5;	
 		private var _attackTime			:Number =	0.0;	// Length of the volume envelope attack (0 to 1)
 		private var _sustainTime		:Number = 	0.0;	// Length of the volume envelope sustain (0 to 1)
 		private var _sustainPunch		:Number = 	0.0;	// Tilts the sustain envelope for more 'pop' (0 to 1)
@@ -694,7 +698,7 @@ package Synthesis
 				_overtoneFalloff = Math.random();
 			
 			if (!lockedParam("bitcrush_freq"))
-				_bitcrush_freq = pow(Math.random(), 5);
+				_bitcrush_freq = pow(Math.random(), 1/2);
 			if (!lockedParam("bitcrush_freq_sweep"))
 				_bitcrush_freq_sweep = pow(Math.random()*2-1, 3);
 						

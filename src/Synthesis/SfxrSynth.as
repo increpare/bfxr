@@ -947,10 +947,10 @@
 								_sample += overtonestrength*(_pinkNoiseBuffer[uint(tempphase * 32 / int(_periodTemp))%32]);
 								break;
 							}
-							case 6: // lolo
+							case 6: // bipolar
 							{
-								amp = tempphase/_periodTemp;								
-								_sample += overtonestrength*(Math.abs(1-amp*amp*amp*2)-1);
+								//detuned
+								_sample += Math.tan(Math.PI*tempphase/_periodTemp)*overtonestrength;
 								break;
 							}
 							case 7: // Whistle 
