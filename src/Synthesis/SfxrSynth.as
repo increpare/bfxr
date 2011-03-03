@@ -43,7 +43,7 @@
 		//should be <32
 		private const LoResNoisePeriod:int = 8;
 		
-		private var _params:SfxrParams = new SfxrParams;	// Params instance
+		private var _params:SfxrParams;	// Params instance
 		
 		private var _sound:Sound;							// Sound instance used to play the sound
 		private var _channel:SoundChannel;					// SoundChannel instance of playing Sound
@@ -135,12 +135,12 @@
 		private var _repeatTime:int;						// Counter for the repeats
 		private var _repeatLimit:int;						// Once the time reaches this limit, some of the variables are reset
 		
-		private var _phaser:Boolean;						// If the phaser is active
-		private var _phaserOffset:Number;					// Phase offset for phaser effect
-		private var _phaserDeltaOffset:Number;				// Change in phase offset
-		private var _phaserInt:int;							// Integer phaser offset, for bit maths
-		private var _phaserPos:int;							// Position through the phaser buffer
-		private var _phaserBuffer:Vector.<Number>;			// Buffer of wave values used to create the out of phase second wave
+		private var _flanger:Boolean;						// If the flanger is active
+		private var _flangerOffset:Number;					// Phase offset for flanger effect
+		private var _flangerDeltaOffset:Number;				// Change in phase offset
+		private var _flangerInt:int;							// Integer flanger offset, for bit maths
+		private var _flangerPos:int;							// Position through the flanger buffer
+		private var _flangerBuffer:Vector.<Number>;			// Buffer of wave values used to create the out of phase second wave
 		
 		private var _filters:Boolean;						// If the filters are active
 		private var _lpFilterPos:Number;					// Adjusted wave position after low-pass filter
@@ -166,12 +166,12 @@
 		private var _sampleCount:uint;						// Number of samples added to the buffer sample
 		private var _bufferSample:Number;					// Another supersample used to create a 22050Hz wave
 		
-		private var _bitcrush_freq:Number;
-		private var _bitcrush_freq_sweep:Number;
-		private var _bitcrush_phase:Number;
-		private var _bitcrush_last:Number;
+		private var _bitcrush_freq:Number;					// inversely proportional to the number of samples to skip 
+		private var _bitcrush_freq_sweep:Number;			// change of the above
+		private var _bitcrush_phase:Number;					// samples when this > 1
+		private var _bitcrush_last:Number;					// last sample value
 		
-		private var _compression_amount:Number;
+		private var _compression_factor:Number;
 		
 		//--------------------------------------------------------------------------
 		//	
@@ -188,6 +188,11 @@
 		}
 		
 		private var updateCallback:Function;
+		
+		public function SfxrSynth()
+		{
+			params = new SfxrParams();
+		}
 		
 		//--------------------------------------------------------------------------
 		//	
@@ -610,106 +615,106 @@
 			// Shorter reference
 			var p:SfxrParams = _params;
 			
-			_period = 100.0 / (p.startFrequency * p.startFrequency + 0.001);
+			_period = 100.0 / (p.getParam("startFrequency") * p.getParam("startFrequency") + 0.001);
 			//trace("_maxperiod = "+_maxPeriod);
-			_maxPeriod = 100.0 / (p.minFrequency * p.minFrequency + 0.001);
+			_maxPeriod = 100.0 / (p.getParam("minFrequency") * p.getParam("minFrequency") + 0.001);
 			
 			//trace("_max period " + _maxPeriod);
 			
-			_slide = 1.0 - p.slide * p.slide * p.slide * 0.01;
-			_deltaSlide = -p.deltaSlide * p.deltaSlide * p.deltaSlide * 0.000001;
+			_slide = 1.0 - p.getParam("slide") * p.getParam("slide") * p.getParam("slide") * 0.01;
+			_deltaSlide = -p.getParam("deltaSlide") * p.getParam("deltaSlide") * p.getParam("deltaSlide") * 0.000001;
 			
-			if (p.waveType == 0)
+			if (p.getParam("waveType") == 0)
 			{
-				_squareDuty = 0.5 - p.squareDuty * 0.5;
-				_dutySweep = -p.dutySweep * 0.00005;
+				_squareDuty = 0.5 - p.getParam("squareDuty") * 0.5;
+				_dutySweep = -p.getParam("dutySweep") * 0.00005;
 			}
 			
-			_changePeriod = Math.max((p.changePeriod+0.1)/1.1) * 20000 + 32;
+			_changePeriod = Math.max(((1-p.getParam("changeRepeat"))+0.1)/1.1) * 20000 + 32;
 			_changePeriodTime = 0;
 			
-			if (p.changeAmount > 0.0) 	_changeAmount = 1.0 - p.changeAmount * p.changeAmount * 0.9;
-			else 						_changeAmount = 1.0 + p.changeAmount * p.changeAmount * 10.0;
+			if (p.getParam("changeAmount") > 0.0) 	_changeAmount = 1.0 - p.getParam("changeAmount") * p.getParam("changeAmount") * 0.9;
+			else 						_changeAmount = 1.0 + p.getParam("changeAmount") * p.getParam("changeAmount") * 10.0;
 			
 			_changeTime = 0;
 			_changeReached=false;
 			
-			if(p.changeSpeed == 1.0) 	_changeLimit = 0;
-			else 						_changeLimit = (1.0 - p.changeSpeed) * (1.0 - p.changeSpeed) * 20000 + 32;
+			if(p.getParam("changeSpeed") == 1.0) 	_changeLimit = 0;
+			else 						_changeLimit = (1.0 - p.getParam("changeSpeed")) * (1.0 - p.getParam("changeSpeed")) * 20000 + 32;
 			
 			
-			if (p.changeAmount2 > 0.0) 	_changeAmount2 = 1.0 - p.changeAmount2 * p.changeAmount2 * 0.9;
-			else 						_changeAmount2 = 1.0 + p.changeAmount2 * p.changeAmount2 * 10.0;
+			if (p.getParam("changeAmount2") > 0.0) 	_changeAmount2 = 1.0 - p.getParam("changeAmount2") * p.getParam("changeAmount2") * 0.9;
+			else 						_changeAmount2 = 1.0 + p.getParam("changeAmount2") * p.getParam("changeAmount2") * 10.0;
 			
 			
 			_changeTime2 = 0;			
 			_changeReached2=false;
 			
-			if(p.changeSpeed2 == 1.0) 	_changeLimit2 = 0;
-			else 						_changeLimit2 = (1.0 - p.changeSpeed2) * (1.0 - p.changeSpeed2) * 20000 + 32;
+			if(p.getParam("changeSpeed2") == 1.0) 	_changeLimit2 = 0;
+			else 						_changeLimit2 = (1.0 - p.getParam("changeSpeed2")) * (1.0 - p.getParam("changeSpeed2")) * 20000 + 32;
 			
-			_changeLimit*=(p.changePeriod+0.1)/1.1;
-			_changeLimit2*=(p.changePeriod+0.1)/1.1;
+			_changeLimit*=(1-p.getParam("changeRepeat")+0.1)/1.1;
+			_changeLimit2*=(1-p.getParam("changeRepeat")+0.1)/1.1;
 			
 			if(totalReset)
 			{
 				p.paramsDirty = false;
 				
-				_masterVolume = p.masterVolume * p.masterVolume;
+				_masterVolume = p.getParam("masterVolume") * p.getParam("masterVolume");
 				
-				_waveType = p.waveType;
+				_waveType = p.getParam("waveType");
 				
-				if (p.sustainTime < 0.01) p.sustainTime = 0.01;
+				if (p.getParam("sustainTime") < 0.01) p.setParam("sustainTime", 0.01);
 				
-				var totalTime:Number = p.attackTime + p.sustainTime + p.decayTime;
+				var totalTime:Number = p.getParam("attackTime") + p.getParam("sustainTime") + p.getParam("decayTime");
 				if (totalTime < 0.18) 
 				{
 					var multiplier:Number = 0.18 / totalTime;
-					p.attackTime *= multiplier;
-					p.sustainTime *= multiplier;
-					p.decayTime *= multiplier;
+					p.setParam("attackTime",p.getParam("attackTime") * multiplier);
+					p.setParam("sustainTime",p.getParam("sustainTime") * multiplier);
+					p.setParam("decayTime",p.getParam("decayTime") * multiplier);
 				}
 				
-				_sustainPunch = p.sustainPunch;
+				_sustainPunch = p.getParam("sustainPunch");
 				
 				_phase = 0;
 				
-				_minFreqency = p.minFrequency;
-				_overtones = p.overtones*10;
-				_overtoneFalloff = p.overtoneFalloff;
+				_minFreqency = p.getParam("minFrequency");
+				_overtones = p.getParam("overtones")*10;
+				_overtoneFalloff = p.getParam("overtoneFalloff");
 								
-				_bitcrush_freq = p.bitcrush_freq;				
-				_bitcrush_freq_sweep = p.bitcrush_freq_sweep* 0.0001;
+				_bitcrush_freq = 1 - Math.pow(p.getParam("bitCrush"),1.0/3.0);				
+				_bitcrush_freq_sweep = -p.getParam("bitCrushSweep")* 0.00002;
 				_bitcrush_phase=0;
 				_bitcrush_last=0;				
 				
-				_compression_amount = Math.max(0.0001,p.compression_amount);
+				_compression_factor = 1/(1+4*p.getParam("compressionAmount"));
 				
-				_filters = p.lpFilterCutoff != 1.0 || p.hpFilterCutoff != 0.0;				
+				_filters = p.getParam("lpFilterCutoff") != 1.0 || p.getParam("hpFilterCutoff") != 0.0;				
 				
 				_lpFilterPos = 0.0;
 				_lpFilterDeltaPos = 0.0;
-				_lpFilterCutoff = p.lpFilterCutoff * p.lpFilterCutoff * p.lpFilterCutoff * 0.1;
-				_lpFilterDeltaCutoff = 1.0 + p.lpFilterCutoffSweep * 0.0001;
-				_lpFilterDamping = 5.0 / (1.0 + p.lpFilterResonance * p.lpFilterResonance * 20.0) * (0.01 + _lpFilterCutoff);
+				_lpFilterCutoff = p.getParam("lpFilterCutoff") * p.getParam("lpFilterCutoff") * p.getParam("lpFilterCutoff") * 0.1;
+				_lpFilterDeltaCutoff = 1.0 + p.getParam("lpFilterCutoffSweep") * 0.0001;
+				_lpFilterDamping = 5.0 / (1.0 + p.getParam("lpFilterResonance") * p.getParam("lpFilterResonance") * 20.0) * (0.01 + _lpFilterCutoff);
 				if (_lpFilterDamping > 0.8) _lpFilterDamping = 0.8;
 				_lpFilterDamping = 1.0 - _lpFilterDamping;
-				_lpFilterOn = p.lpFilterCutoff != 1.0;
+				_lpFilterOn = p.getParam("lpFilterCutoff") != 1.0;
 				
 				_hpFilterPos = 0.0;
-				_hpFilterCutoff = p.hpFilterCutoff * p.hpFilterCutoff * 0.1;
-				_hpFilterDeltaCutoff = 1.0 + p.hpFilterCutoffSweep * 0.0003;
+				_hpFilterCutoff = p.getParam("hpFilterCutoff") * p.getParam("hpFilterCutoff") * 0.1;
+				_hpFilterDeltaCutoff = 1.0 + p.getParam("hpFilterCutoffSweep") * 0.0003;
 				
 				_vibratoPhase = 0.0;
-				_vibratoSpeed = p.vibratoSpeed * p.vibratoSpeed * 0.01;
-				_vibratoAmplitude = p.vibratoDepth * 0.5;
+				_vibratoSpeed = p.getParam("vibratoSpeed") * p.getParam("vibratoSpeed") * 0.01;
+				_vibratoAmplitude = p.getParam("vibratoDepth") * 0.5;
 				
 				_envelopeVolume = 0.0;
 				_envelopeStage = 0;
 				_envelopeTime = 0;
-				_envelopeLength0 = p.attackTime * p.attackTime * 100000.0;
-				_envelopeLength1 = p.sustainTime * p.sustainTime * 100000.0;
-				_envelopeLength2 = p.decayTime * p.decayTime * 100000.0 + 10;
+				_envelopeLength0 = p.getParam("attackTime") * p.getParam("attackTime") * 100000.0;
+				_envelopeLength1 = p.getParam("sustainTime") * p.getParam("sustainTime") * 100000.0;
+				_envelopeLength2 = p.getParam("decayTime") * p.getParam("decayTime") * 100000.0 + 10;
 				_envelopeLength = _envelopeLength0;
 				_envelopeFullLength = _envelopeLength0 + _envelopeLength1 + _envelopeLength2;
 				
@@ -717,28 +722,28 @@
 				_envelopeOverLength1 = 1.0 / _envelopeLength1;
 				_envelopeOverLength2 = 1.0 / _envelopeLength2;
 				
-				_phaser = p.phaserOffset != 0.0 || p.phaserSweep != 0.0;
+				_flanger = p.getParam("flangerOffset") != 0.0 || p.getParam("flangerSweep") != 0.0;
 				
-				_phaserOffset = p.phaserOffset * p.phaserOffset * 1020.0;
-				if(p.phaserOffset < 0.0) _phaserOffset = -_phaserOffset;
-				_phaserDeltaOffset = p.phaserSweep * p.phaserSweep * p.phaserSweep * 0.2;
-				_phaserPos = 0;
+				_flangerOffset = p.getParam("flangerOffset") * p.getParam("flangerOffset") * 1020.0;
+				if(p.getParam("flangerOffset") < 0.0) _flangerOffset = -_flangerOffset;
+				_flangerDeltaOffset = p.getParam("flangerSweep") * p.getParam("flangerSweep") * p.getParam("flangerSweep") * 0.2;
+				_flangerPos = 0;
 				
-				if(!_phaserBuffer) _phaserBuffer = new Vector.<Number>(1024, true);
+				if(!_flangerBuffer) _flangerBuffer = new Vector.<Number>(1024, true);
 				if(!_noiseBuffer) _noiseBuffer = new Vector.<Number>(32, true);
 				if(!_pinkNoiseBuffer) _pinkNoiseBuffer = new Vector.<Number>(32, true);
 				if(!_loResNoiseBuffer) _loResNoiseBuffer = new Vector.<Number>(32, true);
 				if (!_pinkNumber) _pinkNumber = new PinkNumber();
 				
-				for(var i:uint = 0; i < 1024; i++) _phaserBuffer[i] = 0.0;
+				for(var i:uint = 0; i < 1024; i++) _flangerBuffer[i] = 0.0;
 				for(i = 0; i < 32; i++) _noiseBuffer[i] = Math.random() * 2.0 - 1.0;
 				for(i = 0; i < 32; i++) _pinkNoiseBuffer[i] = _pinkNumber.GetNextValue();
 				for(i = 0; i < 32; i++) _loResNoiseBuffer[i] = ((i%LoResNoisePeriod)==0) ? Math.random()*2.0-1.0 : _loResNoiseBuffer[i-1];							
 			
 				_repeatTime = 0;
 				
-				if (p.repeatSpeed == 0.0) 	_repeatLimit = 0;
-				else 						_repeatLimit = int((1.0-p.repeatSpeed) * (1.0-p.repeatSpeed) * 20000) + 32;
+				if (p.getParam("repeatSpeed") == 0.0) 	_repeatLimit = 0;
+				else 						_repeatLimit = int((1.0-p.getParam("repeatSpeed")) * (1.0-p.getParam("repeatSpeed")) * 20000) + 32;
 			}
 		}
 		
@@ -865,13 +870,13 @@
 					case 3: _envelopeVolume = 0.0; _finished = true; 													break;
 				}
 				
-				// Moves the phaser offset
-				if (_phaser)
+				// Moves the flanger offset
+				if (_flanger)
 				{
-					_phaserOffset += _phaserDeltaOffset;
-					_phaserInt = int(_phaserOffset);
-						 if(_phaserInt < 0) 	_phaserInt = -_phaserInt;
-					else if (_phaserInt > 1023) _phaserInt = 1023;
+					_flangerOffset += _flangerDeltaOffset;
+					_flangerInt = int(_flangerOffset);
+						 if(_flangerInt < 0) 	_flangerInt = -_flangerInt;
+					else if (_flangerInt > 1023) _flangerInt = 1023;
 				}
 				
 				// Moves the high-pass filter cutoff
@@ -1008,12 +1013,12 @@
 						_sample = _hpFilterPos;
 					}
 					
-					// Applies the phaser effect
-					if (_phaser)
+					// Applies the flanger effect
+					if (_flanger)
 					{
-						_phaserBuffer[_phaserPos&1023] = _sample;
-						_sample += _phaserBuffer[(_phaserPos - _phaserInt + 1024) & 1023];
-						_phaserPos = (_phaserPos + 1) & 1023;
+						_flangerBuffer[_flangerPos&1023] = _sample;
+						_sample += _flangerBuffer[(_flangerPos - _flangerInt + 1024) & 1023];
+						_flangerPos = (_flangerPos + 1) & 1023;
 					}
 					
 					_superSample += _sample;
@@ -1044,11 +1049,11 @@
 					 
 				 if (_superSample>0)
 				 {
-					 _superSample = Math.pow(_superSample,1/(_compression_amount));
+					 _superSample = Math.pow(_superSample,_compression_factor);
 				 }
 				 else
 				 {
-					 _superSample = -Math.pow(-_superSample,1/(_compression_amount));
+					 _superSample = -Math.pow(-_superSample,_compression_factor);
 				 }
 				 
 				if(waveData)

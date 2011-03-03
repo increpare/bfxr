@@ -9,6 +9,7 @@ package
     import flash.utils.ByteArray;
     import flash.utils.Endian;
     
+    import mx.binding.utils.*;
     import mx.collections.ArrayList;
     import mx.core.UIComponent;
     
@@ -37,11 +38,75 @@ package
 			_volumeSlider = volumeSlider;
             _synth = new SfxrSynth();
 			_synth.params.randomize();	
+			
+			var lastgroup:int=-1;
+			var odd:Boolean=true;
+			_app.SoundParameterList = new ArrayList();
+			var soundParamList:ArrayList = _app.SoundParameterList;
+			for (var i:int=0;i<SfxrParams.ParamData.length;i++)
+			{
+				var slrd:SoundListRowData = new SoundListRowData();
+				slrd.label = 	SfxrParams.ParamData[i][0];
+								
+				
+				slrd.tooltip = 	SfxrParams.ParamData[i][1];
+				slrd.bggroup = 	SfxrParams.ParamData[i][2];
+				slrd.tag = 		SfxrParams.ParamData[i][3];
+				
+				if (SfxrParams.ExcludeParams.indexOf(slrd.tag)>=0)
+					continue;
+				
+				slrd.min = 		SfxrParams.ParamData[i][5];
+				slrd.max = 		SfxrParams.ParamData[i][6];
+				slrd.square = 	SfxrParams.SquareParams.indexOf(slrd.tag)>=0;
+				
+				if (lastgroup!=slrd.bggroup)
+					odd=!odd;
+				
+				slrd.odd = 		odd;
+				slrd.enabled =	true;
+				slrd.value = _synth.params.getParam(slrd.tag);
+				
+				lastgroup =		slrd.bggroup;
+				slrd.addEventListener("DefaultClick",SLRD_On_Default_Clicked);
+				slrd.addEventListener("LockednessChange",SLRD_On_Lockedness_Changed);
+				slrd.addEventListener("SliderChange",SLRD_On_Slider_Changed);
+				
+				//ChangeWatcher.watch(slrd,"locked",LockStatusChanged);
+				//ChangeWatcher.watch(slrd,"value",SliderValueChanged);
+				soundParamList.addItem(slrd);
+			}
         }
 
+		public function randomize():void
+		{
+			_synth.params.randomize();
+		}
+		
 		public function Play():void
 		{
 			_synth.play();
+		}
+		
+		public function SLRD_On_Default_Clicked(event:Event):void
+		{
+			var sprd:SoundListRowData = event.target as SoundListRowData;			
+			ResetSoundParameterValue(sprd.tag);			
+		}
+		
+		public function SLRD_On_Lockedness_Changed(event:Event):void
+		{
+			var sprd:SoundListRowData = event.target as SoundListRowData;
+			_synth.params.setParamLocked(sprd.tag,sprd.locked);	
+			OnSoundParameterChanged(false);		
+		}
+		
+		public function SLRD_On_Slider_Changed(event:Event):void
+		{
+			var sprd:SoundListRowData = event.target as SoundListRowData;
+			
+			_synth.params.setParam(sprd.tag, sprd.value);
+			OnSoundParameterChanged();			
 		}
 		
 		
@@ -50,10 +115,9 @@ package
 			var s:HSlider = e.target as HSlider;
 			var renderercb:SoundParameterRowRenderer = s.parent.parent as SoundParameterRowRenderer;
 			
-			_synth.params[renderercb.data.tag] = s.value;
+			_synth.params.setParam(renderercb.data.tag, s.value);
 			OnSoundParameterChanged();
 		}
-		
 		public function lockChanged(tag:String, locked:Boolean):void
 		{
 			_synth.params.setParamLocked(tag, locked);
@@ -117,7 +181,7 @@ package
 			{
 				(_app["W" + i] as ToggleButton).selected = i == ind;
 			}
-			_synth.params.waveType = ind;
+			_synth.params.setParam("waveType", ind);
 			
 			CalculateSquareSliderEnabledness();
 			
@@ -125,16 +189,12 @@ package
 		}
 		
 		public function UIUpdateTrigger():void
-		{
-			//#1 update all fields
-			
-			_volumeSlider.value = _synth.params.masterVolume;
-			
+		{			
 			// waveform
 			for (var i:int = 0; i < SfxrParams.WAVETYPECOUNT; i++)
 			{
 				var tb:ToggleButton = _app["W" + i] as ToggleButton;
-				tb.selected = _synth.params.waveType == i;
+				tb.selected = int(_synth.params.getParam("waveType")) == i;
 			}
 			
 			CalculateSquareSliderEnabledness();
@@ -151,25 +211,25 @@ package
 			for (i=0;i<_app.SoundParameterList.length;i++)
 			{
 				slrd = _app.SoundParameterList.getItemAt(i) as SoundListRowData;
-				slrd.value = _synth.params[slrd.tag];
+				slrd.value = _synth.params.getParam(slrd.tag);
 			}
 			
 			//volume slider
-			_app.volumeslider.value = _synth.params["masterVolume"];
+			_app.volumeslider.value = _synth.params.getParam("masterVolume");
 			
-			//where are the waveforms update?
 		}
 		
 		
 		public function VolumeChanged(event:Event):void
 		{
-			_synth.params.masterVolume = _volumeSlider.value;
+			_synth.params.setParam("masterVolume", _volumeSlider.value);
 			OnSoundParameterChanged(true,true);
 			UIUpdateTrigger();
 		}
 		
 		public function GeneratePreset(tag:String):void
 		{						
+			//call the preset generation function
 			_synth.params[tag]();
 		}
 		
@@ -181,208 +241,12 @@ package
 				var slrd:SoundListRowData = _app.SoundParameterList.getItemAt(i) as SoundListRowData;
 				if (slrd.square)
 				{
-					slrd.enabled=_synth.params.waveType == 0;
+					slrd.enabled=int(_synth.params.getParam("waveType")) == 0;
 				}
 			}
 			
 			
-		}
-		
-		
-		
-		
-		/**
-		 * Writes the current parameters to a ByteArray and returns it
-		 * Compatible with the original Sfxr files
-		 * @return	ByteArray of settings data
-		 */
-		public function getSettingsFile():ByteArray
-		{
-			var file:ByteArray = new ByteArray();
-			file.endian = Endian.LITTLE_ENDIAN;
-			
-			file.writeInt(SfxrSynth.version);
-			file.writeInt(_synth.params.waveType);
-			file.writeFloat(_synth.params.masterVolume);
-			
-			file.writeFloat(_synth.params.startFrequency);
-			file.writeFloat(_synth.params.minFrequency);
-			file.writeFloat(_synth.params.slide);
-			file.writeFloat(_synth.params.deltaSlide);
-			
-			file.writeFloat(_synth.params.squareDuty);
-			file.writeFloat(_synth.params.dutySweep);
-			
-			file.writeFloat(_synth.params.vibratoDepth);
-			file.writeFloat(_synth.params.vibratoSpeed);
-			file.writeFloat(0);
-			
-			file.writeFloat(_synth.params.attackTime);
-			file.writeFloat(_synth.params.sustainTime);
-			file.writeFloat(_synth.params.decayTime);
-			file.writeFloat(_synth.params.sustainPunch);
-			
-			file.writeBoolean(false);
-			file.writeFloat(_synth.params.lpFilterResonance);
-			file.writeFloat(_synth.params.lpFilterCutoff);
-			file.writeFloat(_synth.params.lpFilterCutoffSweep);
-			file.writeFloat(_synth.params.hpFilterCutoff);
-			file.writeFloat(_synth.params.hpFilterCutoffSweep);
-			
-			file.writeFloat(_synth.params.phaserOffset);
-			file.writeFloat(_synth.params.phaserSweep);
-			
-			file.writeFloat(_synth.params.repeatSpeed);
-			
-			file.writeFloat(_synth.params.changePeriod);
-			file.writeFloat(_synth.params.changeSpeed);
-			file.writeFloat(_synth.params.changeAmount);
-			file.writeFloat(_synth.params.changeSpeed2);
-			file.writeFloat(_synth.params.changeAmount2);
-			
-			file.writeFloat(_synth.params.overtones);
-			file.writeFloat(_synth.params.overtoneFalloff);
-			
-			file.writeBoolean(_synth.params.lockedParam("waveType"));
-			file.writeBoolean(_synth.params.lockedParam("startFrequency"));
-			
-			file.writeBoolean(_synth.params.lockedParam("minFrequency"));
-			file.writeBoolean(_synth.params.lockedParam("slide"));
-			file.writeBoolean(_synth.params.lockedParam("deltaSlide"));
-			
-			file.writeBoolean(_synth.params.lockedParam("squareDuty"));
-			file.writeBoolean(_synth.params.lockedParam("dutySweep"));
-			
-			file.writeBoolean(_synth.params.lockedParam("vibratoDepth"));
-			file.writeBoolean(_synth.params.lockedParam("vibratoSpeed"));
-			
-			file.writeBoolean(_synth.params.lockedParam("attackTime"));
-			file.writeBoolean(_synth.params.lockedParam("sustainTime"));
-			file.writeBoolean(_synth.params.lockedParam("decayTime"));
-			file.writeBoolean(_synth.params.lockedParam("sustainPunch"));
-			
-			file.writeBoolean(_synth.params.lockedParam("lpFilterResonance"));
-			file.writeBoolean(_synth.params.lockedParam("lpFilterCutoff"));
-			file.writeBoolean(_synth.params.lockedParam("lpFilterCutoffSweep"));
-			file.writeBoolean(_synth.params.lockedParam("hpFilterCutoff"));
-			file.writeBoolean(_synth.params.lockedParam("hpFilterCutoffSweep"));
-			
-			file.writeBoolean(_synth.params.lockedParam("phaserOffset"));
-			file.writeBoolean(_synth.params.lockedParam("phaserSweep"));
-			
-			file.writeBoolean(_synth.params.lockedParam("repeatSpeed"));
-			
-			file.writeBoolean(_synth.params.lockedParam("changePeriod"));
-			file.writeBoolean(_synth.params.lockedParam("changeSpeed"));
-			file.writeBoolean(_synth.params.lockedParam("changeAmount"));
-			file.writeBoolean(_synth.params.lockedParam("changeSpeed2"));
-			file.writeBoolean(_synth.params.lockedParam("changeAmount2"));
-			
-			file.writeBoolean(_synth.params.lockedParam("overtones"));
-			file.writeBoolean(_synth.params.lockedParam("overtoneFalloff"));
-			
-			return file;
-		}
-		
-		/**
-		 * Reads parameters from a ByteArray file
-		 * Compatible with the original Sfxr files
-		 * @param	file	ByteArray of settings data
-		 */
-		public function setSettingsFile(file:ByteArray):void
-		{
-			file.position = 0;
-			file.endian = Endian.LITTLE_ENDIAN;
-			
-			var version:int = file.readInt();
-			
-			if (version != 100 && version != 101 && version != 102 && version != 103)
-			{
-				return;
-			}
-			
-			_synth.params.waveType = file.readInt();
-			_synth.params.masterVolume = (version >= 102) ? file.readFloat() : 0.5;
-			
-			_synth.params.startFrequency = file.readFloat();
-			_synth.params.minFrequency = file.readFloat();
-			_synth.params.slide = file.readFloat();
-			_synth.params.deltaSlide = (version >= 101) ? file.readFloat() : 0.0;
-			
-			_synth.params.squareDuty = file.readFloat();
-			_synth.params.dutySweep = file.readFloat();
-			
-			_synth.params.vibratoDepth = file.readFloat();
-			_synth.params.vibratoSpeed = file.readFloat();
-			var unusedVibratoDelay:Number = file.readFloat();
-			
-			_synth.params.attackTime = file.readFloat();
-			_synth.params.sustainTime = file.readFloat();
-			_synth.params.decayTime = file.readFloat();
-			_synth.params.sustainPunch = file.readFloat();
-			
-			var unusedFilterOn:Boolean = file.readBoolean();
-			_synth.params.lpFilterResonance = file.readFloat();
-			_synth.params.lpFilterCutoff = file.readFloat();
-			_synth.params.lpFilterCutoffSweep = file.readFloat();
-			_synth.params.hpFilterCutoff = file.readFloat();
-			_synth.params.hpFilterCutoffSweep = file.readFloat();
-			
-			_synth.params.phaserOffset = file.readFloat();
-			_synth.params.phaserSweep = file.readFloat();
-			
-			_synth.params.repeatSpeed = file.readFloat();
-			
-			_synth.params.changePeriod = (version >= 103) ? file.readFloat() : 1.0;
-			
-			_synth.params.changeSpeed = (version >= 101) ? file.readFloat() : 0.0;
-			_synth.params.changeAmount = (version >= 101) ? file.readFloat() : 0.0;
-			_synth.params.changeSpeed2 = (version >= 103) ? file.readFloat() : 0.0;
-			_synth.params.changeAmount2 = (version >= 103) ? file.readFloat() : 0.0;
-			_synth.params.overtones = (version >= 103) ? file.readFloat() : 0.0;
-			_synth.params.overtoneFalloff = (version >= 103) ? file.readFloat() : 0.0;
-			
-			if (version >= 103)
-			{
-				_synth.params.setParamLocked("waveType", file.readBoolean());
-				_synth.params.setParamLocked("startFrequency", file.readBoolean());
-				
-				_synth.params.setParamLocked("minFrequency", file.readBoolean());
-				_synth.params.setParamLocked("slide", file.readBoolean());
-				_synth.params.setParamLocked("deltaSlide", file.readBoolean());
-				
-				_synth.params.setParamLocked("squareDuty", file.readBoolean());
-				_synth.params.setParamLocked("dutySweep", file.readBoolean());
-				
-				_synth.params.setParamLocked("vibratoDepth", file.readBoolean());
-				_synth.params.setParamLocked("vibratoSpeed", file.readBoolean());
-				
-				_synth.params.setParamLocked("attackTime", file.readBoolean());
-				_synth.params.setParamLocked("sustainTime", file.readBoolean());
-				_synth.params.setParamLocked("decayTime", file.readBoolean());
-				_synth.params.setParamLocked("sustainPunch", file.readBoolean());
-				
-				_synth.params.setParamLocked("lpFilterResonance", file.readBoolean());
-				_synth.params.setParamLocked("lpFilterCutoff", file.readBoolean());
-				_synth.params.setParamLocked("lpFilterCutoffSweep", file.readBoolean());
-				_synth.params.setParamLocked("hpFilterCutoff", file.readBoolean());
-				_synth.params.setParamLocked("hpFilterCutoffSweep", file.readBoolean());
-				
-				_synth.params.setParamLocked("phaserOffset", file.readBoolean());
-				_synth.params.setParamLocked("phaserSweep", file.readBoolean());
-				
-				_synth.params.setParamLocked("repeatSpeed", file.readBoolean());
-				
-				_synth.params.setParamLocked("changePeriod", file.readBoolean());
-				_synth.params.setParamLocked("changeSpeed", file.readBoolean());
-				_synth.params.setParamLocked("changeAmount", file.readBoolean());
-				_synth.params.setParamLocked("changeSpeed2", file.readBoolean());
-				_synth.params.setParamLocked("changeAmount2", file.readBoolean());
-				
-				_synth.params.setParamLocked("overtones", file.readBoolean());
-				_synth.params.setParamLocked("overtoneFalloff", file.readBoolean());
-			}
-		}
+		}							
 		
 		public function getWavFile():ByteArray
 		{

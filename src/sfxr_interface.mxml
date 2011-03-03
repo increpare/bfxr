@@ -12,8 +12,9 @@
     preloaderChromeColor="#CCBDA1"
 	preinitialize="onPreinitialize()"
 	initialize="onInitialize()"
-    applicationComplete="onCreationComplete();"
-    xmlns:local="*">
+	creationComplete="onCreationComplete();"
+    applicationComplete="onApplicationComplete();"
+	xmlns:local="*">
     <s:layout>
         <s:BasicLayout/>
     </s:layout>
@@ -45,6 +46,7 @@
 			public var mixerInterface : MixerInterface;
 
 			public var mixerlist : ArrayList;
+			public var SoundParameterList : ArrayList;
 			
             /** returns -1 if nothing found */
             private function GetSelectedSoundItemID():int
@@ -190,17 +192,27 @@
 					mixerlist.addItem(msed);
 				}
 				
+			}
+			
+			private function onCreationComplete():void
+			{								
+			}
+			
+            private function onApplicationComplete():void
+            {					
 				globalState = new GlobalState();
 				synthInterface = new SynthInterface(this,globalState,volumeslider);
 				mixerInterface = new MixerInterface(this,globalState,volumeslider,mixerlist);
-			}
-			
-            private function onCreationComplete():void
-            {												
-                _time.addEventListener(TimerEvent.TIMER, timerHandler);
-                _time.start();				
+				
+				SoundParameterGroup.dataProvider=SoundParameterList;
+				
+				_time.addEventListener(TimerEvent.TIMER, timerHandler);
+                _time.start();												
 				
 				mixerListComponent.dataProvider = mixerlist;
+				
+				SoundParameterGroup.invalidateDisplayList();
+				SoundParameterGroup.invalidateProperties();
 				
                 saveManager = new SaveManager(this);
 
@@ -236,7 +248,12 @@
                 {
                     if (soundItems.length == 0)
                     {
+						synthInterface.randomize();
+						soundList.selectedIndex=0;
                         AddToSoundList("Randomize", true);
+						synthInterface.randomize();
+						OnSoundParameterChanged(true, true);
+						UIUpdateTrigger();
                     }
 
                 }
@@ -271,7 +288,7 @@
                 OnMixerParameterChanged(false);
                 OnSoundParameterChanged(false);
 
-                DisableApplyButton(true);
+                DisableApplyButton(true);								
             }
 
             public function EnableApplyButton(changesMade:Boolean = false):void
@@ -892,7 +909,7 @@
                 _fileRef.removeEventListener(Event.COMPLETE, onLoadSettings);
 
                 AddToSoundList("loaded");
-                synthInterface.setSettingsFile(_fileRef.data);
+                synthInterface.setSettingsString(_fileRef.data as String);
                 UIUpdateTrigger();
                 OnSoundParameterChanged(true, false);
                 this.DisableApplyButton(false);
@@ -905,7 +922,7 @@
              */
             private function clickSaveSound():void
             {
-                var file:ByteArray = synthInterface.getSettingsFile();
+                var file:String = synthInterface.getSettingsString();
 
                 new FileReference().save(file, "sfx.sfs");
             }
@@ -1231,11 +1248,11 @@
                                             change="synthInterface.WaveformSelect(event)"/>
                                         <s:ToggleButton id="W8"
                                             width="65"
-                                            label="Up"
+                                            label="Breaker"
                                             change="synthInterface.WaveformSelect(event)"/>
                                         <s:ToggleButton id="W6"
                                             width="65"
-                                            label="Bipolar"
+                                            label="Tan"
                                             change="synthInterface.WaveformSelect(event)"/>
                                         <s:ToggleButton id="W7"
                                             width="65"
@@ -1278,271 +1295,24 @@
                                                 paddingRight="0"
                                                 paddingTop="0"/>
                                         </s:layout>
-                                        <s:DataGroup id="SoundParameterGroup"
-                                            width="100%" height="100%"
-                                            itemRenderer="Components.SoundParameterRowRenderer"
-                                            clipAndEnableScrolling="true">
-                                            <s:layout>
-                                                <s:VerticalLayout 
-                                                    paddingBottom="0"
-                                                    paddingLeft="1"
-                                                    paddingRight="0"
-                                                    paddingTop="1"
-                                                    useVirtualLayout="true"
-                                                    gap="0"/>
-                                            </s:layout>
-                                            <mx:ArrayList id="SoundParameterList">
-                                                <local:SoundListRowData 
-                                                    label="Attack time"
-                                                    odd="0"
-                                                    square="false"
-                                                    bggroup="0"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="attackTime"/>
-                                                <local:SoundListRowData 
-                                                    label="Sustain time"
-                                                    odd="1"
-                                                    square="false"
-                                                    bggroup="0"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="sustainTime"/>
-                                                <local:SoundListRowData 
-                                                    label="Sustain punch"
-                                                    odd="0"
-                                                    square="false"
-                                                    bggroup="0"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="sustainPunch"/>
-                                                <local:SoundListRowData 
-                                                    label="Decay time"
-                                                    odd="1"
-                                                    square="false"
-                                                    bggroup="0"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="decayTime"/>
-                                                <local:SoundListRowData 
-                                                    label="Start frequency"
-                                                    odd="0"
-                                                    square="false"
-                                                    bggroup="1"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="startFrequency"/>
-                                                <local:SoundListRowData 
-                                                    label="Min frequency cutoff"
-                                                    odd="1"
-                                                    square="false"
-                                                    bggroup="1"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="minFrequency"/>
-                                                <local:SoundListRowData 
-                                                    label="Slide"
-                                                    odd="0"
-                                                    square="false"
-                                                    bggroup="1"
-                                                    min="-1"
-                                                    max="1"
-                                                    tag="slide"/>
-                                                <local:SoundListRowData 
-                                                    label="Delta slide"
-                                                    odd="1"
-                                                    square="false"
-                                                    bggroup="1"
-                                                    min="-1"
-                                                    max="1"
-                                                    tag="deltaSlide"/>
-                                                <local:SoundListRowData 
-                                                    label="Vibrato depth"
-                                                    odd="0"
-                                                    square="false"
-                                                    bggroup="1"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="vibratoDepth"/>
-                                                <local:SoundListRowData 
-                                                    label="Vibrato speed"
-                                                    odd="1"
-                                                    square="false"
-                                                    bggroup="1"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="vibratoSpeed"/>
-                                                <local:SoundListRowData 
-                                                    label="Change period"
-                                                    odd="0"
-                                                    square="false"
-                                                    bggroup="0"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="changePeriod"/>
-                                                <local:SoundListRowData 
-                                                    label="Change amount"
-                                                    odd="1"
-                                                    square="false"
-                                                    bggroup="0"
-                                                    min="-1"
-                                                    max="1"
-                                                    tag="changeAmount"/>
-                                                <local:SoundListRowData 
-                                                    label="Change speed"
-                                                    odd="0"
-                                                    square="false"
-                                                    bggroup="0"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="changeSpeed"/>
-                                                <local:SoundListRowData 
-                                                    label="Change amount2"
-                                                    odd="1"
-                                                    square="false"
-                                                    bggroup="0"
-                                                    min="-1"
-                                                    max="1"
-                                                    tag="changeAmount2"/>
-                                                <local:SoundListRowData 
-                                                    label="Change speed2"
-                                                    odd="0"
-                                                    square="false"
-                                                    bggroup="0"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="changeSpeed2"/>
-                                                <local:SoundListRowData 
-                                                    label="Square duty"
-                                                    odd="1"
-                                                    square="true"
-                                                    bggroup="1"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="squareDuty"/>
-                                                <local:SoundListRowData 
-                                                    label="Duty sweep"
-                                                    odd="0"
-                                                    square="true"
-                                                    bggroup="1"
-                                                    min="-1"
-                                                    max="1"
-                                                    tag="dutySweep"/>
-                                                <local:SoundListRowData 
-                                                    label="Overtones"
-                                                    odd="1"
-                                                    square="false"
-                                                    bggroup="0"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="overtones"/>
-                                                <local:SoundListRowData 
-                                                    label="Overtone falloff"
-                                                    odd="0"
-                                                    square="false"
-                                                    bggroup="0"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="overtoneFalloff"/>
-                                                <local:SoundListRowData 
-                                                    label="Repeat speed"
-                                                    odd="1"
-                                                    square="false"
-                                                    bggroup="1"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="repeatSpeed"/>
-												
-                                                <local:SoundListRowData 
-                                                    label="Phaser offset"
-                                                    odd="0"
-                                                    square="false"
-                                                    bggroup="1"
-                                                    min="-1"
-                                                    max="1"
-                                                    tag="phaserOffset"/>
-                                                <local:SoundListRowData 
-                                                    label="Phaser sweep"
-                                                    odd="1"
-                                                    square="false"
-                                                    bggroup="1"
-                                                    min="-1"
-                                                    max="1"
-                                                    tag="phaserSweep"/>
-                                                <local:SoundListRowData 
-                                                    label="Low-pass filter cutoff"
-                                                    odd="0"
-                                                    square="false"
-                                                    bggroup="0"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="lpFilterCutoff"/>
-                                                <local:SoundListRowData 
-                                                    label="Low-pass filter cutoff sweep"
-                                                    odd="1"
-                                                    square="false"
-                                                    bggroup="0"
-                                                    min="-1"
-                                                    max="1"
-                                                    tag="lpFilterCutoffSweep"/>
-                                                <local:SoundListRowData 
-                                                    label="Low-pass filter resonance"
-                                                    odd="0"
-                                                    square="false"
-                                                    bggroup="0"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="lpFilterResonance"/>
-                                                <local:SoundListRowData 
-                                                    label="High-pass filter cutoff"
-                                                    odd="1"
-                                                    square="false"
-                                                    bggroup="0"
-                                                    min="0"
-                                                    max="1"
-                                                    tag="hpFilterCutoff"/>
-                                                <local:SoundListRowData 
-                                                    label="High-pass filter cutoff sweep"
-                                                    odd="0"
-                                                    square="false"
-                                                    bggroup="0"
-                                                    min="-1"
-                                                    max="1"
-                                                    tag="hpFilterCutoffSweep"/>												
-												
-												<local:SoundListRowData 
-													label="Bitcrush frequency"
-													odd="0"
-													square="false"
-													bggroup="1"
-													min="0.001"
-													max="1"
-													tag="bitcrush_freq"/>
-												
-												<local:SoundListRowData 
-													label="Bitcrush frequency sweep"
-													odd="0"
-													square="false"
-													bggroup="1"
-													min="-1"
-													max="1"
-													tag="bitcrush_freq_sweep"/>
-												
-												<local:SoundListRowData 
-													label="Compression Amount"
-													odd="0"
-													square="false"
-													bggroup="0"
-													min="1"
-													max="8"
-													tag="compression_amount"/>
-                                            </mx:ArrayList>
-                                        </s:DataGroup>
+										<s:Scroller height="100%" width="100%">											
+	                                        <s:DataGroup id="SoundParameterGroup"
+	                                            width="100%" height="100%"
+	                                            itemRenderer="Components.SoundParameterRowRenderer">
+	                                            <s:layout>
+	                                                <s:VerticalLayout 
+	                                                    paddingBottom="0"
+	                                                    paddingLeft="1"
+	                                                    paddingRight="0"
+	                                                    paddingTop="1"
+	                                                    useVirtualLayout="true"
+	                                                    gap="0"/>
+	                                            </s:layout>    
+	                                        </s:DataGroup>
+										</s:Scroller>
                                     </s:BorderContainer>
                                 </s:VGroup>
-                                <s:VScrollBar 
-                                    height="100"
-                                    viewport="{SoundParameterGroup}"/>
+                                
 
                             </s:HGroup>
                         </s:VGroup>

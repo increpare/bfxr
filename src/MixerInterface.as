@@ -46,13 +46,12 @@ package
 				dat.amplitudemodifier = item.amplitudemodifier;
 				dat.onset = item.onset;
 				dat.preset = true;
-				
 				_mixerList.setItemAt(dat, i);
 				
 				//layerItems.ad
 			}
 		}
-		
+			
 		
 		
 		public function RecalcDilation():void

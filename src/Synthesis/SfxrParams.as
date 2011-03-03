@@ -1,5 +1,7 @@
 package Synthesis   
 {
+	import mx.utils.StringUtil;
+
 	/**
 	 * SfxrParams
 	 * 
@@ -30,59 +32,99 @@ package Synthesis
 		/** If the parameters have been changed since last time (shouldn't used cached sound) */
 		public var paramsDirty:Boolean;			
 		
-		private static var paramData = [
-		["waveType",0,6],// Shape of the wave (0:square, 1:saw, 2:sin or 3:noise)
-		["masterVolume",0,1],// Overall volume of the sound (0 to 1)
+		//interface uses this to disable square sliders when non-square wavetype selected
+		public static const SquareParams:Array = ["squareDuty","dutySweep"];
+		
+		//params to exclude from list
+		public static const ExcludeParams:Array = ["waveType","masterVolume"];
+		
+		public static const ParamData:Array = [
+		// real name, decription
+		//   grouping,name, default, min, max, 
+		["Wave Type","Shape of the wave.",
+			0,"waveType",2,0,WAVETYPECOUNT+0.9999], // the 6.999 thing is because this is really an int parameter...		
+		
+		["Master Volume","Overall volume of the sound",
+			1,"masterVolume",0.5,0,1], 	
+		["Attack Time","Length of the volume envelope attack.",
+			1,"attackTime",0,0,1],		
+		["Sustain Time","Length of the volume envelope sustain.",
+			1,"sustainTime",0.3,0,1], 	
+		["Punch","Tilts the sustain envelope for more 'pop'.",
+			1,"sustainPunch",0,0,1], 		
+		["Decay Time","Length of the volume envelope decay (yes, I know it's called release).",
+			1,"decayTime",0.4,0,1], 	
+		
+		["Compression","Pushes amplitudes together into a narrower range to make them stand out more.  Very good for sound effects, where you want them to stick out against background music.",
+			15,"compressionAmount",0.3,0,1],
+		
+		["Frequency","Base note of the sound.",
+			2,"startFrequency",0.3,0,1], 		
+		["Frequency Cutoff","If sliding, the sound will stop at this frequency, to prevent really low notes.",
+			2,"minFrequency",0.0,0,1], 		
+		
+		["Frequency Slide","Slides the frequency up or down",
+			3,"slide",0.0,-1,1], 	
+		["Delta Slide","Accelerates the frequency slide",
+			3,"deltaSlide",0.0,-1,1], 		
+		
+		["Vibrato Depth","Strength of the vibrato effect",
+			4,"vibratoDepth",0,0,1], 		
+		["Vibrato Speed","Speed of the vibrato effect (i.e. frequency)",
+			4,"vibratoSpeed",0,0,1], 		
+		
+		["Harmonics","Overlays copies of the waveform with copies and multiples of its frequency (warning: can be slow).",
+			13,"overtones",0,0,1], 		
+		["Harmonics Falloff","The rate at which higher overtones should decay.",
+			13,"overtoneFalloff",0,0,1], 
+		
+		["Pitch Jump Repeat Speed","Larger Values means more pitch jumps, which can be useful for arpeggiation.",
+			5,"changeRepeat",1,0,1], 		
+		
+		["Pitch Jump Amount 1","Jump in pitch, either up or down.",
+			5,"changeAmount",0,-1,1], 		
+		["Pitch Jump Onset 1","When the note shift happens.",
+			5,"changeSpeed",0,0,1], 		
+		
+		["Pitch Jump Amount 2","Jump in pitch, either up or down.",
+			7,"changeAmount2",0,-1,1], 	
+		["Pitch Jump Onset 2","When the note shift happens.",
+			7,"changeSpeed2",0,0,1], 		
+		
+		["Square Duty","ontrols the ratio between the up and down states of the square wave, changing the tibre .",
+			8,"squareDuty",0,0,1], 		
+		["Duty Sweep","Sweeps the duty up or down",
+			8,"dutySweep",0,-1,1], 		
+		
+		["Repeat Speed","Speed of the note repeating - certain variables are reset each time",
+			9,"repeatSpeed",0,0,1], 	
+		
+		["Flanger Offset","Offsets a second copy of the wave by a small phase, changing the tibre",
+			10,"flangerOffset",0,-1,1], 		
+		["Flanger Sweep","Sweeps the phase up or down",
+			10,"flangerSweep",0,-1,1], 
+		
+		["Low-pass Filter Cutoff","Frequency at which the low-pass filter starts attenuating higher frequencies ",
+			11,"lpFilterCutoff",1,0,1], 		
+		["Low-pass Filter Cutoff Sweep","Sweeps the low-pass cutoff up or down",
+			11,"lpFilterCutoffSweep",0,-1,1], 	
+		["Low-pass Filter Resonance","Changes the attenuation rate for the low-pass filter, changing the timbre ",
+			11,"lpFilterResonance",0,0,1], 		
+		
+		["High-pass Filter Cutoff","Frequency at which the high-pass filter starts attenuating lower frequencies",
+			12,"hpFilterCutoff",0,0,1], 	
+		["High-pass Filter Cutoff Sweep","Sweeps the high-pass cutoff up or down",
+			12,"hpFilterCutoffSweep",0,-1,1], 	
+						
+		["Bit Crush","Resamples the audio at a lower frequency.",
+			14,"bitCrush",0,0,1] ,
+		["Bit Crush Sweep","Sweeps the Bit Crush filter up or down",
+			14,"bitCrushSweep",0,-1,1]  
+		
 		];
-		private var _waveType			:uint = 	0;		
 		
-		private var _masterVolume		:Number = 	0.5;	
-		private var _attackTime			:Number =	0.0;	// Length of the volume envelope attack (0 to 1)
-		private var _sustainTime		:Number = 	0.0;	// Length of the volume envelope sustain (0 to 1)
-		private var _sustainPunch		:Number = 	0.0;	// Tilts the sustain envelope for more 'pop' (0 to 1)
-		private var _decayTime			:Number = 	0.0;	// Length of the volume envelope decay (yes, I know it's called release) (0 to 1)
-		
-		private var _startFrequency		:Number = 	0.0;	// Base note of the sound (0 to 1)
-		private var _minFrequency		:Number = 	0.0;	// If sliding, the sound will stop at this frequency, to prevent really low notes (0 to 1)
-		
-		private var _slide				:Number = 	0.0;	// Slides the note up or down (-1 to 1)
-		private var _deltaSlide			:Number = 	0.0;	// Accelerates the slide (-1 to 1)
-		
-		private var _vibratoDepth		:Number = 	0.0;	// Strength of the vibrato effect (0 to 1)
-		private var _vibratoSpeed		:Number = 	0.0;	// Speed of the vibrato effect (i.e. frequency) (0 to 1)
-		
-		private var _changePeriod		:Number = 	0.0;	// How fast the note shift happens (only happens once) (0 to 1)
-		
-		private var _changeAmount		:Number = 	0.0;	// Shift in note, either up or down (-1 to 1)
-		private var _changeSpeed		:Number = 	0.0;	// How fast the note shift happens (only happens once) (0 to 1)
-		
-		private var _changeAmount2		:Number = 	0.0;	// Shift in note, either up or down (-1 to 1)
-		private var _changeSpeed2		:Number = 	0.0;	// How fast the note shift happens (only happens once) (0 to 1)
-		
-		private var _squareDuty			:Number = 	0.0;	// Controls the ratio between the up and down states of the square wave, changing the tibre (0 to 1)
-		private var _dutySweep			:Number = 	0.0;	// Sweeps the duty up or down (-1 to 1)
-		
-		private var _repeatSpeed		:Number = 	0.0;	// Speed of the note repeating - certain variables are reset each time (0 to 1)
-		
-		private var _phaserOffset		:Number = 	0.0;	// Offsets a second copy of the wave by a small phase, changing the tibre (-1 to 1)
-		private var _phaserSweep		:Number = 	0.0;	// Sweeps the phase up or down (-1 to 1)
-		
-		private var _lpFilterCutoff		:Number = 	0.0;	// Frequency at which the low-pass filter starts attenuating higher frequencies (0 to 1)
-		private var _lpFilterCutoffSweep:Number = 	0.0;	// Sweeps the low-pass cutoff up or down (-1 to 1)
-		private var _lpFilterResonance	:Number = 	0.0;	// Changes the attenuation rate for the low-pass filter, changing the timbre (0 to 1)
-		
-		private var _hpFilterCutoff		:Number = 	0.0;	// Frequency at which the high-pass filter starts attenuating lower frequencies (0 to 1)
-		private var _hpFilterCutoffSweep:Number = 	0.0;	// Sweeps the high-pass cutoff up or down (0 to 1)
-		
-		private var _overtones		:Number = 	0.0;	// Frequency at which the high-pass filter starts attenuating lower frequencies (0 to 1)
-		private var _overtoneFalloff:Number = 	0.0;	// Sweeps the high-pass cutoff up or down (0 to 1)
-		
-		private var _bitcrush_freq : Number = 0.0;
-		private var _bitcrush_freq_sweep : Number = 0.0;
-		
-		private var _compression_amount:Number = 0.0; // amplitues above this get reduced
-		
-		private var _lockedParams : Vector.<String> = new Vector.<String>(); // stores list of strings, these strings represent parameters that will be locked during randomization/mutation
+		private var _params:Object; // stores values for all the parameters above
+		private var _lockedParams : Vector.<String>; // stores list of strings, these strings represent parameters that will be locked during randomization/mutation
 		
 		//--------------------------------------------------------------------------
 		//
@@ -92,134 +134,66 @@ package Synthesis
 		
 		public static const WAVETYPECOUNT:int = 9;
 		
-		/** Shape of the wave (0:square, 1:saw, 2:sin, 3:noise, or 4:triangle) */
-		public function get waveType():uint { return _waveType; }
-		public function set waveType(value:uint):void { _waveType = value >= WAVETYPECOUNT ? 0 : value; paramsDirty = true; }
+		public function SfxrParams()
+		{
+			//initialize param object 
+			_params = new Object();			
+			for (var i:int=0;i<ParamData.length;i++)
+			{
+				_params[ParamData[i][3]]=-100;
+			}
+			
+			resetParams();
+		}
 		
-		/** Overall volume of the sound (0 to 1) */
-		public function get masterVolume():Number { return _masterVolume; }
-		public function set masterVolume(value:Number):void { _masterVolume = clamp1(value); paramsDirty = true; }
-				
-		/** Length of the volume envelope attack (0 to 1) */
-		public function get attackTime():Number { return _attackTime; }
-		public function set attackTime(value:Number):void { _attackTime = clamp1(value); paramsDirty = true; }
+		public function getDefault(param:String):Number
+		{
+			return getProperty(param,4);
+		}
 		
-		/** Length of the volume envelope sustain (0 to 1) */
-		public function get sustainTime():Number { return _sustainTime; }
-		public function set sustainTime(value:Number):void { _sustainTime = clamp1(value); paramsDirty = true; }
+		public function getMin(param:String):Number
+		{
+			return getProperty(param,5);
+		}
 		
-		/** Tilts the sustain envelope for more 'pop' (0 to 1) */
-		public function get sustainPunch():Number { return _sustainPunch; }
-		public function set sustainPunch(value:Number):void { _sustainPunch = clamp1(value); paramsDirty = true; }
+		public function getMax(param:String):Number
+		{
+			return getProperty(param,6);
+		}
 		
-		/** Length of the volume envelope decay (yes, I know it's called release) (0 to 1) */
-		public function get decayTime():Number { return _decayTime; }
-		public function set decayTime(value:Number):void { _decayTime = clamp1(value); paramsDirty = true; }
-
-		/** Base note of the sound (0 to 1) */
-		public function get startFrequency():Number { return _startFrequency; }
-		public function set startFrequency(value:Number):void { _startFrequency = clamp1(value); paramsDirty = true; }
+		private function getProperty(param:String,index:int):Number
+		{
+			for (var i:int=0;i<ParamData.length;i++)
+			{
+				if (ParamData[i][3]==param)
+				{
+					return ParamData[i][index];
+				}
+			}
+			throw new Error("Could not find param with name " + param );			
+		}
 		
-		/** If sliding, the sound will stop at this frequency, to prevent really low notes (0 to 1) */
-		public function get minFrequency():Number { return _minFrequency; }
-		public function set minFrequency(value:Number):void { _minFrequency = clamp1(value); paramsDirty = true; }
+		public function getParam(param:String):Number
+		{
+			if (! (param in _params))
+			{
+				throw new Error("Could not get param.  Param not found " + param);
+			}
+			
+			return _params[param];			
+		}
 		
-		/** Slides the note up or down (-1 to 1) */
-		public function get slide():Number { return _slide; }
-		public function set slide(value:Number):void { _slide = clamp2(value); paramsDirty = true; }
+		public function setParam(param:String,value:Number):void
+		{
+			if (! (param in _params))
+			{
+				throw new Error("Could not set param.  Param not found " + param);
+			}
+			
+			_params[param]=clamp(value,getMin(param),getMax(param));
+			paramsDirty = true;
+		}
 		
-		/** Accelerates the slide (-1 to 1) */
-		public function get deltaSlide():Number { return _deltaSlide; }
-		public function set deltaSlide(value:Number):void { _deltaSlide = clamp2(value); paramsDirty = true; }
-		
-		/** Strength of the vibrato effect (0 to 1) */
-		public function get vibratoDepth():Number { return _vibratoDepth; }
-		public function set vibratoDepth(value:Number):void { _vibratoDepth = clamp1(value); paramsDirty = true; }
-		
-		/** Speed of the vibrato effect (i.e. frequency) (0 to 1) */
-		public function get vibratoSpeed():Number { return _vibratoSpeed; }
-		public function set vibratoSpeed(value:Number):void { _vibratoSpeed = clamp1(value); paramsDirty = true; }
-		
-		/** Shift in note, either up or down (0 to 1) */
-		public function get changePeriod():Number { return _changePeriod; }
-		public function set changePeriod(value:Number):void { _changePeriod = clamp2(value); paramsDirty = true; }
-		
-		
-		/** Shift in note, either up or down (-1 to 1) */
-		public function get changeAmount():Number { return _changeAmount; }
-		public function set changeAmount(value:Number):void { _changeAmount = clamp2(value); paramsDirty = true; }
-		
-		/** Shift in note, either up or down (-1 to 1) */
-		public function get changeAmount2():Number { return _changeAmount2; }
-		public function set changeAmount2(value:Number):void { _changeAmount2 = clamp2(value); paramsDirty = true; }
-		
-		/** How fast the note shift happens (only happens once) (0 to 1) */
-		public function get changeSpeed():Number { return _changeSpeed; }
-		public function set changeSpeed(value:Number):void { _changeSpeed = clamp1(value); paramsDirty = true; }
-		
-		/** How fast the note shift happens (only happens once) (0 to 1) */
-		public function get changeSpeed2():Number { return _changeSpeed2; }
-		public function set changeSpeed2(value:Number):void { _changeSpeed2 = clamp1(value); paramsDirty = true; }
-		
-		/** Controls the ratio between the up and down states of the square wave, changing the tibre (0 to 1) */
-		public function get squareDuty():Number { return _squareDuty; }
-		public function set squareDuty(value:Number):void { _squareDuty = clamp1(value); paramsDirty = true; }
-		
-		/** Sweeps the duty up or down (-1 to 1) */
-		public function get dutySweep():Number { return _dutySweep; }
-		public function set dutySweep(value:Number):void { _dutySweep = clamp2(value); paramsDirty = true; }
-		
-		/** Speed of the note repeating - certain variables are reset each time (0 to 1) */
-		public function get repeatSpeed():Number { return _repeatSpeed; }
-		public function set repeatSpeed(value:Number):void { _repeatSpeed = clamp1(value); paramsDirty = true; }
-		
-		/** Offsets a second copy of the wave by a small phase, changing the tibre (-1 to 1) */
-		public function get phaserOffset():Number { return _phaserOffset; }
-		public function set phaserOffset(value:Number):void { _phaserOffset = clamp2(value); paramsDirty = true; }
-		
-		/** Sweeps the phase up or down (-1 to 1) */
-		public function get phaserSweep():Number { return _phaserSweep; }
-		public function set phaserSweep(value:Number):void { _phaserSweep = clamp2(value); paramsDirty = true; }
-		
-		/** Frequency at which the low-pass filter starts attenuating higher frequencies (0 to 1) */
-		public function get lpFilterCutoff():Number { return _lpFilterCutoff; }
-		public function set lpFilterCutoff(value:Number):void { _lpFilterCutoff = clamp1(value); paramsDirty = true; }
-		
-		/** Sweeps the low-pass cutoff up or down (-1 to 1) */
-		public function get lpFilterCutoffSweep():Number { return _lpFilterCutoffSweep; }
-		public function set lpFilterCutoffSweep(value:Number):void { _lpFilterCutoffSweep = clamp2(value); paramsDirty = true; }
-		
-		/** Changes the attenuation rate for the low-pass filter, changing the timbre (0 to 1) */
-		public function get lpFilterResonance():Number { return _lpFilterResonance; }
-		public function set lpFilterResonance(value:Number):void { _lpFilterResonance = clamp1(value); paramsDirty = true; }
-		
-		/** Frequency at which the high-pass filter starts attenuating lower frequencies (0 to 1) */
-		public function get hpFilterCutoff():Number { return _hpFilterCutoff; }
-		public function set hpFilterCutoff(value:Number):void { _hpFilterCutoff = clamp1(value); paramsDirty = true; }
-		
-		/** Sweeps the high-pass cutoff up or down (-1 to 1) */
-		public function get hpFilterCutoffSweep():Number { return _hpFilterCutoffSweep; }
-		public function set hpFilterCutoffSweep(value:Number):void { _hpFilterCutoffSweep = clamp2(value); paramsDirty = true; }
-		
-		/** generates overtones adds harmonics 0 to 1 */
-		public function get overtones():Number { return _overtones; }
-		public function set overtones(value:Number):void { _overtones = clamp1(value); paramsDirty = true; }
-		
-		public function get overtoneFalloff():Number { return _overtoneFalloff; }
-		public function set overtoneFalloff(value:Number):void { _overtoneFalloff = clamp2(value); paramsDirty = true; }		
-		
-		/** generates overtones adds harmonics 0 to 1 */
-		public function get bitcrush_freq():Number { return _bitcrush_freq; }
-		public function set bitcrush_freq(value:Number):void { _bitcrush_freq = clamp1(value); paramsDirty = true; }
-		
-		/** generates overtones adds harmonics -1 to 1 */
-		public function get bitcrush_freq_sweep():Number { return _bitcrush_freq_sweep; }
-		public function set bitcrush_freq_sweep(value:Number):void { _bitcrush_freq_sweep = clamp2(value); paramsDirty = true; }
-		
-		/** generates overtones adds harmonics 0 to 1 */
-		public function get compression_amount():Number { return _compression_amount; }
-		public function set compression_amount(value:Number):void { _compression_amount = clamp(value,1,8); paramsDirty = true; }
-				
 		/** Returns true if this parameter is locked */
 		public function lockedParam(param:String):Boolean
 		{
@@ -261,16 +235,16 @@ package Synthesis
 		{
 			resetParams();
 			
-			_startFrequency = 0.4 + Math.random() * 0.5;
+			setParam("startFrequency",0.4+Math.random()*0.5);
 			
-			_sustainTime = Math.random() * 0.1;
-			_decayTime = 0.1 + Math.random() * 0.4;
-			_sustainPunch = 0.3 + Math.random() * 0.3;
+			setParam("sustainTime", Math.random() * 0.1);
+			setParam("decayTime", 0.1 + Math.random() * 0.4);
+			setParam("sustainPunch", 0.3 + Math.random() * 0.3);
 			
 			if(Math.random() < 0.5) 
 			{
-				_changeSpeed = 0.5 + Math.random() * 0.2;
-				_changeAmount = 0.2 + Math.random() * 0.4;
+				setParam("changeSpeed", 0.5 + Math.random() * 0.2);
+				setParam("changeAmount", 0.2 + Math.random() * 0.4);
 			}
 			
 		}
@@ -282,44 +256,52 @@ package Synthesis
 		{
 			resetParams();
 			
-			_waveType = uint(Math.random() * 3);
-			if(_waveType == 2 && Math.random() < 0.5) _waveType = uint(Math.random() * 2);
+			setParam("waveType",uint(Math.random() * 3));
+			if( int(getParam("waveType")) == 2 && Math.random() < 0.5) 
+			{
+				setParam("waveType", 
+					uint(Math.random() * 2));
+			}
 			
-			_startFrequency = 0.5 + Math.random() * 0.5;
-			_minFrequency = _startFrequency - 0.2 - Math.random() * 0.6;
-			if(_minFrequency < 0.2) _minFrequency = 0.2;
+			setParam("startFrequency", 
+				0.5 + Math.random() * 0.5);
+			setParam("minFrequency", 
+				getParam("startFrequency") - 0.2 - Math.random() * 0.6);
 			
-			_slide = -0.15 - Math.random() * 0.2;
+			if(getParam("minFrequency") < 0.2) 
+				setParam("minFrequency",0.2);
 			
+			setParam("slide", -0.15 - Math.random() * 0.2);			
+			 
 			if(Math.random() < 0.33)
 			{
-				_startFrequency = 0.3 + Math.random() * 0.6;
-				_minFrequency = Math.random() * 0.1;
-				_slide = -0.35 - Math.random() * 0.3;
+				setParam("startFrequency", Math.random() * 0.6);
+				setParam("minFrequency", Math.random() * 0.1);
+				setParam("slide", -0.35 - Math.random() * 0.3);
 			}
 			
 			if(Math.random() < 0.5) 
 			{
-				_squareDuty = Math.random() * 0.5;
-				_dutySweep = Math.random() * 0.2;
+				setParam("squareDuty", Math.random() * 0.5);
+				setParam("dutySweep", Math.random() * 0.2);
 			}
 			else
 			{
-				_squareDuty = 0.4 + Math.random() * 0.5;
-				_dutySweep =- Math.random() * 0.7;	
+				setParam("squareDuty", 0.4 + Math.random() * 0.5);
+				setParam("dutySweep",- Math.random() * 0.7);	
 			}
 			
-			_sustainTime = 0.1 + Math.random() * 0.2;
-			_decayTime = Math.random() * 0.4;
-			if(Math.random() < 0.5) _sustainPunch = Math.random() * 0.3;
+			setParam("sustainTime", 0.1 + Math.random() * 0.2);
+			setParam("decayTime", Math.random() * 0.4);
+			if(Math.random() < 0.5) setParam("sustainPunch", Math.random() * 0.3);
 			
 			if(Math.random() < 0.33)
 			{
-				_phaserOffset = Math.random() * 0.2;
-				_phaserSweep = -Math.random() * 0.2;
+				setParam("flangerOffset", Math.random() * 0.2);
+				setParam("flangerSweep", -Math.random() * 0.2);
 			}
 			
-			if(Math.random() < 0.5) _hpFilterCutoff = Math.random() * 0.3;
+			if(Math.random() < 0.5) setParam("hpFilterCutoff", Math.random() * 0.3);
 		}
 		
 		/**
@@ -328,38 +310,38 @@ package Synthesis
 		public function generateExplosion():void
 		{
 			resetParams();
-			_waveType = 3;
+			setParam("waveType", 3);
 			
 			if(Math.random() < 0.5)
 			{
-				_startFrequency = 0.1 + Math.random() * 0.4;
-				_slide = -0.1 + Math.random() * 0.4;
+				setParam("startFrequency", 0.1 + Math.random() * 0.4);
+				setParam("slide", -0.1 + Math.random() * 0.4);
 			}
 			else
 			{
-				_startFrequency = 0.2 + Math.random() * 0.7;
-				_slide = -0.2 - Math.random() * 0.2;
+				setParam("startFrequency", 0.2 + Math.random() * 0.7);
+				setParam("slide", -0.2 - Math.random() * 0.2);
 			}
 			
-			_startFrequency *= _startFrequency;
+			setParam("startFrequency", getParam("startFrequency") * getParam("startFrequency"));
 			
-			if(Math.random() < 0.2) _slide = 0.0;
-			if(Math.random() < 0.33) _repeatSpeed = 0.3 + Math.random() * 0.5;
+			if(Math.random() < 0.2) setParam("slide", 0.0);
+			if(Math.random() < 0.33) setParam("repeatSpeed", 0.3 + Math.random() * 0.5);
 			
-			_sustainTime = 0.1 + Math.random() * 0.3;
-			_decayTime = Math.random() * 0.5;
-			_sustainPunch = 0.2 + Math.random() * 0.6;
+			setParam("sustainTime", 0.1 + Math.random() * 0.3);
+			setParam("decayTime", Math.random() * 0.5);
+			setParam("sustainPunch", 0.2 + Math.random() * 0.6);
 			
 			if(Math.random() < 0.5)
 			{
-				_phaserOffset = -0.3 + Math.random() * 0.9;
-				_phaserSweep = -Math.random() * 0.3;
+				setParam("flangerOffset", -0.3 + Math.random() * 0.9);
+				setParam("flangerSweep", -Math.random() * 0.3);
 			}
 			
 			if(Math.random() < 0.33)
 			{
-				_changeSpeed = 0.6 + Math.random() * 0.3;
-				_changeAmount = 0.8 - Math.random() * 1.6;
+				setParam("changeSpeed", 0.6 + Math.random() * 0.3);
+				setParam("changeAmount", 0.8 - Math.random() * 1.6);
 			}
 		}
 		
@@ -370,29 +352,29 @@ package Synthesis
 		{
 			resetParams();
 			
-			if(Math.random() < 0.5) _waveType = 1;
-			else 					_squareDuty = Math.random() * 0.6;
+			if(Math.random() < 0.5) setParam("waveType", 1);
+			else 					setParam("squareDuty", Math.random() * 0.6);
 			
 			if(Math.random() < 0.5)
 			{
-				_startFrequency = 0.2 + Math.random() * 0.3;
-				_slide = 0.1 + Math.random() * 0.4;
-				_repeatSpeed = 0.4 + Math.random() * 0.4;
+				setParam("startFrequency", 0.2 + Math.random() * 0.3);
+				setParam("slide", 0.1 + Math.random() * 0.4);
+				setParam("repeatSpeed", 0.4 + Math.random() * 0.4);
 			}
 			else
 			{
-				_startFrequency = 0.2 + Math.random() * 0.3;
-				_slide = 0.05 + Math.random() * 0.2;
+				setParam("startFrequency", 0.2 + Math.random() * 0.3);
+				setParam("slide", 0.05 + Math.random() * 0.2);
 				
 				if(Math.random() < 0.5)
 				{
-					_vibratoDepth = Math.random() * 0.7;
-					_vibratoSpeed = Math.random() * 0.6;
+					setParam("vibratoDepth", Math.random() * 0.7);
+					setParam("vibratoSpeed", Math.random() * 0.6);
 				}
 			}
 			
-			_sustainTime = Math.random() * 0.4;
-			_decayTime = 0.1 + Math.random() * 0.4;
+			setParam("sustainTime", Math.random() * 0.4);
+			setParam("decayTime", 0.1 + Math.random() * 0.4);
 		}
 		
 		/**
@@ -402,17 +384,19 @@ package Synthesis
 		{
 			resetParams();
 			
-			_waveType = uint(Math.random() * 3);
-			if(_waveType == 2) _waveType = 3;
-			else if(_waveType == 0) _squareDuty = Math.random() * 0.6;
+			setParam("waveType", uint(Math.random() * 3));
+			if(int(getParam("waveType")) == 2) 
+				setParam("waveType", 3);
+			else if(int(getParam("waveType")) == 0) 
+				setParam("squareDuty", Math.random() * 0.6);
 			
-			_startFrequency = 0.2 + Math.random() * 0.6;
-			_slide = -0.3 - Math.random() * 0.4;
+			setParam("startFrequency", 0.2 + Math.random() * 0.6);
+			setParam("slide", -0.3 - Math.random() * 0.4);
 			
-			_sustainTime = Math.random() * 0.1;
-			_decayTime = 0.1 + Math.random() * 0.2;
+			setParam("sustainTime", Math.random() * 0.1);
+			setParam("decayTime", 0.1 + Math.random() * 0.2);
 			
-			if(Math.random() < 0.5) _hpFilterCutoff = Math.random() * 0.3;
+			if(Math.random() < 0.5) setParam("hpFilterCutoff", Math.random() * 0.3);
 		}
 		
 		/**
@@ -422,16 +406,16 @@ package Synthesis
 		{
 			resetParams();
 			
-			_waveType = 0;
-			_squareDuty = Math.random() * 0.6;
-			_startFrequency = 0.3 + Math.random() * 0.3;
-			_slide = 0.1 + Math.random() * 0.2;
+			setParam("waveType", 0);
+			setParam("squareDuty", Math.random() * 0.6);
+			setParam("startFrequency", 0.3 + Math.random() * 0.3);
+			setParam("slide", 0.1 + Math.random() * 0.2);
 			
-			_sustainTime = 0.1 + Math.random() * 0.3;
-			_decayTime = 0.1 + Math.random() * 0.2;
+			setParam("sustainTime", 0.1 + Math.random() * 0.3);
+			setParam("decayTime", 0.1 + Math.random() * 0.2);
 			
-			if(Math.random() < 0.5) _hpFilterCutoff = Math.random() * 0.3;
-			if(Math.random() < 0.5) _lpFilterCutoff = 1.0 - Math.random() * 0.6;
+			if(Math.random() < 0.5) setParam("hpFilterCutoff", Math.random() * 0.3);
+			if(Math.random() < 0.5) setParam("lpFilterCutoff", 1.0 - Math.random() * 0.6);
 		}
 		
 		/**
@@ -441,14 +425,15 @@ package Synthesis
 		{
 			resetParams();
 			
-			_waveType = uint(Math.random() * 2);
-			if(_waveType == 0) _squareDuty = Math.random() * 0.6;
+			setParam("waveType", uint(Math.random() * 2));
+			if(int(getParam("waveType")) == 0) 
+				setParam("squareDuty", Math.random() * 0.6);
 			
-			_startFrequency = 0.2 + Math.random() * 0.4;
+			setParam("startFrequency", 0.2 + Math.random() * 0.4);
 			
-			_sustainTime = 0.1 + Math.random() * 0.1;
-			_decayTime = Math.random() * 0.2;
-			_hpFilterCutoff = 0.1;
+			setParam("sustainTime", 0.1 + Math.random() * 0.1);
+			setParam("decayTime", Math.random() * 0.2);
+			setParam("hpFilterCutoff", 0.1);
 		}
 		
 		/**
@@ -458,84 +443,18 @@ package Synthesis
 		{
 			paramsDirty = true;
 			
-			if (paramsToReset==null || paramsToReset.indexOf("masterVolume")>=0)
-				_masterVolume = 0.5;
-			if (paramsToReset==null || paramsToReset.indexOf("waveType")>=0)
-				_waveType = 0;
-			if (paramsToReset==null || paramsToReset.indexOf("startFrequency")>=0)
-				_startFrequency = 0.3;
-			if (paramsToReset==null || paramsToReset.indexOf("minFrequency")>=0)
-				_minFrequency = 0.0;
-			if (paramsToReset==null || paramsToReset.indexOf("slide")>=0)
-				_slide = 0.0;
-			if (paramsToReset==null || paramsToReset.indexOf("deltaSlide")>=0)
-				_deltaSlide = 0.0;
-			if (paramsToReset==null || paramsToReset.indexOf("squareDuty")>=0)
-				_squareDuty = 0.0;
-			if (paramsToReset==null || paramsToReset.indexOf("dutySweep")>=0)
-				_dutySweep = 0.0;
+			for (var param:String in _params)
+			{
+				if (paramsToReset==null || paramsToReset.indexOf(param)>=0)
+					_params[param]=getDefault(param);
+			}
 			
-			if (paramsToReset==null || paramsToReset.indexOf("vibratoDepth")>=0)
-				_vibratoDepth = 0.0;
-			if (paramsToReset==null || paramsToReset.indexOf("vibratoSpeed")>=0)
-				_vibratoSpeed = 0.0;
-			
-			if (paramsToReset==null || paramsToReset.indexOf("attackTime")>=0)
-				_attackTime = 0.0;
-			if (paramsToReset==null || paramsToReset.indexOf("sustainTime")>=0)
-				_sustainTime = 0.3;
-			if (paramsToReset==null || paramsToReset.indexOf("decayTime")>=0)
-				_decayTime = 0.4;
-			if (paramsToReset==null || paramsToReset.indexOf("sustainPunch")>=0)
-				_sustainPunch = 0.0;
-			
-			if (paramsToReset==null || paramsToReset.indexOf("lpFilterResonance")>=0)
-				_lpFilterResonance = 0.0;
-			if (paramsToReset==null || paramsToReset.indexOf("lpFilterCutoff")>=0)
-				_lpFilterCutoff = 1.0;
-			if (paramsToReset==null || paramsToReset.indexOf("lpFilterCutoffSweep")>=0)
-				_lpFilterCutoffSweep = 0.0;
-			if (paramsToReset==null || paramsToReset.indexOf("hpFilterCutoff")>=0)
-				_hpFilterCutoff = 0.0;
-			if (paramsToReset==null || paramsToReset.indexOf("hpFilterCutoffSweep")>=0)
-				_hpFilterCutoffSweep = 0.0;
-			
-			if (paramsToReset==null || paramsToReset.indexOf("phaserOffset")>=0)
-				_phaserOffset = 0.0;
-			if (paramsToReset==null || paramsToReset.indexOf("phaserSweep")>=0)
-				_phaserSweep = 0.0;
-			
-			if (paramsToReset==null || paramsToReset.indexOf("repeatSpeed")>=0)
-				_repeatSpeed = 0.0;
-			
-			if (paramsToReset==null || paramsToReset.indexOf("changePeriod")>=0)
-				_changePeriod = 1.0;
-			
-			if (paramsToReset==null || paramsToReset.indexOf("changeSpeed")>=0)
-				_changeSpeed = 0.0;
-			if (paramsToReset==null || paramsToReset.indexOf("changeAmount")>=0)
-				_changeAmount = 0.0;
-			
-			if (paramsToReset==null || paramsToReset.indexOf("changeSpeed2")>=0)
-				_changeSpeed2 = 0.0;
-			if (paramsToReset==null || paramsToReset.indexOf("changeAmount2")>=0)
-				_changeAmount2 = 0.0;
-			
-			if (paramsToReset==null || paramsToReset.indexOf("overtoneFalloff")>=0)
-				_overtoneFalloff=0;
-			if (paramsToReset==null || paramsToReset.indexOf("overtones")>=0)
-				_overtones=0;
-						
-			if (paramsToReset==null || paramsToReset.indexOf("bitcrush_freq")>=0)
-				_bitcrush_freq=1;
-			if (paramsToReset==null || paramsToReset.indexOf("bitcrush_freq_sweep")>=0)
-				_bitcrush_freq_sweep=0;			
-			
-			if (paramsToReset==null || paramsToReset.indexOf("compression_amount")>=0)
-				_compression_amount=1;
-						
 			if (paramsToReset==null || paramsToReset.indexOf("lockedParams")>=0)
+			{
 				_lockedParams = new Vector.<String>();
+				//lock this one by default
+				_lockedParams.push("masterVolume");
+			}
 			
 		}
 		
@@ -550,183 +469,93 @@ package Synthesis
 		 */
 		public function mutate(mutation:Number = 0.05):void
 		{			
-	
-			if (!lockedParam("startFrequency"))
-				if (Math.random() < 0.5) startFrequency += 		Math.random() * mutation*2 - mutation;			
-			if (!lockedParam("minFrequency"))
-				if (Math.random() < 0.5) minFrequency += 		Math.random() * mutation*2 - mutation;
-			if (!lockedParam("slide"))
-				if (Math.random() < 0.5) slide += 				Math.random() * mutation*2 - mutation;
-			if (!lockedParam("deltaSlide"))
-				if (Math.random() < 0.5) deltaSlide += 			Math.random() * mutation*2 - mutation;
-			if (!lockedParam("squareDuty"))
-				if (Math.random() < 0.5) squareDuty += 			Math.random() * mutation*2 - mutation;
-			if (!lockedParam("dutySweep"))
-				if (Math.random() < 0.5) dutySweep += 			Math.random() * mutation*2 - mutation;
-			if (!lockedParam("vibratoDepth"))
-				if (Math.random() < 0.5) vibratoDepth += 		Math.random() * mutation*2 - mutation;
-			if (!lockedParam("vibratoSpeed"))
-				if (Math.random() < 0.5) vibratoSpeed += 		Math.random() * mutation*2 - mutation;
-			if (!lockedParam("attackTime"))
-				if (Math.random() < 0.5) attackTime += 			Math.random() * mutation*2 - mutation;
-			if (!lockedParam("sustainTime"))
-				if (Math.random() < 0.5) sustainTime += 		Math.random() * mutation*2 - mutation;
-			if (!lockedParam("decayTime"))
-				if (Math.random() < 0.5) decayTime += 			Math.random() * mutation*2 - mutation;
-			if (!lockedParam("decayTime"))
-				if (Math.random() < 0.5) sustainPunch += 		Math.random() * mutation*2 - mutation;
-			if (!lockedParam("lpFilterCutoff"))
-				if (Math.random() < 0.5) lpFilterCutoff += 		Math.random() * mutation*2 - mutation;
-			if (!lockedParam("lpFilterCutoffSweep"))
-				if (Math.random() < 0.5) lpFilterCutoffSweep += Math.random() * mutation*2 - mutation;
-			if (!lockedParam("lpFilterResonance"))
-				if (Math.random() < 0.5) lpFilterResonance += 	Math.random() * mutation*2 - mutation;
-			if (!lockedParam("hpFilterCutoff"))
-				if (Math.random() < 0.5) hpFilterCutoff += 		Math.random() * mutation*2 - mutation;
-			if (!lockedParam("hpFilterCutoffSweep"))
-				if (Math.random() < 0.5) hpFilterCutoffSweep += Math.random() * mutation*2 - mutation;
-			if (!lockedParam("phaserOffset"))
-				if (Math.random() < 0.5) phaserOffset += 		Math.random() * mutation*2 - mutation;
-			if (!lockedParam("phaserSweep"))
-				if (Math.random() < 0.5) phaserSweep += 		Math.random() * mutation*2 - mutation;
-			if (!lockedParam("repeatSpeed"))
-				if (Math.random() < 0.5) repeatSpeed += 		Math.random() * mutation*2 - mutation;
-			if (!lockedParam("changePeriod"))
-				if (Math.random() < 0.5) changePeriod += 		Math.random() * mutation*2 - mutation;
-			if (!lockedParam("changeSpeed"))
-				if (Math.random() < 0.5) changeSpeed += 		Math.random() * mutation*2 - mutation;
-			if (!lockedParam("changeAmount"))
-				if (Math.random() < 0.5) changeAmount += 		Math.random() * mutation*2 - mutation;
-			if (!lockedParam("changeSpeed2"))
-				if (Math.random() < 0.5) changeSpeed2 += 		Math.random() * mutation*2 - mutation;
-			if (!lockedParam("changeAmount2"))
-				if (Math.random() < 0.5) changeAmount2 += 		Math.random() * mutation*2 - mutation;
-			if (!lockedParam("overtoneFalloff"))
-				if (Math.random() < 0.5) overtoneFalloff += 	Math.random() * mutation*2 - mutation;
-			if (!lockedParam("overtones"))
-				if (Math.random() < 0.5) overtones += 			Math.random() * mutation*2 - mutation;
-			if (!lockedParam("bitcrush_freq"))
-				if (Math.random() < 0.5) bitcrush_freq += 	Math.random() * mutation*2 - mutation;
-			if (!lockedParam("bitcrush_freq_sweep"))
-				if (Math.random() < 0.5) bitcrush_freq_sweep += 	Math.random() * mutation*2 - mutation;
-			if (!lockedParam("compression_amount"))
-				if (Math.random() < 0.5) compression_amount += 	Math.random() * mutation*2 - mutation;
+			for (var param:String in _params)
+			{
+				if (!lockedParam(param))
+				{
+					if (Math.random()<0.5)
+					{
+						setParam(param, getParam(param) + Math.random()*mutation*2 - mutation);
+					}
+				}
+			}
 		}
 		
+		//some constants used for weighting random values 
+		
+		private var RandomizationPower:Object = 
+			{
+				attackTime:4,
+				sustainTime:2,
+				sustainPunch:2,
+				overtones:3,
+				overtoneFalloff:0.25,
+				slide:5,
+				deltaSlide:3,
+				vibratoDepth:3,
+				dutySweep:3,
+				flangerOffset:3,
+				flangerSweep:3,
+				lpFilterCutoff:3,
+				lpFilterSweep:3,
+				hpFilterCutoff:5,
+				hpFilterSweep:5,
+				bitCrush:4,			
+				bitCrushSweep:5,
+				minFrequency:7
+			}
+			
 		/**
 		 * Sets all parameters to random values
 		 * If passed null, no fields constrained
 		 */
 		public function randomize():void
 		{
-		
+			
+			for (var param:String in _params)
+			{
+				if (!lockedParam(param))
+				{
+					if (Math.random()<0.5)
+					{
+						var min:Number = getMin(param);
+						var max:Number = getMax(param);
+						var r:Number = Math.random();
+						if (param in RandomizationPower)
+							r=Math.pow(r,RandomizationPower[param]);
+						_params[param] = min  + (max-min)*r;
+					}
+				}
+			}
+			
 			paramsDirty = true;
-			
-			if (!lockedParam("waveType"))
-				_waveType = uint(Math.random() * WAVETYPECOUNT);
-			
-			if (!lockedParam("attackTime"))
-				_attackTime =  		pow(Math.random()*2-1, 4);
-			
-			if (!lockedParam("sustainTime"))
-				_sustainTime =  	pow(Math.random()*2-1, 2);
-						
-			if (!lockedParam("sustainPunch"))
-				_sustainPunch =  	pow(Math.random()*0.8, 2);
-						
-			if (!lockedParam("decayTime"))
-				_decayTime =  		Math.random();
 			
 			
 			if (!lockedParam("startFrequency"))
-				_startFrequency =  	(Math.random() < 0.5) ? pow(Math.random()*2-1, 2) : (pow(Math.random() * 0.5, 3) + 0.5);
-			
-			if (!lockedParam("minFrequency"))
-				_minFrequency =  	0.0;
-			
-			if (!lockedParam("slide"))
-				_slide =  			pow(Math.random()*2-1, 5);
-			if (!lockedParam("deltaSlide"))
-				_deltaSlide =  		pow(Math.random()*2-1, 3);
-			
-			if (!lockedParam("vibratoDepth"))
-				_vibratoDepth =  	pow(Math.random()*2-1, 3);
-			if (!lockedParam("vibratoSpeed"))
-				_vibratoSpeed =  	Math.random()*2-1;
-			
-			if (!lockedParam("changePeriod"))
-				_changePeriod = Math.random();
-			
-			if (!lockedParam("changeAmount"))
-				_changeAmount =  	Math.random()*2-1;
-			if (!lockedParam("changeSpeed"))
-				_changeSpeed =  	Math.random()*2-1;
-			
-			if (!lockedParam("changeAmount2"))
-				_changeAmount2 =  	Math.random()*2-1;
-			if (!lockedParam("changeSpeed2"))
-				_changeSpeed2 =  	Math.random()*2-1;
-			
-			if (!lockedParam("squareDuty"))
-				_squareDuty =  		Math.random()*2-1;
-			if (!lockedParam("dutySweep"))
-				_dutySweep =  		pow(Math.random()*2-1, 3);
-			
-			if (!lockedParam("repeatSpeed"))
-				_repeatSpeed =  	Math.random()*2-1;
-			
-			if (!lockedParam("phaserOffset"))
-				_phaserOffset =  	pow(Math.random()*2-1, 3);
-			if (!lockedParam("phaserSweep"))
-				_phaserSweep =  	pow(Math.random()*2-1, 3);
-			
-			if (!lockedParam("lpFilterCutoff"))
-				_lpFilterCutoff =  		1 - pow(Math.random(), 3);
-			if (!lockedParam("lpFilterCutoffSweep"))
-				_lpFilterCutoffSweep = 	pow(Math.random()*2-1, 3);
-			if (!lockedParam("lpFilterResonance"))
-				_lpFilterResonance =  	Math.random()*2-1;
-			
-			if (!lockedParam("hpFilterCutoff"))
-				_hpFilterCutoff =  		pow(Math.random(), 5);
-			if (!lockedParam("hpFilterCutoffSweep"))
-				_hpFilterCutoffSweep = 	pow(Math.random()*2-1, 5);
-			
-			if (!lockedParam("overtones"))
-				_overtones = Math.random();
-			if (!lockedParam("overtoneFalloff"))
-				_overtoneFalloff = Math.random();
-			
-			if (!lockedParam("bitcrush_freq"))
-				_bitcrush_freq = pow(Math.random(), 1/2);
-			if (!lockedParam("bitcrush_freq_sweep"))
-				_bitcrush_freq_sweep = pow(Math.random()*2-1, 3);
-						
-			if (!lockedParam("compression_amount"))
-				_compression_amount = 1+Math.random()*7;
+				setParam("startFrequency",  	(Math.random() < 0.5) ? pow(Math.random()*2-1, 2) : (pow(Math.random() * 0.5, 3) + 0.5));
 			
 			if ((!lockedParam("sustainTime")) && (!lockedParam("decayTime")))
 			{
-				if(_attackTime + _sustainTime + _decayTime < 0.2)
+				if(getParam("attackTime") + getParam("sustainTime") + getParam("decayTime") < 0.2)
 				{
-					_sustainTime = 0.2 + Math.random() * 0.3;
-					_decayTime = 0.2 + Math.random() * 0.3;
+					setParam("sustainTime", 0.2 + Math.random() * 0.3);
+					setParam("decayTime", 0.2 + Math.random() * 0.3);
 				}
 			}
 			
 			if (!lockedParam("slide"))
 			{
-				if((_startFrequency > 0.7 && _slide > 0.2) || (_startFrequency < 0.2 && _slide < -0.05)) 
+				if((getParam("startFrequency") > 0.7 && getParam("slide") > 0.2) || (getParam("startFrequency") < 0.2 && getParam("slide") < -0.05)) 
 				{
-					_slide = -_slide;
+					setParam("slide", -getParam("slide"));
 				}
 			}
 			
 			if (!lockedParam("lpFilterCutoffSweep"))
 			{
-				if(_lpFilterCutoff < 0.1 && _lpFilterCutoffSweep < -0.05) 
+				if(getParam("lpFilterCutoff") < 0.1 && getParam("lpFilterCutoffSweep") < -0.05) 
 				{
-					_lpFilterCutoffSweep = -_lpFilterCutoffSweep;
+					setParam("lpFilterCutoffSweep", -getParam("lpFilterCutoffSweep"));
 				}
 			}
 		}
@@ -743,27 +572,19 @@ package Synthesis
 		 * @return	A comma-delimited list of parameter values
 		 */
 		public function getSettingsString():String
-		{
-			var string:String = String(waveType);
-			string += "," + to4DP(_attackTime) + 			"," + to4DP(_sustainTime) 
-					+ "," + to4DP(_sustainPunch) + 			"," + to4DP(_decayTime) 
-					+ "," + to4DP(_startFrequency) + 		"," + to4DP(_minFrequency)
-					+ "," + to4DP(_slide) + 				"," + to4DP(_deltaSlide)
-					+ "," + to4DP(_vibratoDepth) + 			"," + to4DP(_vibratoSpeed)
-					+ "," + to4DP(_changePeriod)
-					+ "," + to4DP(_changeAmount) + 			"," + to4DP(_changeSpeed)
-					+ "," + to4DP(_changeAmount2) + 		"," + to4DP(_changeSpeed2)
-					+ "," + to4DP(_squareDuty) + 			"," + to4DP(_dutySweep)
-					+ "," + to4DP(_repeatSpeed) + 			"," + to4DP(_phaserOffset)
-					+ "," + to4DP(_phaserSweep) + 			"," + to4DP(_lpFilterCutoff)
-					+ "," + to4DP(_lpFilterCutoffSweep) + 	"," + to4DP(_lpFilterResonance)
-					+ "," + to4DP(_hpFilterCutoff)+ 		"," + to4DP(_hpFilterCutoffSweep)
-					+ "," + to4DP(_overtones) + 			"," + to4DP(_overtoneFalloff)
-					+ "," + to4DP(_bitcrush_freq) + 	 	"," + to4DP(_bitcrush_freq_sweep)
-				 	+ "," + to4DP(_compression_amount)
-					+ "," + to4DP(_masterVolume);
+		{			
+			var string:String="";
+			for (var i:int=0; i< SfxrParams.ParamData.length;i++)
+			{
+				var param:String = SfxrParams.ParamData[i][3];
+				
+				if (i>0)
+					string+=",";
+				
+				string += to4DP(getParam(param)); 
+			}
 			
-			for (var i:int=0;i<this._lockedParams.length;i++)
+			for (i=0;i<this._lockedParams.length;i++)
 			{
 				string+=","+_lockedParams[i];
 			}
@@ -783,43 +604,15 @@ package Synthesis
 			
 			var values:Array = string.split(",");
 			
-			if (values.length < 31) return false;
-			
-			waveType = 				uint(values[0]) || 0;
-			attackTime =  			Number(values[1]) || 0;
-			sustainTime =  			Number(values[2]) || 0;
-			sustainPunch =  		Number(values[3]) || 0;
-			decayTime =  			Number(values[4]) || 0;
-			startFrequency =  		Number(values[5]) || 0;
-			minFrequency =  		Number(values[6]) || 0;
-			slide =  				Number(values[7]) || 0;
-			deltaSlide =  			Number(values[8]) || 0;
-			vibratoDepth =  		Number(values[9]) || 0;
-			vibratoSpeed =  		Number(values[10]) || 0;
-			changePeriod =  		Number(values[11]) || 0;
-			changeAmount =  		Number(values[12]) || 0;
-			changeSpeed =  			Number(values[13]) || 0;
-			changeAmount2 =  		Number(values[14]) || 0;
-			changeSpeed2 = 			Number(values[15]) || 0;
-			squareDuty =  			Number(values[16]) || 0;
-			dutySweep =  			Number(values[17]) || 0;
-			repeatSpeed =  			Number(values[18]) || 0;
-			phaserOffset =  		Number(values[19]) || 0;
-			phaserSweep =  			Number(values[20]) || 0;
-			lpFilterCutoff =  		Number(values[21]) || 0;
-			lpFilterCutoffSweep =  	Number(values[22]) || 0;
-			lpFilterResonance =  	Number(values[23]) || 0;
-			hpFilterCutoff =  		Number(values[24]) || 0;
-			hpFilterCutoffSweep =  	Number(values[25]) || 0;
-			overtones =  			Number(values[26]) || 0;
-			overtoneFalloff =  		Number(values[27]) || 0;
-			bitcrush_freq =  		Number(values[28]) || 0;
-			bitcrush_freq_sweep =  	Number(values[29]) || 0;
-			compression_amount =  	Number(values[30]) || 0;
-			masterVolume = 			Number(values[31]) || 0;
+			var string:String;
+			for (var i:int=0; i< SfxrParams.ParamData.length;i++)
+			{
+				var param:String = SfxrParams.ParamData[i][3];
+				setParam(param,Number(values[i]));
+			}						
 						
 			_lockedParams = new Vector.<String>();
-			for (var i:int=36;i<values.length;i++)
+			for (;i<values.length;i++)
 			{
 				_lockedParams.push(values[i]);
 			}
@@ -852,38 +645,10 @@ package Synthesis
 		 */
 		public function copyFrom(params:SfxrParams, makeDirty:Boolean = false):void
 		{
-			_waveType = 			params.waveType;
-			_attackTime =           params.attackTime;
-			_sustainTime =          params.sustainTime;
-			_sustainPunch =         params.sustainPunch;
-			_decayTime =			params.decayTime;
-			_startFrequency = 		params.startFrequency;
-			_minFrequency = 		params.minFrequency;
-			_slide = 				params.slide;
-			_deltaSlide = 			params.deltaSlide;
-			_vibratoDepth = 		params.vibratoDepth;
-			_vibratoSpeed = 		params.vibratoSpeed;
-			_changePeriod = 		params.changePeriod;
-			_changeAmount = 		params.changeAmount;
-			_changeSpeed = 			params.changeSpeed;
-			_changeAmount2 = 		params.changeAmount2;
-			_changeSpeed2 = 		params.changeSpeed2;
-			_squareDuty = 			params.squareDuty;
-			_dutySweep = 			params.dutySweep;
-			_repeatSpeed = 			params.repeatSpeed;
-			_phaserOffset = 		params.phaserOffset;
-			_phaserSweep = 			params.phaserSweep;
-			_lpFilterCutoff = 		params.lpFilterCutoff;
-			_lpFilterCutoffSweep = 	params.lpFilterCutoffSweep;
-			_lpFilterResonance = 	params.lpFilterResonance;
-			_hpFilterCutoff = 		params.hpFilterCutoff;
-			_hpFilterCutoffSweep = 	params.hpFilterCutoffSweep;
-			_overtones = 			params.overtones;
-			_overtoneFalloff = 		params.overtoneFalloff;
-			_bitcrush_freq = 		params.bitcrush_freq;
-			_bitcrush_freq_sweep = 	params.bitcrush_freq_sweep;
-			_compression_amount = 	params.compression_amount;
-			_masterVolume = 		params.masterVolume;
+			for (var param:String in _params)
+			{
+				_params[param] = params.getParam(param);
+			}
 			
 			if (makeDirty) paramsDirty = true;
 		}   

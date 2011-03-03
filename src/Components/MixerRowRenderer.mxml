@@ -4,7 +4,6 @@
 				xmlns:s="library://ns.adobe.com/flex/spark"
 				
 				 contentBackgroundColor="#CCBDA1" height="74" width="340"
-				  removedFromStage="OnRemoved(event)"				  
 				  creationComplete="CreationComplete(event)"
 				  dataChange="DataChanged(event)"
 				  symbolColor="#CCBDA1">
@@ -21,36 +20,6 @@
 			
 			import spark.components.List;
 			import spark.skins.spark.CheckBoxSkin;
-			
-			private function updateFields():void {
-		
-			}
-			
-			private function OnRemoved(event:Event):void
-			{
-				if (data!=null)
-				{
-					var synth:SfxrSynth = data.synth as SfxrSynth;
-					synth.stop();
-				}
-			}
-			
-			private function SliderValueChange(event:Event):void
-			{
-				/*
-				var app:sfxr_interface = this.parentApplication as sfxr_interface;
-				app.sliderChanged(event);
-				*/
-			}
-			
-			
-			private function OnLockButtonChanged(event:Event):void
-			{
-				/*
-				var app:sfxr_interface = this.parentApplication as sfxr_interface;
-				app.lockChanged(data.tag,  locked.selected);
-				*/
-			}
 			
 			private function PlayClick():void
 			{
@@ -69,8 +38,7 @@
 					dropdown.dataProvider=app.soundItems;															
 					TryUpdateDropdown(false,false);
 				}
-			}
-			
+			}			
 			
 			private function DataChanged(event:Event = null):void
 			{	
@@ -91,8 +59,7 @@
 					this.data.PlayStartCallback = this.PlayStart;
 					this.data.PlayStopCallback = this.PlayStop;
 					this.data.SetDilationCallback = this.SetDilation;
-					this.data.CalcLengthCallback = this.CalcLength;
-						
+					this.data.CalcLengthCallback = this.CalcLength;						
 				}
 								
 				onsetSliderPosition = data.onset;
@@ -101,10 +68,8 @@
 				if (dropdown.dataProvider!=null)
 				{
 					TryUpdateDropdown();
-				}
-				
-			}
-			
+				}				
+			}		
 			
 			private function TryUpdateDropdown(play:Boolean = true, modified:Boolean = false):void
 			{				
@@ -126,14 +91,7 @@
 						break;
 					}
 				}					
-			}
-			private function LabelClick():void
-			{			
-				/*
-				var app:sfxr_interface = this.parentApplication as sfxr_interface;
-				app.ResetParameterValue(data.tag);
-				*/
-			}			
+			}	
 			
 			private function DropdownChange(event:Event = null,play:Boolean=true, modified:Boolean=true):void
 			{

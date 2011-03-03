@@ -1,11 +1,14 @@
 package
 {
+	import Synthesis.SfxrSynth;
+	
+	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.utils.ByteArray;
-	import Synthesis.SfxrSynth;
 
 	//class mainly to stop warning messages about being unable to bind properties
 	[Bindable]
+	[Event("DataChanged")]
 	public class MixerListEntryDat extends EventDispatcher
 	{
 		public var id:int=0;
