@@ -1,4 +1,4 @@
-package Synthesis
+package synthesis
 {
 	import flash.events.Event;
 	import flash.events.EventDispatcher;

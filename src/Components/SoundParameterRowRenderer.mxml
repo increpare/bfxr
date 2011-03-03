@@ -8,6 +8,7 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import dataClasses.SoundListRowData;
 			import spark.skins.spark.CheckBoxSkin;
 			
 			private function CreationComplete(event:Event):void
@@ -19,18 +20,18 @@
 			private function SliderValueChange(event:Event):void
 			{
 				data.value=this.slider.value;
-				(data as SoundListRowData).dispatchEvent(new Event("SliderChange"));
+				(data as SoundListRowData).dispatchEvent(new Event(SoundListRowData.SLIDER_CHANGE));
 			}			
 			
 			private function OnLockButtonChanged(event:Event):void
 			{
 				data.locked = locked.selected;
-				(data as SoundListRowData).dispatchEvent(new Event("LockednessChange"));
+				(data as SoundListRowData).dispatchEvent(new Event(SoundListRowData.LOCKEDNESS_CHANGE));
 			}
 			
 			private function LabelClick():void
 			{				
-				(data as SoundListRowData).dispatchEvent(new Event("DefaultClick"));				
+				(data as SoundListRowData).dispatchEvent(new Event(SoundListRowData.DEFAULT_CLICK));				
 			}
 				
 		]]>
@@ -77,7 +78,7 @@
 			click="LabelClick()"
 			/>    
 		<s:HSlider
-			  skinClass="Components.TickedHSliderSkin"
+			  skinClass="components.TickedHSliderSkin"
 			id="slider" 
 			width="116" 
 			minimum="{data.min}" 

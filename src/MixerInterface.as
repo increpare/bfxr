@@ -1,8 +1,8 @@
 package
 {
-	import Synthesis.Mixer;
-	import Synthesis.MixerSoundData;
-	import Synthesis.SfxrSynth;
+	import synthesis.Mixer;
+	import synthesis.MixerSoundData;
+	import synthesis.SfxrSynth;
 	
 	import flash.events.Event;
 	import flash.events.MouseEvent;
@@ -11,6 +11,10 @@ package
 	import mx.collections.ArrayList;
 	
 	import spark.components.HSlider;
+	import dataClasses.LayerData;
+	import dataClasses.MixerItemParams;
+	import dataClasses.MixerListEntryDat;
+	import dataClasses.SoundData;
 
 	public class MixerInterface
 	{
@@ -229,9 +233,9 @@ package
 		}
 		
 		//the clipboard string also includes the data of all sounds attached to it.
-		public function setClipboardString(data:String):void
+		public function setClipboardString(str:String):void
 		{
-			var chunks:Array = data.split("|");
+			var chunks:Array = str.split("|");
 			//first part is layer data itself
 			_mixer.params.items = new Vector.<MixerItemParams>();
 			

@@ -5,6 +5,8 @@ package
 	import spark.components.CheckBox;
 	import spark.components.DropDownList;
 	import spark.components.List;
+	import dataClasses.LayerData;
+	import dataClasses.SoundData;
 
 	public class GlobalState
 	{

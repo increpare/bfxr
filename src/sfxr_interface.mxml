@@ -10,9 +10,7 @@
     xmlns:mx="library://ns.adobe.com/flex/mx"
     pageTitle="as3sfxr-b"
     preloaderChromeColor="#CCBDA1"
-	preinitialize="onPreinitialize()"
 	initialize="onInitialize()"
-	creationComplete="onCreationComplete();"
     applicationComplete="onApplicationComplete();"
 	xmlns:local="*">
     <s:layout>
@@ -20,13 +18,16 @@
     </s:layout>
     <fx:Script>
         <![CDATA[
-			import Components.SoundParameterRowRenderer;
+			import dataClasses.LayerData;
+			import dataClasses.MixerListEntryDat;
+			import dataClasses.SoundData;
+			import components.SoundParameterRowRenderer;
 			
-			import Synthesis.Mixer;
-			import Synthesis.MixerParams;
-			import Synthesis.MixerSoundData;
-			import Synthesis.SfxrParams;
-			import Synthesis.SfxrSynth;
+			import synthesis.Mixer;
+			import synthesis.MixerParams;
+			import synthesis.MixerSoundData;
+			import synthesis.SfxrParams;
+			import synthesis.SfxrSynth;
 			
 			import mx.collections.ArrayList;
 			import mx.controls.sliderClasses.Slider;
@@ -131,20 +132,30 @@
 
             private function timerHandler(event:TimerEvent):void
             {
-                SoundMixer.computeSpectrum(ba, true);
-                var i:int;
-                equalizer.graphics.clear();
-                equalizer.graphics.lineStyle(0, 0x938373);
-                equalizer.graphics.beginFill(0x938373);
-                equalizer.graphics.moveTo(0, 0);
-                var w:int = 2;
-                var dy:Number = equalizer.height / 512;
-                for (i = 0; i < 512; i += w)
-                {
-                    var t:Number = ba.readFloat();
-                    var n:Number = (t * (equalizer.width - 10));
-                    equalizer.graphics.drawRect(0, i * dy, Math.abs(n), w);
-                }
+				/*
+				//gives sandbox violation if other stuff going on :(
+				try
+				{
+	                SoundMixer.computeSpectrum(ba, true);
+	                var i:int;
+	                equalizer.graphics.clear();
+	                equalizer.graphics.lineStyle(0, 0x938373);
+	                equalizer.graphics.beginFill(0x938373);
+	                equalizer.graphics.moveTo(0, 0);
+	                var w:int = 2;
+	                var dy:Number = equalizer.height / 512;
+	                for (i = 0; i < 512; i += w)
+	                {
+	                    var t:Number = ba.readFloat();
+	                    var n:Number = (t * (equalizer.width - 10));
+	                    equalizer.graphics.drawRect(0, i * dy, Math.abs(n), w);
+	                }
+				}
+				catch (e:Error)
+				{
+					trace(e.message);
+				}
+				*/
             }
 
             private function keyDown(event:KeyboardEvent):void
@@ -176,11 +187,6 @@
                     }
                 }
             }
-
-			private function onPreinitialize():void
-			{
-				
-			}
 			
 			private function onInitialize():void
 			{				
@@ -192,10 +198,6 @@
 					mixerlist.addItem(msed);
 				}
 				
-			}
-			
-			private function onCreationComplete():void
-			{								
 			}
 			
             private function onApplicationComplete():void
@@ -272,12 +274,6 @@
 					SelectItemInLayerList(0,false);
 				}
 				
-                soundItems.addEventListener(CollectionEvent.COLLECTION_CHANGE, onCollectionChange, false, 0, true);
-                soundItems.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, onPropertyChange, false, 0, true);
-
-                layerItems.addEventListener(CollectionEvent.COLLECTION_CHANGE, onCollectionChange, false, 0, true);
-                layerItems.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, onPropertyChange, false, 0, true);
-
                 samplerate.dataProvider = samplerates;
                 samplerate.selectedIndex = 0;
 
@@ -369,34 +365,11 @@
                 return true;
             }
 
-            /* listen for generic list changes */
-            private function onCollectionChange(event:CollectionEvent):void
-            {
-                //statusTxt.appendText(event.type + " # of items: " + event.items.length + "\n");
-            }
-
-            /* listen for specific item changes in the list */
-            private function onPropertyChange(event:PropertyChangeEvent):void
-            {
-                //statusTxt.appendText(event.type + " prop:" + event.property + ", old:" + event.oldValue + ", new:" + event.newValue + "\n");
-            }
+        
 
             protected function PlayClick(event:MouseEvent):void
             {
                 DoPlay();
-            }
-
-            public static function getLength(o:Object):uint
-            {
-                var len:uint = 0;
-                for (var item:* in o)
-                {
-                    if (item != "mx_internal_uid")
-                    {
-                        len++;
-                    }
-                }
-                return len;
             }
 
             public function RemoveFromSoundList(dat:Object):void
@@ -545,7 +518,7 @@
 
                 if (select)
                 {
-                    SelectItemInLayerList(layerItems.length - 1, triggerplay,false);
+                    SelectItemInLayerList(layerItems.length - 1, triggerplay);
                 }
             }
 
@@ -559,7 +532,7 @@
                 });
             }
 
-            private function SelectItemInLayerList(i:int, triggerplay:Boolean = true,updateUI:Boolean=true):void
+            private function SelectItemInLayerList(i:int, triggerplay:Boolean = true):void
             {
                 layerList.selectedIndex = i;
                 layerListSelectionChanged(null, triggerplay,false);
@@ -591,7 +564,7 @@
                 throw new Error("error - couldn't select item with id " + id + "no such item exists");
             }
 
-            private function SelectItemInLayerListByID(id:int, triggerplay:Boolean = true,updateUI:Boolean=true):void
+            private function SelectItemInLayerListByID(id:int, triggerplay:Boolean = true):void
             {
                 if (id == -1)
                 {
@@ -603,12 +576,12 @@
                     var o:Object = layerItems.getItemAt(i);
                     if (o.id == id)
                     {
-                        SelectItemInLayerList(i,triggerplay,updateUI);
+                        SelectItemInLayerList(i,triggerplay);
                         return;
                     }
                 }
 
-                SelectItemInLayerList(0,triggerplay,updateUI);
+                SelectItemInLayerList(0,triggerplay);
 
                 throw new Error("error - couldn't select item with id " + id + "no such item exists");
             }
@@ -757,16 +730,10 @@
                 l.data = savedData.data;
 
                 mixerInterface.setSettingsString(l.data);
-                ReformMixerData();
 
                 UIUpdateTrigger();
                 OnMixerParameterChanged(true, true);
                 DisableApplyButton(true);
-            }
-
-            private function ReformMixerData():void
-            {
-
             }
 
             protected function clickNew(event:MouseEvent):void
@@ -823,7 +790,6 @@
 
             private function layerListSelectionChanged(event:Event, triggerPlay:Boolean = true,updateUI:Boolean=true):void
             {
-                trace("layer list selection changed");
                 if (layerList.selectedIndex == -1)
                 {
                     if (layerItems.length == 0)
@@ -1179,7 +1145,7 @@
                 <s:List id="soundList"
                     width="170" height="100%"
                     click="soundListSelectionChanged(event)"
-                    itemRenderer="Components.SoundListItemRenderer"
+                    itemRenderer="components.SoundListItemRenderer"
 					valueCommit="this.globalState.OnSoundListSelectionChanged(event)"
                     contentBackgroundColor="#CCBDA1"
                     requireSelection="true"/>
@@ -1298,7 +1264,7 @@
 										<s:Scroller height="100%" width="100%">											
 	                                        <s:DataGroup id="SoundParameterGroup"
 	                                            width="100%" height="100%"
-	                                            itemRenderer="Components.SoundParameterRowRenderer">
+	                                            itemRenderer="components.SoundParameterRowRenderer">
 	                                            <s:layout>
 	                                                <s:VerticalLayout 
 	                                                    paddingBottom="0"
@@ -1331,7 +1297,7 @@
                             gap="0">
                             <s:DataGroup id="mixerListComponent"
                                 width="100%" height="372"
-                                itemRenderer="Components.MixerRowRenderer">
+                                itemRenderer="components.MixerRowRenderer">
                                 <s:layout>
                                     <s:VerticalLayout 
                                         horizontalAlign="justify"
@@ -1346,7 +1312,7 @@
                                 width="170" height="100%"
                                 change="layerListSelectionChanged(event)"
                                 requireSelection="true"
-                                itemRenderer="Components.LayerListItemRenderer"
+                                itemRenderer="components.LayerListItemRenderer"
                                 contentBackgroundColor="#CCBDA1"								
 								valueCommit="globalState.OnLayerListSelectionChanged(event)"
 								/>

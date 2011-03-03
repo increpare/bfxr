@@ -1,7 +1,7 @@
 /*
 class taken from http://www.firstpr.com.au/dsp/pink-noise/#Filtering
 */
-package Synthesis
+package synthesis
 {
 	public class PinkNumber
 	{
@@ -10,7 +10,7 @@ package Synthesis
 		private var white_values:Vector.<int> = new Vector.<int>();
 		private var range:uint;
 		
-		public function	PinkNumber():void
+		public function	PinkNumber()
 		{
 			max_key = 0x1f; // Five bits set
 			this.range = 128;

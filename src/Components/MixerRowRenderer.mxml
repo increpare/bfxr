@@ -13,7 +13,7 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import Synthesis.SfxrSynth;
+			import synthesis.SfxrSynth;
 			
 			import mx.events.FlexEvent;
 			import mx.events.SandboxMouseEvent;

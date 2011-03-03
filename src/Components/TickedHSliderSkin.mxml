@@ -73,7 +73,7 @@
 	
 	<!--- The default skin class is HSliderTrackSkin. -->
 	<s:Button id="track" left="0" right="0" top="0" bottom="0" minWidth="33" width="100"
-			  skinClass="Components.HSliderTrackSkinTicks" />
+			  skinClass="components.HSliderTrackSkinTicks" />
 	
 	<!--- The default skin class is HSliderThumbSkin. -->
 	<s:Button id="thumb" top="0" bottom="0" width="11" height="11"

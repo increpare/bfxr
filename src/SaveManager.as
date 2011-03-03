@@ -3,7 +3,9 @@ package
 	import flash.net.SharedObject;
 	
 	import mx.collections.ArrayList;
-	import Synthesis.SfxrSynth;
+	import synthesis.SfxrSynth;
+	import dataClasses.LayerData;
+	import dataClasses.SoundData;
 	
 	public class SaveManager
 	{
@@ -214,7 +216,6 @@ package
 		public function GetSoundDataWithID(id:int):SoundData
 		{
 			var soundarray:Array = _saveDat.data.soundList;
-			var curmax:int=0;
 			for(var s:String in soundarray)
 			{
 				var o:Object = soundarray[s];
@@ -231,7 +232,6 @@ package
 		public function GetLayerDataWithID(id:int):LayerData
 		{
 			var layerarray:Array = _saveDat.data.layerList;
-			var curmax:int=0;
 			for(var s:String in layerarray)
 			{
 				var o:Object = layerarray[s];
@@ -297,7 +297,6 @@ package
 		public function UpdateSoundItem(newdata:SoundData):Boolean
 		{
 			var soundarray:Array = _saveDat.data.soundList;
-			var curmax:int=0;
 			for(var s:String in soundarray)
 			{
 				if (soundarray[s].id==newdata.id)
@@ -316,7 +315,6 @@ package
 		public function UpdateLayerItem(newdata:LayerData):Boolean
 		{
 			var layerarray:Array = _saveDat.data.layerList;
-			var curmax:int=0;
 			for(var s:String in layerarray)
 			{
 				if (layerarray[s].id==newdata.id)

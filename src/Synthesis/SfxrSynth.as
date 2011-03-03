@@ -1,4 +1,4 @@
-﻿package Synthesis 
+﻿package synthesis 
 {
 	import flash.display.Shape;
 	import flash.events.Event;

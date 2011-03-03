@@ -1,4 +1,4 @@
-package Synthesis
+package synthesis
 {
 	import flash.utils.ByteArray;
 	

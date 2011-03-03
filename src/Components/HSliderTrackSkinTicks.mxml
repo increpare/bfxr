@@ -30,7 +30,6 @@
                 var sliderSkin:TickedHSliderSkin = (this.hostComponent.parentDocument as TickedHSliderSkin);
                 
                 var thumbGroupWidth:Number = sliderSkin.thumb.width;
-                var stepSize:Number = sliderSkin.hostComponent.stepSize;
                 var numberOfTicks:Number = 10;//(sliderSkin.hostComponent.maximum - sliderSkin.hostComponent.minimum)*10;
                 var tickSpacing:Number = ((width - thumbGroupWidth) / numberOfTicks);
 				

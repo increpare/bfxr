@@ -1,5 +1,7 @@
-package Synthesis
+package synthesis
 {
+	import dataClasses.MixerItemParams;
+
 	public class MixerParams implements ISerializable
 	{
 		public var items:Vector.<MixerItemParams>;

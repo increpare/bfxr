@@ -1,4 +1,4 @@
-package Synthesis   
+package synthesis   
 {
 	import mx.utils.StringUtil;
 

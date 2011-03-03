@@ -1,9 +1,9 @@
 package
 {
-    import Components.SoundParameterRowRenderer;
+    import components.SoundParameterRowRenderer;
     
-    import Synthesis.SfxrParams;
-    import Synthesis.SfxrSynth;
+    import synthesis.SfxrParams;
+    import synthesis.SfxrSynth;
     
     import flash.events.Event;
     import flash.utils.ByteArray;
@@ -17,6 +17,8 @@ package
     import spark.components.HSlider;
     import spark.components.Label;
     import spark.components.ToggleButton;
+    import dataClasses.SoundData;
+    import dataClasses.SoundListRowData;
 
     public class SynthInterface
     {
@@ -68,9 +70,9 @@ package
 				slrd.value = _synth.params.getParam(slrd.tag);
 				
 				lastgroup =		slrd.bggroup;
-				slrd.addEventListener("DefaultClick",SLRD_On_Default_Clicked);
-				slrd.addEventListener("LockednessChange",SLRD_On_Lockedness_Changed);
-				slrd.addEventListener("SliderChange",SLRD_On_Slider_Changed);
+				slrd.addEventListener(SoundListRowData.DEFAULT_CLICK,SLRD_On_Default_Clicked);
+				slrd.addEventListener(SoundListRowData.LOCKEDNESS_CHANGE,SLRD_On_Lockedness_Changed);
+				slrd.addEventListener(SoundListRowData.SLIDER_CHANGE,SLRD_On_Slider_Changed);
 				
 				//ChangeWatcher.watch(slrd,"locked",LockStatusChanged);
 				//ChangeWatcher.watch(slrd,"value",SliderValueChanged);
