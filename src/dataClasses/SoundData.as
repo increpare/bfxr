@@ -6,5 +6,13 @@ package dataClasses
 		{
 			super(_label, _data, _id);
 		}
+		
+		
+		public static function Deserialize(source:String):SoundData
+		{
+			var a:Array = source.split(":");
+			
+			return new SoundData(a[0],a[1],int(a[2]));
+		}
 	}
 }

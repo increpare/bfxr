@@ -13,23 +13,22 @@
 	initialize="onInitialize()"
     applicationComplete="onApplicationComplete();"
 	xmlns:local="*">
+	
     <s:layout>
         <s:BasicLayout/>
     </s:layout>
     <fx:Script>
         <![CDATA[
-			import dataClasses.LayerData;
-			import dataClasses.MixerListEntryDat;
-			import dataClasses.SoundData;
 			import components.SoundParameterRowRenderer;
 			
-			import synthesis.Mixer;
-			import synthesis.MixerParams;
-			import synthesis.MixerSoundData;
-			import synthesis.SfxrParams;
-			import synthesis.SfxrSynth;
+			import dataClasses.LayerData;
+			import dataClasses.MixerListEntryDat;
+			import dataClasses.SfxLibrary;
+			import dataClasses.SoundData;
 			
 			import mx.collections.ArrayList;
+			import mx.controls.Alert;
+			import mx.controls.Menu;
 			import mx.controls.sliderClasses.Slider;
 			import mx.core.UIComponent;
 			import mx.events.CollectionEvent;
@@ -40,6 +39,12 @@
 			import mx.logging.LogEventLevel;
 			import mx.logging.targets.TraceTarget;
 			import mx.utils.URLUtil;
+			
+			import com.increpare.bfxr.synthesis.Mixer;
+			import com.increpare.bfxr.synthesis.MixerParams;
+			import com.increpare.bfxr.synthesis.MixerSoundData;
+			import com.increpare.bfxr.synthesis.SfxrParams;
+			import com.increpare.bfxr.synthesis.SfxrSynth;
 
             public var saveManager:SaveManager;
 			public var globalState:GlobalState;
@@ -48,6 +53,7 @@
 
 			public var mixerlist : ArrayList;
 			public var SoundParameterList : ArrayList;
+	
 			
             /** returns -1 if nothing found */
             private function GetSelectedSoundItemID():int
@@ -391,6 +397,11 @@
                     newindex--;
                 }
                 SelectItemInSoundList(newindex, index == soundItems.length);
+				
+				if(tabs.selectedIndex==1)
+				{
+					mixerInterface.RemoveOrphanSounds();
+				}
             }
 
             public function RemoveFromLayerList(dat:Object):void
@@ -522,27 +533,27 @@
                 }
             }
 
-            private function SelectItemInSoundList(i:int, triggerplay:Boolean = true):void
+            private function SelectItemInSoundList(i:int, triggerplay:Boolean = true,triggercommit:Boolean = true):void
             {
                 soundList.selectedIndex = i;
-                soundListSelectionChanged(null, triggerplay);
+                soundListSelectionChanged(null, triggerplay,triggercommit);
                 callLater(function():void
                 {
                     soundList.ensureIndexIsVisible(i);
                 });
             }
 
-            private function SelectItemInLayerList(i:int, triggerplay:Boolean = true):void
+            private function SelectItemInLayerList(i:int, triggerplay:Boolean = true, triggercommit:Boolean = true):void
             {
                 layerList.selectedIndex = i;
-                layerListSelectionChanged(null, triggerplay,false);
+                layerListSelectionChanged(null, triggerplay,false,triggercommit);
                 callLater(function():void
                 {
                     layerList.ensureIndexIsVisible(i);
                 });
             }
 
-            private function SelectItemInSoundListByID(id:int):void
+            private function SelectItemInSoundListByID(id:int,triggerplay:Boolean=true,triggercommit:Boolean=true):void
             {
                 if (id == -1)
                 {
@@ -554,17 +565,17 @@
                     var o:Object = soundItems.getItemAt(i);
                     if (o.id == id)
                     {
-                        SelectItemInSoundList(i);
+                        SelectItemInSoundList(i,triggerplay,triggercommit);
                         return;
                     }
                 }
 
-                SelectItemInSoundList(0);
+                SelectItemInSoundList(0,triggerplay,triggercommit);
 
                 throw new Error("error - couldn't select item with id " + id + "no such item exists");
             }
 
-            private function SelectItemInLayerListByID(id:int, triggerplay:Boolean = true):void
+            private function SelectItemInLayerListByID(id:int, triggerplay:Boolean = true, triggercommit:Boolean=true):void
             {
                 if (id == -1)
                 {
@@ -576,12 +587,12 @@
                     var o:Object = layerItems.getItemAt(i);
                     if (o.id == id)
                     {
-                        SelectItemInLayerList(i,triggerplay);
+                        SelectItemInLayerList(i,triggerplay,triggercommit);
                         return;
                     }
                 }
 
-                SelectItemInLayerList(0,triggerplay);
+                SelectItemInLayerList(0,triggerplay,triggercommit);
 
                 throw new Error("error - couldn't select item with id " + id + "no such item exists");
             }
@@ -756,7 +767,7 @@
                 }
             }
 
-            private function soundListSelectionChanged(event:Event, triggerPlay:Boolean = true):void
+            private function soundListSelectionChanged(event:Event, triggerPlay:Boolean = true,triggercommit:Boolean=true):void
             {
                 if (soundList.selectedIndex == -1)
                 {
@@ -774,7 +785,11 @@
 
                 synthInterface.setSettingsString(row.data);
 
-                CommitGlobal();
+				if (triggercommit)
+				{
+                	CommitGlobal();
+				}
+				
 				OnSoundParameterChanged(triggerPlay, false);
 				synthInterface.UIUpdateTrigger();
 
@@ -788,7 +803,7 @@
                 }
             }
 
-            private function layerListSelectionChanged(event:Event, triggerPlay:Boolean = true,updateUI:Boolean=true):void
+            private function layerListSelectionChanged(event:Event, triggerPlay:Boolean = true,updateUI:Boolean=true, triggercommit:Boolean=true):void
             {
                 if (layerList.selectedIndex == -1)
                 {
@@ -806,8 +821,13 @@
 
                 mixerInterface.setSettingsString(row.data);
 
-                CommitGlobal();
-                OnMixerParameterChanged(triggerPlay, false);
+				if (triggercommit)
+				{
+                	CommitGlobal();
+				}
+				
+				OnMixerParameterChanged(triggerPlay, false);
+				
 				if (updateUI)
 				{
                 	UIUpdateTrigger();
@@ -844,7 +864,6 @@
 
             /**
              * Opens a browse window to load a sound setting file
-             * @param	button	Button pressed
              */
             private function clickLoadSound():void
             {
@@ -852,6 +871,114 @@
                 _fileRef.addEventListener(Event.SELECT, onSelectSettings);
                 _fileRef.browse([ new FileFilter("SFX Sample Files (*.sfs)", "*.sfs")]);
             }
+			
+			private function clickLoadAll(event:Event):void
+			{
+				trace("load all clicked");
+				var myClickHandler:Function = function (evt_obj:Object):void {
+					if (evt_obj.detail == Alert.OK) {
+						trace(DoLoadAll());
+					}
+				};
+
+				Alert.show("Are you sure you want to Load All?  This will clear your current playlists and repopulate them with new data.", "Alert", Alert.OK | Alert.CANCEL, null, myClickHandler, null, Alert.OK);
+
+			}
+			private function DoLoadAll():void
+			{
+				_fileRef = new FileReference();
+				_fileRef.addEventListener(Event.SELECT, onSelectLoadAllSettings);
+				_fileRef.browse([ new FileFilter("BFXR Sample and Mixer Library (*.bfxr_library)", "*.bfxr_library")]);
+			}
+			
+			private function onSelectLoadAllSettings(e:Event):void
+			{
+				_fileRef.cancel();
+				
+				_fileRef.removeEventListener(Event.SELECT, onSelectLoadAllSettings);
+				_fileRef.addEventListener(Event.COMPLETE, onLoadAllSettings);
+				_fileRef.load();
+			}
+			
+			/**
+			 * Once loaded, passes the file to the synthesizer to parse
+			 * @param	e	Complete event
+			 */
+			private function onLoadAllSettings(e:Event):void
+			{
+				var i:int;
+				
+				_fileRef.removeEventListener(Event.COMPLETE, onLoadSettings);
+				
+				AddToSoundList("loaded");
+				var lib:SfxLibrary = SfxLibrary.LoadFrom((_fileRef.data as ByteArray).toString());
+								
+				//SYNTHS
+				this.soundItems.removeAll();
+				for (i=0;i<lib.synths.length;i++)
+				{
+					this.soundItems.addItem(lib.synths[i]);
+				}
+				
+				//MIXES
+				this.layerItems.removeAll();
+				for (i=0;i<lib.mixes.length;i++)
+				{
+					this.layerItems.addItem(lib.mixes[i]);
+				}
+				
+				//GLOBALS
+				this.globalState.Deserialize(lib.globals);
+				OnGlobalParameterChanged();
+				
+				this.saveManager.RefreshSaveWithAppData();
+				
+				OnSoundParameterChanged(true, false);
+				this.soundList.selectedIndex=globalState.selectedSoundItemID;
+				this.layerList.selectedIndex=globalState.selectedLayerItemID;
+				
+				SelectItemInSoundListByID(globalState.selectedSoundItemID,false,false);
+				SelectItemInLayerListByID(globalState.selectedLayerItemID,false,false);
+				
+				OnSoundParameterChanged(true, false);
+				
+				UIUpdateTrigger();
+				this.DisableApplyButton(false);
+				_fileRef = null;
+			}
+			
+			//doesn't change list selections
+			private function OnGlobalParameterChanged():void
+			{
+				playonchange.selected = globalState.playOnChange;
+				bitdepth.selectedIndex = globalState.bitDepth == 16 ? 0 : 1;
+				samplerate.selectedIndex = globalState.sampleRate == 44100 ? 0 : 1;
+			}
+			
+			private function clickSaveAll():void
+			{
+				//first compile strings - 
+				// they'll be of form
+				// VERSION\n\nSOUNDNAME1=SOUNDDAT1\nSOUNDNAME2=SOUNDDAT2\n\nCOMPOUNDNAME1=COMPOUNDDAT1\n&c.
+				// 
+				var lib:SfxLibrary = new SfxLibrary();
+				
+				lib.globals=globalState.Serialize();
+				
+				for (var i:int=0;i<this.soundItems.length;i++)
+				{
+					lib.synths.push((soundItems.getItemAt(i) as SoundData));
+				}
+				
+				for (i=0;i<this.layerItems.length;i++)
+				{
+					lib.mixes.push((layerItems.getItemAt(i) as LayerData));
+				}
+				
+				var file:String = lib.Save();				
+				
+				new FileReference().save(file, "sfx.bfxr_library");
+			}
 
             /**
              * When the user selects a file, begins loading it
@@ -1005,6 +1132,10 @@
 						{
 							DisableApplyButton(false);							
 						}
+						
+						mixerInterface.RemoveOrphanSounds();
+						mixerInterface.CheckIfSoundsOutOfDate();
+						
                         break;
                     }
                 }
@@ -1048,7 +1179,18 @@
                 data="8"
                 label="8-bit"/>
         </mx:ArrayList>
-    </fx:Declarations>
+		
+		<fx:XML format="e4x" id="loadoptions"> 
+			<root>
+				<editItem label="Load All"/> 
+			</root>
+		</fx:XML>
+		<fx:XML format="e4x" id="saveoptions"> 
+			<root>
+				<editItem label="Save All"/> 
+			</root>
+		</fx:XML>
+	</fx:Declarations>
 
 
     <s:HGroup 
@@ -1387,18 +1529,33 @@
 					requireSelection="true">
                 </s:DropDownList>
             </s:BorderContainer>      
-            <s:Button id="import_sfxr"
-                label="Load from disk"
-                click="clickLoadSound()"/>
-            <s:Button id="export_sfxr"
-                label="Save to disk"
-                click="clickSaveSound()"/>
+            <mx:PopUpMenuButton 
+            	dataProvider="{loadoptions}"
+            	labelField="@label" 
+            	showRoot="false" 
+            	id="loadmenu"
+            	creationComplete="{Menu(loadmenu.popUp).selectedIndex=0;}"
+            	label="Load from Disk"
+            	click="clickLoadSound()"
+            	itemClick="clickLoadAll(event)"
+            	/>
+            <mx:PopUpMenuButton 
+            	dataProvider="{saveoptions}"
+            	labelField="@label" 
+            	showRoot="false" 
+            	id="savemenu"
+            	creationComplete="{Menu(savemenu.popUp).selectedIndex=0;}"
+            	label="Save to Disk"
+            	click="clickSaveSound()"
+            	itemClick="clickSaveAll()"
+            	/>
             <s:Button id="linkbutton"
                 label="Copy"
                 click="clickCopyButton()"/>
             <s:Button id="linkbutton0"
                 label="Paste"
                 click="clickPasteButton()"/>
+            <mx:Spacer height="22"/>
             <s:Button id="linkbutton1"
                 label="Copy Link"
                 click="clickLinkButton()"/>	

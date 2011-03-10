@@ -2,8 +2,8 @@ package
 {
     import components.SoundParameterRowRenderer;
     
-    import synthesis.SfxrParams;
-    import synthesis.SfxrSynth;
+    import com.increpare.bfxr.synthesis.SfxrParams;
+    import com.increpare.bfxr.synthesis.SfxrSynth;
     
     import flash.events.Event;
     import flash.utils.ByteArray;

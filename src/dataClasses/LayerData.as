@@ -6,5 +6,12 @@ package dataClasses
 		{
 			super(_label, _data, _id);
 		}
+			
+		public static function Deserialize(source:String):LayerData
+		{
+			var a:Array = source.split(":");
+			
+			return new LayerData(a[0],a[1],int(a[2]));
+		}
 	}
 }

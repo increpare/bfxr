@@ -3,7 +3,7 @@ package
 	import flash.net.SharedObject;
 	
 	import mx.collections.ArrayList;
-	import synthesis.SfxrSynth;
+	import com.increpare.bfxr.synthesis.SfxrSynth;
 	import dataClasses.LayerData;
 	import dataClasses.SoundData;
 	
@@ -146,6 +146,17 @@ package
 			}			
 			
 			throw new Error("nothing found with id " + id);
+		}
+		
+		//Rebuilds save from scratch using current application settings
+		public function RefreshSaveWithAppData():void
+		{
+			//global first
+			commitGlobal(_parent.globalState);
+			//synths next
+			PushSoundList(_parent.soundItems);
+			//mixes last
+			PushLayerList(_parent.layerItems);
 		}
 		
 		//potentially quite dangerous?

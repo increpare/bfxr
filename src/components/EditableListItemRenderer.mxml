@@ -129,7 +129,9 @@
 	<s:TextInput id="inputTxt"  
 				 visible="false"  
 				 focusOut="onChange(event)"	
-				 top="1"  bottom="1" left="1" right="0" minWidth="25"/>
+				 top="1"  bottom="1" left="1" right="0" minWidth="25"
+				 restrict="A-Za-z 0-9"
+				 />
 	
 	<s:Button id="removeBtn"
 			  width="30"

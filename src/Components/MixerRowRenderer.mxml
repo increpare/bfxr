@@ -13,13 +13,17 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import synthesis.SfxrSynth;
+			import dataClasses.MixerListEntryDat;
 			
+			import mx.binding.utils.BindingUtils;
+			import mx.binding.utils.ChangeWatcher;
 			import mx.events.FlexEvent;
 			import mx.events.SandboxMouseEvent;
 			
 			import spark.components.List;
 			import spark.skins.spark.CheckBoxSkin;
+			
+			import com.increpare.bfxr.synthesis.SfxrSynth;
 			
 			private function PlayClick():void
 			{
@@ -38,7 +42,14 @@
 					dropdown.dataProvider=app.soundItems;															
 					TryUpdateDropdown(false,false);
 				}
+				(data as EventDispatcher).addEventListener(MixerListEntryDat.REFRESH_SYNTH,RefreshTrigger);
 			}			
+			
+			//called when the data in the synth has been modified
+			private function RefreshTrigger(event:Event=null):void
+			{				
+				DropdownChange(null,true,true);		
+			}
 			
 			private function DataChanged(event:Event = null):void
 			{	
@@ -68,7 +79,13 @@
 				if (dropdown.dataProvider!=null)
 				{
 					TryUpdateDropdown();
-				}				
+				}		
+				
+				if (!this.data.synthset)
+				{					
+					cachingtext.visible=false;
+					sliderimagecontainer.visible=false;
+				}
 			}		
 			
 			private function TryUpdateDropdown(play:Boolean = true, modified:Boolean = false):void

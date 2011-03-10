@@ -36,5 +36,10 @@ package dataClasses
 			o.id=id;
 			return o;
 		}
+		
+		public function Serialize():String
+		{
+			return label+":"+data+":"+id;
+		}		
 	}
 }

@@ -1,6 +1,6 @@
 package dataClasses
 {
-	import synthesis.SfxrSynth;
+	import com.increpare.bfxr.synthesis.SfxrSynth;
 	
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
@@ -8,9 +8,11 @@ package dataClasses
 
 	//class mainly to stop warning messages about being unable to bind properties
 	[Bindable]
-	[Event("DataChanged")]
+	[Event(REFRESH_SYNTH)]
 	public class MixerListEntryDat extends EventDispatcher
 	{
+		public static const REFRESH_SYNTH:String = "RefreshSynth";
+		
 		public var id:int=0;
 		public var bggroup:int		= 0;
 		public var label:String		= "";
