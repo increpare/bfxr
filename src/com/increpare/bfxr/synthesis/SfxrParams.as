@@ -571,7 +571,7 @@ package com.increpare.bfxr.synthesis
 		 * Returns a string representation of the parameters for copy/paste sharing
 		 * @return	A comma-delimited list of parameter values
 		 */
-		public function getSettingsString():String
+		public function Serialize():String
 		{			
 			var string:String="";
 			for (var i:int=0; i< SfxrParams.ParamData.length;i++)
@@ -597,7 +597,7 @@ package com.increpare.bfxr.synthesis
 		 * @param	string	Settings string to parse
 		 * @return			If the string successfully parsed
 		 */
-		public function setSettingsString(string:String):Boolean
+		public function Deserialize(string:String):Boolean
 		{
 			if (string==null)
 				return false;

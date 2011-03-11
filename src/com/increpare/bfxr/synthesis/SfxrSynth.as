@@ -271,7 +271,6 @@
 				_cachedMutations[_cachingMutation] = _cachedMutation;
 				_waveData = null;
 				
-				trace("setting _original from playMutated");
 				_original = _params.clone();
 				_params.mutate(mutationAmount);
 				reset(true);
@@ -305,7 +304,6 @@
 			if(_original)
 			{
 				_params.copyFrom(_original);
-				trace("clearing _original from stop()");
 				_original = null;
 			}
 		}
@@ -352,7 +350,6 @@
 						if (synthWave(_cachedMutation, 3072, true))
 						{
 							_params.copyFrom(_original);							
-							trace("clearing _original from onSampleData");
 							_original = null;
 							
 							_cachingMutation++;
@@ -429,7 +426,7 @@
 		/** PlayerInterface implementation: */
 		public function Load(data:String):void
 		{
-			params.setSettingsString(data);
+			params.Deserialize(data);
 		}
 		
 		public function Play(volume:Number=1):void
@@ -502,7 +499,6 @@
 				_cachingAsync = true;
 				_cacheTimePerFrame = maxTimePerFrame;
 				
-				trace("setting _cachedCallback");
 				_cachedCallback = callback;
 				
 				if (!_cacheTicker) _cacheTicker = new Shape;
@@ -546,7 +542,6 @@
 			
 			if (_cachingAsync) 
 			{
-				trace("caching async");
 				return;
 			}
 			
@@ -563,7 +558,6 @@
 				_cachedMutationAmount = mutationAmount;
 				
 				
-				trace("setting _original from cacheMutated");
 				_original = _params.clone();
 				_params.mutate(mutationAmount);
 				
@@ -572,7 +566,6 @@
 				_cachingAsync = true;
 				_cacheTimePerFrame = maxTimePerFrame;
 				
-				trace("setting _cachedCallback 2");
 				_cachedCallback = callback;
 				
 				if (!_cacheTicker) _cacheTicker = new Shape;
@@ -627,7 +620,6 @@
 							_params.paramsDirty = false;
 							
 							_cachedCallback();
-							trace("clearing _cachedCallback 1");
 							_cachedCallback = null;
 							_cacheTicker.removeEventListener(Event.ENTER_FRAME, cacheSection);
 							
@@ -648,7 +640,6 @@
 						_cachingAsync = false;
 						
 						_cachedCallback();
-						trace("clearing _cachedCallback 2");
 						_cachedCallback = null;
 						_cacheTicker.removeEventListener(Event.ENTER_FRAME, cacheSection);
 						
@@ -667,6 +658,18 @@
 		//
 		//--------------------------------------------------------------------------
 		
+		/* Length in quarter-seconds */
+		public function GetLength():Number
+		{			
+			var p:SfxrParams = _params;
+			var envelopeLength0:Number = p.getParam("attackTime") * p.getParam("attackTime") * 100000.0;
+			var envelopeLength1:Number = p.getParam("sustainTime") * p.getParam("sustainTime") * 100000.0;
+			var envelopeLength2:Number = p.getParam("decayTime") * p.getParam("decayTime") * 100000.0 + 10;
+			return (envelopeLength0 + envelopeLength1 + envelopeLength2)*2/(44100);
+
+		}
+		
+		
 		/**
 		 * Resets the runing variables from the params
 		 * Used once at the start (total reset) and for the repeat effect (partial reset)
@@ -678,10 +681,8 @@
 			var p:SfxrParams = _params;
 			
 			_period = 100.0 / (p.getParam("startFrequency") * p.getParam("startFrequency") + 0.001);
-			//trace("_maxperiod = "+_maxPeriod);
 			_maxPeriod = 100.0 / (p.getParam("minFrequency") * p.getParam("minFrequency") + 0.001);
 			
-			//trace("_max period " + _maxPeriod);
 			
 			_slide = 1.0 - p.getParam("slide") * p.getParam("slide") * p.getParam("slide") * 0.01;
 			_deltaSlide = -p.getParam("deltaSlide") * p.getParam("deltaSlide") * p.getParam("deltaSlide") * 0.000001;
@@ -826,7 +827,6 @@
 			{
 				if (_finished) 
 				{
-					//trace("quitting at " + i);
 					return true;					
 				}
 				

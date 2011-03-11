@@ -18,6 +18,7 @@ package dataClasses
 		public var bggroup:int;
 		public var min:Number;
 		public var max:Number;
+		public var defaultvalue:Number;
 		public var value:Number;
 		public var locked:Boolean;
 		public var tag:String;

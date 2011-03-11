@@ -12,6 +12,7 @@ package
 	public class GlobalState
 	{
 		public var playOnChange:Boolean
+		public var modifyExisting:Boolean;
 		public var sampleRate:int;
 		public var bitDepth:int;
 		public var selectedSoundItemID:int;
@@ -64,6 +65,14 @@ package
 			playOnChange = cb.selected;
 		}
 		
+		
+		public function OnModifyExistingChange(event:Event):void
+		{
+			var cb:CheckBox = event.target as CheckBox;
+			modifyExisting = cb.selected;
+		}
+		
+		
 		public function GlobalState()
 		{
 		}
@@ -71,6 +80,7 @@ package
 		public function Serialize():String
 		{
 			return playOnChange.toString()+","
+					+modifyExisting.toString()+","
 					+sampleRate.toString()+","
 					+bitDepth.toString()+","
 					+selectedSoundItemID.toString()+","
@@ -81,10 +91,11 @@ package
 		{
 			var ar:Array = dat.split(",");
 			playOnChange=ar[0]=="false"?false:true;
-			sampleRate=ar[1];
-			bitDepth=ar[2];
-			selectedSoundItemID=ar[3];
-			selectedLayerItemID=ar[4];
+			modifyExisting=ar[1]=="false"?false:true;
+			sampleRate=ar[2];
+			bitDepth=ar[3];
+			selectedSoundItemID=ar[4];
+			selectedLayerItemID=ar[5];
 		}
 	}
 }

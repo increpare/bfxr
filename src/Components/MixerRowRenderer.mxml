@@ -13,6 +13,8 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import com.increpare.bfxr.synthesis.SfxrSynth;
+			
 			import dataClasses.MixerListEntryDat;
 			
 			import mx.binding.utils.BindingUtils;
@@ -23,12 +25,12 @@
 			import spark.components.List;
 			import spark.skins.spark.CheckBoxSkin;
 			
-			import com.increpare.bfxr.synthesis.SfxrSynth;
-			
 			private function PlayClick():void
 			{
 				if (dropdown.selectedIndex>=0)
 				{					
+					var app:sfxr_interface = this.parentApplication as sfxr_interface;
+					app.mixerInterface.MixerPlayStop();
 					PlayStart();
 					data.synth.play(PlayCallback);
 				}
@@ -53,6 +55,11 @@
 			
 			private function DataChanged(event:Event = null):void
 			{	
+				var enableComponents:Boolean = dropdown.selectedIndex>=0;
+				Deselect.enabled = enableComponents;
+				PlayButton.enabled = enableComponents;
+				volumeslider.enabled = enableComponents;
+				
 				if (this.data ==null)
 					return;
 				var app:sfxr_interface = this.parentApplication as sfxr_interface;
@@ -70,7 +77,6 @@
 					this.data.PlayStartCallback = this.PlayStart;
 					this.data.PlayStopCallback = this.PlayStop;
 					this.data.SetDilationCallback = this.SetDilation;
-					this.data.CalcLengthCallback = this.CalcLength;						
 				}
 								
 				onsetSliderPosition = data.onset;
@@ -111,19 +117,22 @@
 			}	
 			
 			private function DropdownChange(event:Event = null,play:Boolean=true, modified:Boolean=true):void
-			{
-				Deselect.enabled = dropdown.selectedIndex>=0;
+			{				
 				
 				var app:sfxr_interface = this.parentApplication as sfxr_interface;
-				
+				app.mixerInterface.MixerPlayStop();
 				var synth:SfxrSynth = data.synth;
 				
 				if (dropdown.selectedIndex>=0)
 				{
 					var row:Object = dropdown.dataProvider.getItemAt(dropdown.selectedIndex);
 					
-					data.synth.params.setSettingsString(row.data);
+					data.synth.params.Deserialize(row.data);					
 					
+					if (data.id==-1)
+					{
+						data.onset=0;
+					}
 					
 					data.id=row.id;
 					data.cached=false;
@@ -145,37 +154,33 @@
 				else
 				{
 					data.id=-1;
+					data.amplitudemodifier=1;
 					data.cached=false;
 					sliderimagecontainer.visible=false;
-					data.synthset=false;
+					data.synthset=false;					
+					app.mixerInterface.RecalcDilation();
 				}
 				
 				if (modified)
 				{
-					app.mixerInterface.mixer_id_soundChanged(null);
+					app.mixerInterface.ComponentChangeCallback("id",null);
 				}
 			}
 			
 			private var dilation:Number=15;
-			
-			/** returns -1 if still buffering, &c. */
-			private function CalcLength():Number
-			{
-				var synth:SfxrSynth = data.synth;
-				if (synth.Dirty())
-					return -1;
-				var length:Number = synth.cachedWave.length/(4*44100.0);
-				return length;
-			}
-			
+					
 			public function SetDilation(newDilation:Number):void
 			{
+				if (dilation==newDilation)
+					return;
+				
 				dilation=newDilation;
+				
 				var synth:SfxrSynth = data.synth;
-				if (!synth.Dirty())
-				{
-					DrawSynthImage();
-				}
+				
+				DrawSynthImage();
+				
+				DataChanged();
 			}
 			
 			private function DeselectClick():void
@@ -283,8 +288,8 @@
 			private function volumechanged(event:Event):void
 			{
 				data.amplitudemodifier=volumeslider.value;
-				var app:sfxr_interface = this.parentApplication as sfxr_interface;								
-				app.mixerInterface.mixer_volume_sliderChanged(event);
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;												
+				app.mixerInterface.ComponentChangeCallback("volume",null);
 				DrawSynthImage();
 			}						
 			
@@ -371,14 +376,15 @@
 			
 			public function PlayStop(event:Event = null):void
 			{
+				playline.x=0;
 				playline.visible=false;
 			}
 			
 			private function SliderImageChangeEnd():void
 			{				
 				data.onset=onsetSliderPosition;		
-				var app:sfxr_interface = this.parentApplication as sfxr_interface;				
-				app.mixerInterface.mixer_onset_sliderChanged();
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;							
+				app.mixerInterface.ComponentChangeCallback("onset",null);
 			}
 			
 			public var onsettimescale:Number=1;
@@ -397,6 +403,16 @@
 				var right:Number = (this.sliderimagecontainer.width-this.sliderimage.width);
 				
 				sliderimage.x = n/(onsettimescale/(dilation));
+
+				ClampSliderPos();
+			}
+			
+			private function ClampSliderPos():void
+			{
+				var left:Number = 0;
+				var right:Number = (this.sliderimagecontainer.width-this.sliderimage.width);
+				if (sliderimage.x<left) sliderimage.x=left;
+				else if (sliderimage.x>right) sliderimage.x=right;
 			}
 			
 		]]>
@@ -406,7 +422,7 @@
 		<s:fill><s:SolidColor color="{ ((data.bggroup=='0') ? 0xffccbda1 : 0xffe7d1a7)  }" /></s:fill>	
 	</s:Rect>
 	
-	<s:BorderContainer width="191" backgroundColor="0xccbda1" backgroundAlpha="1.0" height="74" y="0" right="0" mouseDown="sliderImageContainerClick(event)"  id="sliderimagecontainer" visible="false">		
+	<s:BorderContainer width="191" backgroundColor="0xccbda1" backgroundAlpha="1.0" right="0" mouseDown="sliderImageContainerClick(event)"  id="sliderimagecontainer" visible="false" top="0" height="75">		
 		<s:layout>
 			<s:BasicLayout/>
 		</s:layout>
@@ -433,10 +449,10 @@
 			<mx:SolidColorStroke color="0"/>
 		</s:stroke>		
 	</s:Rect>	
-	<s:VSlider x="130" y="10" height="54" id="volumeslider" value="1" minimum="0" maximum="2" changeEnd="volumechanged(event)" stepSize=".01"/>
+	<s:VSlider x="130" y="10" height="54" id="volumeslider" value="1" minimum="0" maximum="2" changeEnd="volumechanged(event)" stepSize=".01" enabled="false"/>
 	<s:DropDownList id="dropdown" x="14" y="10" change="DropdownChange(event)" requireSelection="false"></s:DropDownList>
-	<s:Button x="14" y="43" label="Play" click="PlayClick()"/>
-	<s:Button x="92" y="43" id="Deselect" label="X" click="DeselectClick()" width="30" enabled="false"/>
+	<s:Button x="14" y="43" id="PlayButton" label="Play" click="PlayClick()" enabled="false"/>
+	<s:Button x="92" y="43" id="Deselect" label="X" toolTip="Clears the channel." click="DeselectClick()" width="30" enabled="false"/>
 	<s:Label x="207" y="10" text="Caching" id="cachingtext" width="94" height="54" verticalAlign="middle" visible="false"/>
 
 </s:ItemRenderer>

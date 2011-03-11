@@ -3,15 +3,18 @@
 				xmlns:s="library://ns.adobe.com/flex/spark" 
 				xmlns:mx="library://ns.adobe.com/flex/mx" 
 				autoDrawBackground="true"
-				creationComplete="onCreationComplete()">
+				creationComplete="onCreationComplete()"					
+				>
 	
 	<fx:Script>
 		<![CDATA[
 			import dataClasses.SoundData;
-			import mx.controls.List;
+			
 			import mx.events.FlexEvent;
 			
+			import spark.components.List;
 			import spark.components.supportClasses.ListBase;
+			import spark.events.IndexChangeEvent;
 			
 			private function onCreationComplete():void
 			{	
@@ -46,7 +49,7 @@
 				labelDisplay.text = data.label;
 				labelDisplay.alpha=1.0;
 				this.inputTxt.alpha=1.0;
-			}			
+			}						
 			
 			private function onEdit(event:Event):void 
 			{
@@ -91,7 +94,7 @@
 				}
 				isEdit(false);
 				
-			}			
+			}		
 			
 			protected function RenameData():void
 			{
@@ -111,7 +114,7 @@
 			{
 				RemoveData();
 				event.stopImmediatePropagation();
-			}	
+			}				
 			
 		]]>
 	</fx:Script>
@@ -121,7 +124,6 @@
 			 text="{data.label + (data.modified?'*':'')}"   
 			 click="onEdit(event)" 
 			 top="0" bottom="0" left="0" right="0"
-			 
 			 paddingTop="7" paddingBottom="5" paddingLeft="5" paddingRight="3"  
 			 verticalAlign="middle"
 			 />

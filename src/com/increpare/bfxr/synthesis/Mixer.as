@@ -43,7 +43,7 @@ package com.increpare.bfxr.synthesis
 		/** PlayerInterface implementation: */
 		public function Load(data:String):void
 		{
-			params.setSettingsString(data);
+			params.Deserialize(data);
 		}
 		
 		public function Play(volume:Number=1):void
@@ -109,7 +109,7 @@ package com.increpare.bfxr.synthesis
 			
 			_lastSoundParams = params.items[_sourcesoundindex] as MixerItemParams;
 			_lastSynth = new SfxrSynth();
-			_lastSynth.params.setSettingsString(_lastSoundParams.data);
+			_lastSynth.params.Deserialize(_lastSoundParams.data);
 			_lastSynth.Cache(generateSourceSound,_sourcesoundMaxTimePerFrame);
 		}
 		
@@ -131,7 +131,7 @@ package com.increpare.bfxr.synthesis
 				throw new Error("Bfxr doesn't support asynchronous callbacks for mixed functions yet."); 
 			}
 			
-			var original_parameters:String = this.getSettingsString();
+			var original_parameters:String = this.Serialize();
 			
 			this._cachedMutations = new Vector.<ByteArray>();
 			for (var i:int=0;i<count;i++)
@@ -142,7 +142,7 @@ package com.increpare.bfxr.synthesis
 				{
 					var mip:MixerItemParams = params.items[j] as MixerItemParams;
 					var s:SfxrSynth = new SfxrSynth();
-					s.params.setSettingsString(mip.data);
+					s.params.Deserialize(mip.data);
 					s.params.mutate(amount);
 					s.Cache();
 					var bytes:ByteArray = s.getCachedWave();					
@@ -156,21 +156,21 @@ package com.increpare.bfxr.synthesis
 					this.sourcesounds.push(msd);
 					//params.items[j].
 				}
-				this.setSettingsString(original_parameters);
+				this.Deserialize(original_parameters);
 			}
 			this._dirty=false;			
 			this._mutation=true;
 			//cacheMutations(count,amount);			
 		}
 		
-		public function getSettingsString():String
+		public function Serialize():String
 		{
-			return this.params.getSettingsString();
+			return this.params.Serialize();
 		}
 		
-		public function setSettingsString(data:String):void
+		public function Deserialize(data:String):void
 		{		
-			this.params.setSettingsString(data);			
+			this.params.Deserialize(data);			
 		}
 		
 		public function getCachedWave():ByteArray
@@ -218,7 +218,6 @@ package com.increpare.bfxr.synthesis
 		
 		public function AddTrack(b:MixerSoundData):void
 		{
-			trace("adding track to mixer w/ id " + b.id);
 			sourcesounds.push(b);
 			_dirty=true;
 		}
@@ -277,6 +276,8 @@ package com.increpare.bfxr.synthesis
 			
 			var added:Boolean=true;
 			
+			var masterVolume:Number = this.params.volume;
+
 			switch(unitsize)
 			{
 				case 1:
@@ -292,6 +293,8 @@ package com.increpare.bfxr.synthesis
 								added=true;
 							}
 						}
+						
+						val *= masterVolume;
 						
 						if (val >= (1<<7))
 							val=1<<7;
@@ -315,6 +318,7 @@ package com.increpare.bfxr.synthesis
 							}
 						}
 						
+						val *= masterVolume;
 						
 						if (val >= (1<<15))
 							val=1<<15;
@@ -337,6 +341,8 @@ package com.increpare.bfxr.synthesis
 								added=true;
 							}
 						}
+						
+						valf *= masterVolume;
 						
 						_waveData.writeFloat(valf);
 					}

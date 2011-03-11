@@ -9,8 +9,10 @@
     
     <fx:Script>
         <![CDATA[
-            
-            import spark.components.Group;
+			import dataClasses.SoundListRowData;
+			
+			import spark.components.Group;
+			import spark.components.supportClasses.ItemRenderer;
 
             /**
             * Probably a better way of doing this
@@ -29,11 +31,19 @@
                 // and the stepSize, minimum, maximum values of the custom slider
                 var sliderSkin:TickedHSliderSkin = (this.hostComponent.parentDocument as TickedHSliderSkin);
                 
+				
                 var thumbGroupWidth:Number = sliderSkin.thumb.width;
                 var numberOfTicks:Number = 10;//(sliderSkin.hostComponent.maximum - sliderSkin.hostComponent.minimum)*10;
                 var tickSpacing:Number = ((width - thumbGroupWidth) / numberOfTicks);
 				
-				var centerTick:int = Math.abs(sliderSkin.hostComponent.minimum)<0.01 ? 0 : 5;
+				var min:Number = sliderSkin.hostComponent.minimum;
+				var max:Number = sliderSkin.hostComponent.maximum;
+				
+				var defaultval:Number = 
+					((sliderSkin.hostComponent.parent.parent as ItemRenderer).data as SoundListRowData).defaultvalue;
+				
+				var defaultTick:int = 
+					Math.round((defaultval-min)*numberOfTicks/(max - min));
 				
                 ticksGroup.left = ticksGroup.right = Math.floor(thumbGroupWidth/2);
                 
@@ -41,7 +51,7 @@
                 ticksGroup.width = 0;
                 
                 for (var i:int = 0; i <= numberOfTicks; i++){
-					if (i!=centerTick)
+					if (i!=defaultTick)
 					{
                     	var tick:Tick = new Tick();
                    

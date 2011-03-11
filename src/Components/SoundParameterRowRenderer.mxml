@@ -3,7 +3,7 @@
 <s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
 				xmlns:mx="library://ns.adobe.com/flex/mx" 
 				xmlns:s="library://ns.adobe.com/flex/spark"
-				
+				valueCommit="OnValueCommit()"
 				 contentBackgroundColor="#FFFFFF" xmlns:local="*">
 	
 	<fx:Script>
@@ -12,9 +12,14 @@
 			import spark.skins.spark.CheckBoxSkin;
 			
 			private function CreationComplete(event:Event):void
-			{	
+			{					
 				//sliders pips wrongly positioned
 				(slider.skin as TickedHSliderSkin).track.skin.invalidateDisplayList();				
+			}
+			
+			private function OnValueCommit():void
+			{				
+				(slider.skin as TickedHSliderSkin).track.skin.invalidateDisplayList();	
 			}
 						
 			private function SliderValueChange(event:Event):void
@@ -82,7 +87,7 @@
 			id="slider" 
 			width="116" 
 			minimum="{data.min}" 
-			maximum="{data.max}" 
+			maximum="{data.max}"			
 			value="{data.value}"
 			stepSize="0.005" 
 			enabled="{data.enabled}"

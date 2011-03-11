@@ -3,7 +3,7 @@ package com.increpare.bfxr.synthesis
 	public class MixerParams implements ISerializable
 	{
 		public var items:Vector.<MixerItemParams>;
-		public var volume:Number;
+		public var volume:Number = 1;
 		
 		public static const CHANNELCOUNT:int=5;
 		
@@ -18,7 +18,7 @@ package com.increpare.bfxr.synthesis
 			}
 		}
 		
-		public function getSettingsString():String
+		public function Serialize():String
 		{
 			var result:String = "";
 			for (var i:int=0;i<this.items.length;i++)
@@ -31,7 +31,7 @@ package com.increpare.bfxr.synthesis
 			return result;
 		}
 		
-		public function setSettingsString(settings:String):Boolean
+		public function Deserialize(settings:String):Boolean
 		{					
 			//remove everything
 			items = new Vector.<MixerItemParams>()

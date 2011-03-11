@@ -25,7 +25,6 @@ package dataClasses
 		public var PlayStartCallback:Function = null;
 		public var PlayStopCallback:Function = null;
 		public var SetDilationCallback:Function = null;
-		public var CalcLengthCallback:Function = null;
 		
 		public var onset:Number = 0 ;
 		public var amplitudemodifier:Number = 1;

@@ -1,9 +1,12 @@
 package
 {
-    import components.SoundParameterRowRenderer;
-    
     import com.increpare.bfxr.synthesis.SfxrParams;
     import com.increpare.bfxr.synthesis.SfxrSynth;
+    
+    import components.SoundParameterRowRenderer;
+    
+    import dataClasses.SoundData;
+    import dataClasses.SoundListRowData;
     
     import flash.events.Event;
     import flash.utils.ByteArray;
@@ -17,10 +20,8 @@ package
     import spark.components.HSlider;
     import spark.components.Label;
     import spark.components.ToggleButton;
-    import dataClasses.SoundData;
-    import dataClasses.SoundListRowData;
 
-    public class SynthInterface
+    public class SynthInterface implements ITabManager
     {
 
         private var _synth:SfxrSynth; // Synthesizer instance
@@ -38,6 +39,7 @@ package
 			_app=app;
 			_globalState = globalState;
 			_volumeSlider = volumeSlider;
+			_lockWave = app.lockwave;
             _synth = new SfxrSynth();
 			_synth.params.randomize();	
 			
@@ -48,19 +50,21 @@ package
 			for (var i:int=0;i<SfxrParams.ParamData.length;i++)
 			{
 				var slrd:SoundListRowData = new SoundListRowData();
-				slrd.label = 	SfxrParams.ParamData[i][0];
+				slrd.label = 		SfxrParams.ParamData[i][0];
 								
 				
-				slrd.tooltip = 	SfxrParams.ParamData[i][1];
-				slrd.bggroup = 	SfxrParams.ParamData[i][2];
-				slrd.tag = 		SfxrParams.ParamData[i][3];
+				slrd.tooltip = 		SfxrParams.ParamData[i][1];
+				slrd.bggroup = 		SfxrParams.ParamData[i][2];
+				slrd.tag = 			SfxrParams.ParamData[i][3];
+				
 				
 				if (SfxrParams.ExcludeParams.indexOf(slrd.tag)>=0)
 					continue;
 				
-				slrd.min = 		SfxrParams.ParamData[i][5];
-				slrd.max = 		SfxrParams.ParamData[i][6];
-				slrd.square = 	SfxrParams.SquareParams.indexOf(slrd.tag)>=0;
+				slrd.defaultvalue = SfxrParams.ParamData[i][4];				
+				slrd.min = 			SfxrParams.ParamData[i][5];
+				slrd.max = 			SfxrParams.ParamData[i][6];
+				slrd.square = 		SfxrParams.SquareParams.indexOf(slrd.tag)>=0;
 				
 				if (lastgroup!=slrd.bggroup)
 					odd=!odd;
@@ -70,9 +74,9 @@ package
 				slrd.value = _synth.params.getParam(slrd.tag);
 				
 				lastgroup =		slrd.bggroup;
-				slrd.addEventListener(SoundListRowData.DEFAULT_CLICK,SLRD_On_Default_Clicked);
-				slrd.addEventListener(SoundListRowData.LOCKEDNESS_CHANGE,SLRD_On_Lockedness_Changed);
-				slrd.addEventListener(SoundListRowData.SLIDER_CHANGE,SLRD_On_Slider_Changed);
+				slrd.addEventListener(SoundListRowData.DEFAULT_CLICK,function(e:Event):void{ComponentChangeCallback("reset",e);});
+				slrd.addEventListener(SoundListRowData.LOCKEDNESS_CHANGE,function(e:Event):void{ComponentChangeCallback("locked",e);});
+				slrd.addEventListener(SoundListRowData.SLIDER_CHANGE,function(e:Event):void{ComponentChangeCallback("slider",e);});
 				
 				//ChangeWatcher.watch(slrd,"locked",LockStatusChanged);
 				//ChangeWatcher.watch(slrd,"value",SliderValueChanged);
@@ -90,66 +94,81 @@ package
 			_synth.play();
 		}
 		
-		public function SLRD_On_Default_Clicked(event:Event):void
+		public function ComponentChangeCallback(tag:String,e:Event):void
 		{
-			var sprd:SoundListRowData = event.target as SoundListRowData;	
-			_synth.params.resetParams([ sprd.tag ]);
-			OnSoundParameterChanged();
-			UIUpdateTrigger();
-		}
-		
-		public function SLRD_On_Lockedness_Changed(event:Event):void
-		{
-			var sprd:SoundListRowData = event.target as SoundListRowData;
-			_synth.params.setParamLocked(sprd.tag,sprd.locked);	
-			OnSoundParameterChanged(false);		
-		}
-		
-		public function SLRD_On_Slider_Changed(event:Event):void
-		{
-			var sprd:SoundListRowData = event.target as SoundListRowData;
+			var sprd:SoundListRowData = e.target as SoundListRowData;	
+			var updateui:Boolean=false;
+			var audible:Boolean=true;
 			
-			_synth.params.setParam(sprd.tag, sprd.value);
-			OnSoundParameterChanged();			
-		}
-		
-        public function WaveTypeLockClicked():void
-        {
-            _synth.params.setParamLocked("waveType", _lockWave.selected);
-			OnSoundParameterChanged(false,true);
-        }
+			switch(tag)
+			{
+				case "reset":
+					_synth.params.resetParams([ sprd.tag ]);
+					updateui=true;
+					break;
+				case "locked":
+					_synth.params.setParamLocked(sprd.tag,sprd.locked);	
+					audible=false;
+					break;
+				case "slider":
+					_synth.params.setParam(sprd.tag, sprd.value);
+					break;
+				case "wavetype":    
+					_synth.params.setParamLocked("waveType", _lockWave.selected);					
+					break;
+				case "volume":					
+					_synth.params.setParam("masterVolume", _volumeSlider.value);
+					break;
+				default:
+					throw new Error("tag not identified");
+			}
+			
+			OnParameterChanged(audible);	
+			
+			if (updateui)
+			{
+				RefreshUI();
+			}			
+		}				
 
         // called when synth and visuals have been synced
         // audible if we want to retrigger a play 
         //(e.g. changing lock status of a field shouldn't trigger a replay)
-        public function OnSoundParameterChanged(audible:Boolean = true, underlyingModification:Boolean = true):void
+        public function OnParameterChanged(audible:Boolean = true, underlyingModification:Boolean = true, forceplay:Boolean = false):void
         {						
 			//apply applications to selected item's data
 			if (underlyingModification)
 			{
 				var sd:SoundData = _app.soundItems.getItemAt(_app.soundList.selectedIndex) as SoundData;
-				sd.data = getSettingsString();
+				sd.data = Serialize();
 				
 				_app.EnableApplyButton(true);
 			}
 			
             //_synth.params.wave
-            if (audible && _globalState.playOnChange)
+            if ((audible && _globalState.playOnChange)||forceplay)
             {
                 _synth.play();
             }
         }
 
-		public function getSettingsString():String
+		public function Serialize():String
 		{
-			return _synth.params.getSettingsString();
+			return _synth.params.Serialize();
 		}
 		
-		public function setSettingsString(str:String):Boolean
+		public function Deserialize(str:String):Boolean
 		{
-			return _synth.params.setSettingsString(str);
+			return _synth.params.Deserialize(str);
 		}
 		
+		public function DeserializeFromClipboard(str:String):void
+		{			
+			_app.AddToSoundList("Paste", true);
+			Deserialize(str);
+			RefreshUI();
+			OnParameterChanged(true, false);
+		}
 		
 		public function WaveformSelect(event:Event):void
 		{
@@ -166,10 +185,10 @@ package
 			
 			CalculateSquareSliderEnabledness();
 			
-			OnSoundParameterChanged();
+			OnParameterChanged();
 		}
 		
-		public function UIUpdateTrigger():void
+		public function RefreshUI():void
 		{			
 			// waveform
 			for (var i:int = 0; i < SfxrParams.WAVETYPECOUNT; i++)
@@ -196,16 +215,17 @@ package
 			}
 			
 			//volume slider
-			_app.volumeslider.value = _synth.params.getParam("masterVolume");
-			
+			if (_app.tabs.selectedIndex==0)
+			{
+				UpdateSharedComponents();
+			}			
 		}
 		
-		
-		public function VolumeChanged(event:Event):void
-		{
-			_synth.params.setParam("masterVolume", _volumeSlider.value);
-			OnSoundParameterChanged(true,true);
-			UIUpdateTrigger();
+		public function UpdateSharedComponents():void
+		{			
+			_app.modifyexisting.enabled=true;
+			_app.volumeslider.value = _synth.params.getParam("masterVolume");
+			_app.PlayButton.enabled=true;
 		}
 		
 		public function GeneratePreset(tag:String):void
