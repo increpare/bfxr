@@ -1,6 +1,6 @@
 package dataClasses
 {
-	import com.increpare.bfxr.synthesis.SfxrSynth;
+	import com.increpare.bfxr.synthesis.*;
 
 	public class SfxLibrary
 	{

@@ -1,7 +1,5 @@
 package com.increpare.bfxr.synthesis
 {
-	import dataClasses.MixerItemParams;
-
 	public class MixerParams implements ISerializable
 	{
 		public var items:Vector.<MixerItemParams>;
@@ -26,21 +24,19 @@ package com.increpare.bfxr.synthesis
 			for (var i:int=0;i<this.items.length;i++)
 			{
 				if (i>0)
-					result+="^";
+					result+="|";
 				
-				result += items[i].id+"^"+items[i].data+"^"+ items[i].onset+"^"+items[i].amplitudemodifier;
+				result += items[i].id+"|"+items[i].data+"|"+ items[i].onset+"|"+items[i].amplitudemodifier;
 			}
 			return result;
 		}
 		
 		public function setSettingsString(settings:String):Boolean
-		{
-			//stop all caching
-			
+		{					
 			//remove everything
 			items = new Vector.<MixerItemParams>()
-			
-			var params:Array = settings.split("^");
+						
+			var params:Array = settings.split("|");
 			//start adding stuff
 			
 			for (var i:int=1;i<params.length;i+=4)

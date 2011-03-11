@@ -8,8 +8,8 @@ package com.increpare.bfxr.synthesis
 		
 		function Play(volume:Number=1):void;
 		
-		function Cache():void;
-		function CacheMutations(amount:Number= 0.05,count:int=16):void;
+		function Cache(callback:Function = null, maxTimePerFrame:uint = 5):void;
+		function CacheMutations(amount:Number= 0.05,count:int=16,callback:Function = null, maxTimePerFrame:uint = 5):void;
 		
 		function getCachedWave():ByteArray;
 

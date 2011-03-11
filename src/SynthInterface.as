@@ -92,8 +92,10 @@ package
 		
 		public function SLRD_On_Default_Clicked(event:Event):void
 		{
-			var sprd:SoundListRowData = event.target as SoundListRowData;			
-			ResetSoundParameterValue(sprd.tag);			
+			var sprd:SoundListRowData = event.target as SoundListRowData;	
+			_synth.params.resetParams([ sprd.tag ]);
+			OnSoundParameterChanged();
+			UIUpdateTrigger();
 		}
 		
 		public function SLRD_On_Lockedness_Changed(event:Event):void
@@ -111,33 +113,10 @@ package
 			OnSoundParameterChanged();			
 		}
 		
-		
-		public function sliderChanged(e:Event):void
-		{
-			var s:HSlider = e.target as HSlider;
-			var renderercb:SoundParameterRowRenderer = s.parent.parent as SoundParameterRowRenderer;
-			
-			_synth.params.setParam(renderercb.data.tag, s.value);
-			OnSoundParameterChanged();
-		}
-		public function lockChanged(tag:String, locked:Boolean):void
-		{
-			_synth.params.setParamLocked(tag, locked);
-			OnSoundParameterChanged(false);
-		}
-		
-
         public function WaveTypeLockClicked():void
         {
             _synth.params.setParamLocked("waveType", _lockWave.selected);
 			OnSoundParameterChanged(false,true);
-        }
-
-        public function ResetSoundParameterValue(paramname:String):void
-        {
-            _synth.params.resetParams([ paramname ]);
-            OnSoundParameterChanged();
-            UIUpdateTrigger();
         }
 
         // called when synth and visuals have been synced

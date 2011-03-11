@@ -1,7 +1,5 @@
 package com.increpare.bfxr.synthesis
-{
-	import dataClasses.MixerItemParams;
-	
+{	
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.SampleDataEvent;
@@ -12,7 +10,7 @@ package com.increpare.bfxr.synthesis
 	import flash.utils.ByteArray;
 	import flash.utils.Endian;
 	
-	public class Mixer extends EventDispatcher// implements PlayerInterface
+	public class Mixer extends EventDispatcher implements PlayerInterface
 	{				
 		public var _dirty:Boolean;
 		public var _cachedWaveData:ByteArray;
@@ -60,16 +58,79 @@ package com.increpare.bfxr.synthesis
 			}
 		}
 		
-		public function Cache():void
+		public function Cache(callback:Function = null, maxTimePerFrame:uint = 5):void
 		{
 			if (_dirty)
 			{
-				CacheWave();
+				GenerateSourceSounds(
+										function():void
+										{
+											CacheWave(); 
+											callback();
+										},
+										maxTimePerFrame);
 			}
 		}
 		
-		public function CacheMutations(amount:Number=0.05,count:int=16):void
+		private function GenerateSourceSounds(onComplete:Function, maxTimePerFrame:Number=5):void
 		{
+			sourcesounds= new Vector.<MixerSoundData>();
+			
+			_sourcesoundindex=-1;
+			_sourceSoundOnCompleteCallback=onComplete;
+			_sourcesoundMaxTimePerFrame=maxTimePerFrame;
+			_lastSynth=null;
+			_lastSoundParams=null;
+			generateSourceSound();
+		}
+		
+		private var _sourcesoundindex:int;
+		private var _sourcesoundMaxTimePerFrame:Number;
+		private var _sourceSoundOnCompleteCallback:Function;
+		private var _lastSynth:SfxrSynth;
+		private var _lastSoundParams:MixerItemParams;
+		
+		private function generateSourceSound():void
+		{
+			if (_lastSynth!=null)
+			{
+				generateSourceSoundApply();				
+			}
+			_sourcesoundindex++;
+			if (_sourcesoundindex>=params.items.length)
+			{
+				if (_lastSynth!=null)
+				{
+					generateSourceSoundApply();				
+				}
+				_sourceSoundOnCompleteCallback();
+				return;
+			}
+			
+			_lastSoundParams = params.items[_sourcesoundindex] as MixerItemParams;
+			_lastSynth = new SfxrSynth();
+			_lastSynth.params.setSettingsString(_lastSoundParams.data);
+			_lastSynth.Cache(generateSourceSound,_sourcesoundMaxTimePerFrame);
+		}
+		
+		private function generateSourceSoundApply():void
+		{
+			var msd:MixerSoundData = new MixerSoundData(
+				_lastSoundParams.id,
+				_lastSoundParams.data,
+				_lastSynth.cachedWave,
+				_lastSoundParams.onset,
+				_lastSoundParams.amplitudemodifier
+			);
+		}
+		
+		public function CacheMutations(amount:Number=0.05,count:int=16,callback:Function = null, maxTimePerFrame:uint = 5):void
+		{
+			if (callback != null)
+			{
+				throw new Error("Bfxr doesn't support asynchronous callbacks for mixed functions yet."); 
+			}
+			
 			var original_parameters:String = this.getSettingsString();
 			
 			this._cachedMutations = new Vector.<ByteArray>();

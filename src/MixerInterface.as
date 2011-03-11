@@ -1,7 +1,11 @@
 package
 {
+	import com.increpare.bfxr.synthesis.Mixer;
+	import com.increpare.bfxr.synthesis.MixerItemParams;
+	import com.increpare.bfxr.synthesis.MixerSoundData;
+	import com.increpare.bfxr.synthesis.SfxrSynth;
+	
 	import dataClasses.LayerData;
-	import dataClasses.MixerItemParams;
 	import dataClasses.MixerListEntryDat;
 	import dataClasses.SoundData;
 	
@@ -12,10 +16,6 @@ package
 	import mx.collections.ArrayList;
 	
 	import spark.components.HSlider;
-	
-	import com.increpare.bfxr.synthesis.Mixer;
-	import com.increpare.bfxr.synthesis.MixerSoundData;
-	import com.increpare.bfxr.synthesis.SfxrSynth;
 
 	public class MixerInterface
 	{
@@ -202,10 +202,7 @@ package
 		
 		public function getClipboardString():String
 		{
-			var result:String = "";
-			//mixer string first
-			result = _mixer.params.getSettingsString();
-			
+			//collate object data
 			var o:Array = new Array();
 			for (var i:int = 0; i < _mixer.params.items.length; i++)
 			{
@@ -218,57 +215,72 @@ package
 				}
 			}
 			
-			for (var s:String in o)
+			
+			//update data in the mixer
+			for (i=0;i<_mixer.params.items.length;i++)
 			{
-				result += "|" + s + "," + o[s];
+				var mip:MixerItemParams = _mixer.params.items[i];
+				mip.data = o[mip.id];
 			}
+			
+			//mixer string first
+			var result:String  = _mixer.params.getSettingsString();
+
 			return result;
 		}
 		
 		//the clipboard string also includes the data of all sounds attached to it.
 		public function setClipboardString(str:String):void
-		{
-			var chunks:Array = str.split("|");
-			//first part is layer data itself
-			_mixer.params.items = new Vector.<MixerItemParams>();
-			
-			trace(" mix description  = " + chunks[0]);
-			//will need to update the IDs here as I read the other strings in, in case there're clashes
-			_mixer.params.setSettingsString(chunks[0]);
-			
-			for (var i:int = 1; i < chunks.length; i++)
-			{
-				var chunk:String = chunks[i];
-				var firstcomma:int = chunk.indexOf(",");
-				var idpart:int = int(chunk.substr(0, firstcomma));
-				var descriptionpart:String = chunk.substr(firstcomma + 1);
-				if (_app.GetIndexOfSoundItemWithID(idpart)>=0)
-				{
-					var newid:int = _app.saveManager.GetID();
-					//rename id in mixer
-					for (var j:int = 0; j < _mixer.params.items.length; j++)
-					{
-						if (_mixer.params.items[j].id == idpart)
-						{
-							_mixer.params.items[j].id = newid;
-							//there could be several uses of this id, so shouldn't break;
-						}
-					}
-					idpart = newid;
-				}
-				
-				//now that everything's added, can paste sound in as normal(?)
-				
-				_app.AddToSoundList("Sound", true, true, idpart);
-				trace(" sound description  = " + descriptionpart);
-				_app.synthInterface.setSettingsString(descriptionpart);
-				
-				_app.OnSoundParameterChanged(false, false);
-				
-			}
-			
+		{	
 			//now push the  mixer settings and load them as if you had clicked on them
 			_app.AddToLayerList("Pasted", true);
+			
+			//set basic mixer data
+			_mixer.params.items = new Vector.<MixerItemParams>();
+			
+
+			//if synth IDs overlap, then rename
+			_mixer.params.setSettingsString(str);
+			
+			//1: get list of IDs used
+			var idlist:Vector.<int> = new Vector.<int>;
+			var descriptions:Vector.<String> = new Vector.<String>;
+			for (i=0;i<_mixer.params.items.length;i++)
+			{
+				var id:int=_mixer.params.items[i].id;
+				
+				if (idlist.indexOf(id)==-1)
+				{
+					idlist.push(id);
+					descriptions.push(_mixer.params.items[i].data);
+				}
+			}
+			
+			//2: see if ids are already in use
+			for (var i:int=0;i<idlist.length;i++)
+			{
+				id=idlist[i];
+				if (_app.GetIndexOfSoundItemWithID(id)>=0)
+				{
+					//then calculate new id and change all references to this id
+					var newid:int=_app.saveManager.GetID();
+					trace("renaming " + id + " to " + newid);
+					for (var j:int=0;j<_mixer.params.items.length;j++)
+					{
+						if (_mixer.params.items[j].id==id)
+						{
+							trace("reassigning");
+							_mixer.params.items[j].id=newid;
+						}
+					}
+					id=newid;
+				}
+				
+				//add new id to list
+				_app.AddToSoundList("Sound",true,false,id);
+				_app.synthInterface.setSettingsString(descriptions[i]);
+				_app.OnSoundParameterChanged(false, false);
+			}			
 			
 			UIUpdateTrigger();
 			

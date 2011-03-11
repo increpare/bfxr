@@ -271,6 +271,7 @@
 				_cachedMutations[_cachingMutation] = _cachedMutation;
 				_waveData = null;
 				
+				trace("setting _original from playMutated");
 				_original = _params.clone();
 				_params.mutate(mutationAmount);
 				reset(true);
@@ -304,6 +305,7 @@
 			if(_original)
 			{
 				_params.copyFrom(_original);
+				trace("clearing _original from stop()");
 				_original = null;
 			}
 		}
@@ -349,7 +351,8 @@
 						
 						if (synthWave(_cachedMutation, 3072, true))
 						{
-							_params.copyFrom(_original);
+							_params.copyFrom(_original);							
+							trace("clearing _original from onSampleData");
 							_original = null;
 							
 							_cachingMutation++;
@@ -441,14 +444,14 @@
 			}
 		}
 		
-		public function Cache():void
+		public function Cache(callback:Function = null, maxTimePerFrame:uint = 5):void
 		{
-			cacheSound();
+			cacheSound(callback,maxTimePerFrame);
 		}
 		
-		public function CacheMutations(amount:Number = 0.05,count:int = 16):void
+		public function CacheMutations(amount:Number = 0.05,count:int = 16,callback:Function = null, maxTimePerFrame:uint = 5):void
 		{
-			cacheMutations(count,amount);
+			cacheMutations(count,amount,callback,maxTimePerFrame);
 		}
 		
 		public function getCachedWave():ByteArray
@@ -492,13 +495,14 @@
 			
 			_cachedWave = new ByteArray();
 			
-			if (Boolean(callback)) 
+			if (callback!=null) 
 			{
 				_mutation = false;
 				_cachingNormal = true;
 				_cachingAsync = true;
 				_cacheTimePerFrame = maxTimePerFrame;
 				
+				trace("setting _cachedCallback");
 				_cachedCallback = callback;
 				
 				if (!_cacheTicker) _cacheTicker = new Shape;
@@ -540,20 +544,26 @@
 		{
 			stop();
 			
-			if (_cachingAsync) return;
+			if (_cachingAsync) 
+			{
+				trace("caching async");
+				return;
+			}
 			
 			_cachedMutationsNum = mutationsNum;
 			_cachedMutations = new Vector.<ByteArray>();
 			
-			if (Boolean(callback))
-			{
-				_mutation = true;
-				
+			_mutation = true;
+			
+			if (callback!=null)
+			{			
 				_cachingMutation = 0;
 				_cachedMutation = new ByteArray;
 				_cachedMutations[0] = _cachedMutation;
 				_cachedMutationAmount = mutationAmount;
 				
+				
+				trace("setting _original from cacheMutated");
 				_original = _params.clone();
 				_params.mutate(mutationAmount);
 				
@@ -562,6 +572,7 @@
 				_cachingAsync = true;
 				_cacheTimePerFrame = maxTimePerFrame;
 				
+				trace("setting _cachedCallback 2");
 				_cachedCallback = callback;
 				
 				if (!_cacheTicker) _cacheTicker = new Shape;
@@ -599,7 +610,7 @@
 					_waveDataPos = _cachedMutation.position;
 					
 					if (synthWave(_cachedMutation, 500, true))
-					{
+					{						
 						_params.copyFrom(_original);
 						_params.mutate(_cachedMutationAmount);
 						reset(true);
@@ -616,6 +627,7 @@
 							_params.paramsDirty = false;
 							
 							_cachedCallback();
+							trace("clearing _cachedCallback 1");
 							_cachedCallback = null;
 							_cacheTicker.removeEventListener(Event.ENTER_FRAME, cacheSection);
 							
@@ -636,6 +648,7 @@
 						_cachingAsync = false;
 						
 						_cachedCallback();
+						trace("clearing _cachedCallback 2");
 						_cachedCallback = null;
 						_cacheTicker.removeEventListener(Event.ENTER_FRAME, cacheSection);
 						
