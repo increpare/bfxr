@@ -322,10 +322,12 @@
                 bitdepth.dataProvider = bitdepths;
                 bitdepth.selectedIndex = 0;
 
-                UIUpdateTrigger();
                 mixerInterface.OnParameterChanged(false);
                 synthInterface.OnParameterChanged(false);
-
+				
+				synthInterface.RefreshUI();
+				mixerInterface.RefreshUI();
+				
                 DisableApplyButton(true);								
             }
 
