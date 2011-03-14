@@ -27,6 +27,7 @@ package com.increpare.bfxr.synthesis
 					result+="|";
 				
 				result += items[i].id+"|"+items[i].data+"|"+ items[i].onset+"|"+items[i].amplitudemodifier;
+				trace("writing :\t " + items[i].id+","+items[i].data+","+ items[i].onset+","+items[i].amplitudemodifier); 
 			}
 			return result;
 		}
@@ -42,6 +43,7 @@ package com.increpare.bfxr.synthesis
 			for (var i:int=1;i<params.length;i+=4)
 			{
 				items.push(new MixerItemParams(int(params[i-1]),params[i],Number(params[i+1]),Number(params[i+2])));
+				trace("reading :\t " + int(params[i-1])+","+params[i]+","+Number(params[i+1]) +","+Number(params[i+2]));
 			}
 			//cache everything
 			return true;	

@@ -2,6 +2,7 @@ package
 {
 	import com.increpare.bfxr.synthesis.Mixer;
 	import com.increpare.bfxr.synthesis.MixerItemParams;
+	import com.increpare.bfxr.synthesis.MixerParams;
 	import com.increpare.bfxr.synthesis.MixerSoundData;
 	import com.increpare.bfxr.synthesis.SfxrSynth;
 	
@@ -14,6 +15,7 @@ package
 	import flash.utils.ByteArray;
 	
 	import mx.collections.ArrayList;
+	import mx.events.FlexEvent;
 	
 	import spark.components.HSlider;
 
@@ -90,10 +92,10 @@ package
 				}
 				
 				var len:Number = mled.synth.GetLength();
-				
+				trace(len + " : " + i + " : " + mled.id + " : " +mled.synth.params.Serialize());
 				if (mled.onset + len > 2*maxlength)
 				{
-					mled.onset = 0;
+					mled.onset = 2*maxlength-len;
 					clamped=true;
 				}
 			}
@@ -172,7 +174,7 @@ package
 			{
 				var dat:MixerListEntryDat = _mixerList.getItemAt(i) as MixerListEntryDat;
 				//synth.();
-				if (dat.synthset)
+				if (dat.id>=0)
 				{
 					var msd:MixerSoundData = new MixerSoundData(dat.id,dat.data, dat.synth.cachedWave, dat.onset, dat.amplitudemodifier);
 					_mixer.AddTrack(msd);
@@ -356,7 +358,7 @@ package
 			for (var i:int = 0; i < _mixerList.length; i++)
 			{
 				var dat:MixerListEntryDat = _mixerList.getItemAt(i) as MixerListEntryDat;
-				if (dat.synthset)
+				if (dat.id>=0)
 				{
 					var msd:MixerSoundData = new MixerSoundData(dat.id, dat.data, dat.synth.getWavFile(_globalState.sampleRate,_globalState.bitDepth), dat.onset, dat.amplitudemodifier);
 					_mixer.AddTrack(msd);
@@ -371,14 +373,44 @@ package
 			for (var i:int=0;i<_mixerList.length;i++)
 			{
 				var dat:MixerListEntryDat = _mixerList.getItemAt(i) as MixerListEntryDat;
-				if (dat.synthset)
+				if (dat.id>=0)
 				{
 					// check if synth still exists in list
 					if (_app.GetIndexOfSoundItemWithID(dat.id)<0)
 					{
-						dat.synthset=false;
+						dat.id=-1;
 					}		
 				}
+			}
+			
+			var changedany:Boolean=false;
+			//remove references in other mixes as well
+			for (i=0;i<_app.layerItems.length;i++)
+			{
+				var changed:Boolean=false;
+				var ld:LayerData = LayerData(_app.layerItems.getItemAt(i));
+				var mp:MixerParams = new MixerParams();
+				mp.Deserialize(ld.data);
+				for (var j:int=0;j<mp.items.length;j++)
+				{
+					var mip:MixerItemParams = mp.items[j];
+					if (mip.id>=0 && _app.GetIndexOfSoundItemWithID(mip.id)<0)
+					{
+						mip.id=-1;
+						changed=true;
+						changedany=true;
+					}
+				}
+				if (changed)
+				{					
+					ld.data=mp.Serialize();
+					ld.dispatchEvent(new FlexEvent(FlexEvent.CHANGE_END));
+				}
+			}
+			
+			if (changedany)
+			{
+				_app.saveManager.PushLayerList(_app.layerItems);
 			}
 		}
 		
@@ -387,7 +419,7 @@ package
 			for (var i:int=0;i<_mixerList.length;i++)
 			{
 				var dat:MixerListEntryDat = _mixerList.getItemAt(i) as MixerListEntryDat;
-				if (dat.synthset)
+				if (dat.id>=0)
 				{
 					var index:int = _app.GetIndexOfSoundItemWithID(dat.id);
 					// check if synth still exists in list

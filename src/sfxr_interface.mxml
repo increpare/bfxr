@@ -42,12 +42,14 @@
 			import mx.events.CollectionEvent;
 			import mx.events.CollectionEventKind;
 			import mx.events.FlexEvent;
+			import mx.events.MenuEvent;
 			import mx.events.PropertyChangeEvent;
 			import mx.logging.Log;
 			import mx.logging.LogEventLevel;
 			import mx.logging.targets.TraceTarget;
 			import mx.utils.URLUtil;
 			
+			import spark.components.VScrollBar;
 			import spark.events.IndexChangeEvent;
 
             public var saveManager:SaveManager;
@@ -327,7 +329,7 @@
 				
 				synthInterface.RefreshUI();
 				mixerInterface.RefreshUI();
-				
+								
                 DisableApplyButton(true);								
             }
 
@@ -399,7 +401,14 @@
                 {
                     var tail:String = ar[1] as String;
                     var sounddescr:String = unescape(tail.substr(2));
-                    return synthInterface.Deserialize(sounddescr);
+					if (sounddescr.indexOf("|")==-1)
+					{
+                    	return synthInterface.Deserialize(sounddescr);
+					}
+					else
+					{
+						return mixerInterface.Deserialize(sounddescr);
+					}
 				}
                 catch (e:Error)
                 {
@@ -584,7 +593,7 @@
             private function SelectItemInLayerList(i:int, triggerplay:Boolean = true, triggercommit:Boolean = true):void
             {
                 layerList.selectedIndex = i;
-                layerListSelectionChanged(null, triggerplay,false,triggercommit);
+                layerListSelectionChanged(null, triggerplay,true,triggercommit);
                 callLater(function():void
                 {
                     layerList.ensureIndexIsVisible(i);
@@ -805,6 +814,11 @@
 
             private function soundListSelectionChanged(event:Event, triggerPlay:Boolean = true,triggercommit:Boolean=true):void
             {
+				if (event!=null)
+				{
+					if ((event.target is VScrollBar) || (event.target is Button))
+						return;
+				}
                 if (soundList.selectedIndex == -1)
                 {
                     if (soundItems.length == 0)
@@ -831,14 +845,18 @@
 				synthInterface.OnParameterChanged(triggerPlay, false,forceplay);
 				synthInterface.RefreshUI();
 
-                if (row.modified)
-                {
-                    EnableApplyButton(false);
-                }
-                else
-                {
-                    DisableApplyButton(false);
-                }
+				//sound list only has dominion over the 'apply' button if first tab opened.
+				if (tabs.selectedIndex==0)
+				{
+                	if (row.modified)
+                	{
+                	    EnableApplyButton(false);
+                	}
+                	else
+                	{
+                	    DisableApplyButton(false);
+                	}
+				}
             }
 
             private function layerListSelectionChanged(event:Event, triggerPlay:Boolean = true,updateUI:Boolean=true, triggercommit:Boolean=true):void
@@ -910,8 +928,13 @@
                 _fileRef.browse([ new FileFilter("SFX Sample Files (*.sfs)", "*.sfs")]);
             }
 			
-			private function clickLoadAll(event:Event):void
+			private function clickLoadAll(event:MenuEvent):void
 			{
+				if (event.index==0)
+				{
+					clickLoadSound();
+					return;
+				}
 				var myClickHandler:Function = function (evt_obj:Object):void {
 					if (evt_obj.detail == Alert.OK) {
 						DoLoadAll();
@@ -1003,8 +1026,13 @@
 				samplerate.selectedIndex = globalState.sampleRate == 44100 ? 0 : 1;
 			}
 			
-			private function clickSaveAll():void
+			private function clickSaveAll(event:MenuEvent):void
 			{
+				if (event.index==0)
+				{
+					clickSaveSound();
+					return;
+				}
 				//first compile strings - 
 				// they'll be of form
 				// VERSION\n\nSOUNDNAME1=SOUNDDAT1\nSOUNDNAME2=SOUNDDAT2\n\nCOMPOUNDNAME1=COMPOUNDDAT1\n&c.
@@ -1197,8 +1225,16 @@
                 var base:String = ExternalInterface.call('window.location.href.toString');
                 base = base.split("?")[0];
 
-                var myurl:String = base + "?d=" + escape(synthInterface.Serialize());
-
+                var myurl:String = base;
+				
+				switch (tabs.selectedIndex)
+				{
+					case 0:
+						myurl += "?s=" + escape(synthInterface.Serialize());
+					case 1:
+						myurl += "?s=" + escape(mixerInterface.Serialize());
+				}
+				
                 System.setClipboard(myurl);
             }
       
@@ -1233,11 +1269,13 @@
 		
 		<fx:XML format="e4x" id="loadoptions"> 
 			<root>
+				<editItem label="Load"/> 
 				<editItem label="Load All"/> 
 			</root>
 		</fx:XML>
 		<fx:XML format="e4x" id="saveoptions"> 
 			<root>
+				<editItem label="Save"/> 
 				<editItem label="Save All"/> 
 			</root>
 		</fx:XML>
@@ -1597,7 +1635,6 @@
             	id="loadmenu"
             	creationComplete="{Menu(loadmenu.popUp).selectedIndex=0;}"
             	label="Load from Disk"
-            	click="clickLoadSound()"
             	itemClick="clickLoadAll(event)"
             	/>
             <mx:PopUpMenuButton 
@@ -1607,8 +1644,7 @@
             	id="savemenu"
             	creationComplete="{Menu(savemenu.popUp).selectedIndex=0;}"
             	label="Save to Disk"
-            	click="clickSaveSound()"
-            	itemClick="clickSaveAll()"
+            	itemClick="clickSaveAll(event)"
             	/>
             <s:Button id="linkbutton"
                 label="Copy"

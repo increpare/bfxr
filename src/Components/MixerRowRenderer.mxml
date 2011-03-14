@@ -4,6 +4,7 @@
 				xmlns:s="library://ns.adobe.com/flex/spark"
 				
 				 contentBackgroundColor="#CCBDA1" height="74" width="340"
+				 preinitialize="PreInitialize(event)"
 				  creationComplete="CreationComplete(event)"
 				  dataChange="DataChanged(event)"
 				  symbolColor="#CCBDA1">
@@ -16,13 +17,17 @@
 			import com.increpare.bfxr.synthesis.SfxrSynth;
 			
 			import dataClasses.MixerListEntryDat;
+			import dataClasses.SoundData;
 			
 			import mx.binding.utils.BindingUtils;
 			import mx.binding.utils.ChangeWatcher;
 			import mx.events.FlexEvent;
+			import mx.events.PropertyChangeEvent;
+			import mx.events.PropertyChangeEventKind;
 			import mx.events.SandboxMouseEvent;
 			
 			import spark.components.List;
+			import spark.components.supportClasses.ListBase;
 			import spark.skins.spark.CheckBoxSkin;
 			
 			private function PlayClick():void
@@ -36,6 +41,11 @@
 				}
 			}			
 			
+			private function PreInitialize(event:Event):void
+			{
+				trace("preinit");
+			}
+			
 			private function CreationComplete(event:Event):void
 			{
 				if (dropdown.dataProvider==null)
@@ -44,7 +54,13 @@
 					dropdown.dataProvider=app.soundItems;															
 					TryUpdateDropdown(false,false);
 				}
-				(data as EventDispatcher).addEventListener(MixerListEntryDat.REFRESH_SYNTH,RefreshTrigger);
+				if (data==null)
+				{
+					trace("data is null :S ");
+					return;
+				}
+				
+				(data as EventDispatcher).addEventListener(MixerListEntryDat.REFRESH_SYNTH,RefreshTrigger);			
 			}			
 			
 			//called when the data in the synth has been modified
@@ -53,7 +69,7 @@
 				DropdownChange(null,true,true);		
 			}
 			
-			private function DataChanged(event:Event = null):void
+			private function DataChanged(event:FlexEvent = null):void
 			{	
 				var enableComponents:Boolean = dropdown.selectedIndex>=0;
 				Deselect.enabled = enableComponents;
@@ -79,15 +95,21 @@
 					this.data.SetDilationCallback = this.SetDilation;
 				}
 								
+				trace(data.onset);
 				onsetSliderPosition = data.onset;
 				volumeslider.value=data.amplitudemodifier;
 				
 				if (dropdown.dataProvider!=null)
 				{
-					TryUpdateDropdown();
+					//only call if something has changed.
+					var row:SoundData = dropdown.selectedItem;
+					if ( (row==null && data.id!=-1) || (row!=null && data.id!=row.id))
+					{
+						TryUpdateDropdown();
+					}
 				}		
 				
-				if (!this.data.synthset)
+				if (this.data.id==-1)
 				{					
 					cachingtext.visible=false;
 					sliderimagecontainer.visible=false;
@@ -109,14 +131,14 @@
 						if (dropdown.selectedIndex!=i)
 						{
 							dropdown.selectedIndex=i;
-							DropdownChange(null,play,modified);
+							DropdownChange(null,play,modified,false);
 						}
 						break;
 					}
 				}					
 			}	
 			
-			private function DropdownChange(event:Event = null,play:Boolean=true, modified:Boolean=true):void
+			private function DropdownChange(event:Event = null,play:Boolean=true, modified:Boolean=true, resetonset:Boolean=false):void
 			{				
 				
 				var app:sfxr_interface = this.parentApplication as sfxr_interface;
@@ -129,35 +151,41 @@
 					
 					data.synth.params.Deserialize(row.data);					
 					
-					if (data.id==-1)
+					if (resetonset)
 					{
 						data.onset=0;
 					}
 					
-					data.id=row.id;
-					data.cached=false;
 					cachingtext.visible=true;
 					sliderimagecontainer.visible=false;
+					if (data.cached!=false)
+					{
+						data.cached=false;
+					}
 					
-					data.synthset=true;
+					if (data.id!=row.id)
+					{
+						data.id=row.id;
+					}
 					
 					if (play && app.playonchange.selected)
 					{
 						PlayStart();
-						synth.play(PlayCallback);
+						app.mixerInterface.Play();
 					}
 					else
 					{
 						synth.cacheSound()
 					}
+					
+					app.mixerInterface.RecalcDilation();
 				}//otherwise, clear the sound
 				else
 				{
 					data.id=-1;
 					data.amplitudemodifier=1;
 					data.cached=false;
-					sliderimagecontainer.visible=false;
-					data.synthset=false;					
+					sliderimagecontainer.visible=false;									
 					app.mixerInterface.RecalcDilation();
 				}
 				
@@ -171,8 +199,8 @@
 					
 			public function SetDilation(newDilation:Number):void
 			{
-				if (dilation==newDilation)
-					return;
+//				if (dilation==newDilation)
+//					return;
 				
 				dilation=newDilation;
 				
@@ -185,7 +213,7 @@
 			
 			private function DeselectClick():void
 			{
-				dropdown.selectedIndex=-1;
+				dropdown.selectedIndex=-1;				
 				DropdownChange();
 			}
 			
@@ -197,15 +225,19 @@
 				data.cached=true;
 				this.cachingtext.visible=false;
 				sliderimagecontainer.visible=true;
-				
-				DrawSynthImage();
-				
+								
 				var app:sfxr_interface = this.parentApplication as sfxr_interface;
+				
+				//recalcdilation also redraws synthss
 				app.mixerInterface.RecalcDilation();
 			}
 			
 			private function DrawSynthImage():void
 			{
+				if (data.id==-1)
+				{
+					return;
+				}
 				trace("drawing synth image");
 				//200 points should be enuff
 				//sliderimage.width=synth.
@@ -213,7 +245,7 @@
 				var cachedWave:ByteArray = synth.cachedWave;
 				var length:Number = cachedWave.length/(4*44100.0);
 				
-				sliderimage.width=length*dilation;//let's just say this is the case for now
+				sliderimage.width=Math.max(Math.round(length*dilation),3);//let's just say this is the case for now
 				var d:int = int(cachedWave.length/(4*sliderimage.width))*4;
 				var points : Vector.<Number> = new Vector.<Number>();
 				var amplitudemodifier:Number =  data.amplitudemodifier;
@@ -248,7 +280,7 @@
 					}
 				}*/
 				
-				sliderimage.width=points.length;
+				sliderimage.width=Math.round(points.length);
 				sliderimage.graphics.clear();
 				sliderimage.graphics.beginFill(0xe7d1a7,1.0);
 				sliderimage.graphics.drawRect(0,0,sliderimage.width,sliderimage.height);
@@ -361,12 +393,12 @@
 			
 			private function PlayCallback(playingtime:Number):void
 			{
-				playline.x=sliderimage.x+int(playingtime*dilation);
+				playline.x=Math.min(sliderimage.x+int(playingtime*dilation),sliderimagecontainer.width-3);
 			}
 			
 			public function PlayCallbackAbsolute(playingtime:Number):void
 			{
-				playline.x=int(playingtime*dilation);
+				playline.x=Math.min(int(playingtime*dilation),sliderimagecontainer.width-3);
 			}
 			
 			public function PlayStart():void
@@ -402,7 +434,7 @@
 				var left:Number = 0;
 				var right:Number = (this.sliderimagecontainer.width-this.sliderimage.width);
 				
-				sliderimage.x = n/(onsettimescale/(dilation));
+				sliderimage.x = Math.round(n/(onsettimescale/(dilation)));
 
 				ClampSliderPos();
 			}

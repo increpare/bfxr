@@ -262,6 +262,7 @@ package com.increpare.bfxr.synthesis
 			if (!_sound) (_sound = new Sound()).addEventListener(SampleDataEvent.SAMPLE_DATA, onSoundData);
 		
 			_channel = _sound.play(0,0,new SoundTransform(volume));
+			_channel.addEventListener(Event.SOUND_COMPLETE,function():void { dispatchEvent(new Event(SfxrSynth.PLAY_COMPLETE));	});
 		}
 		
 		/** param is whether to work in bytes, shorts, or floats (1,2,4)*/
@@ -368,19 +369,19 @@ package com.increpare.bfxr.synthesis
 				if(_waveDataPos + _waveDataBytes > _waveDataLength)
 				{
 					_waveDataBytes = _waveDataLength - _waveDataPos;
-					dispatchEvent(new Event(SfxrSynth.PLAY_COMPLETE));	
 				}
 				
 				if(_waveDataBytes > 0) e.data.writeBytes(_waveData, _waveDataPos, _waveDataBytes);
 							
 				//if too short..append data
-				if (e.data.length<_waveDataBytes) 
+				if (e.data.position<24576) 
 				{
-					_caching=false;
-					while (e.data.length<_waveDataBytes)
+					while (e.data.position<24576)
 					{
 						e.data.writeFloat(0.0);
+						_waveDataBytes+=4;
 					}
+					_caching=false;
 				}
 				
 				_waveDataPos += _waveDataBytes;	

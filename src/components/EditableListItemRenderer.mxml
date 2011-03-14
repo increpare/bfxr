@@ -44,6 +44,13 @@
 				data.modified=false;
 				
 				var list:ListBase = this.owner as ListBase;
+				
+				if (list.selectedItem==this.data)
+				{
+					var app:sfxr_interface = this.parentApplication as sfxr_interface;
+					app.DisableApplyButton(false);
+				}
+				
 				list.dataProvider.itemUpdated(data, 'modified', oldValue, data.modified); 
 				
 				labelDisplay.text = data.label;

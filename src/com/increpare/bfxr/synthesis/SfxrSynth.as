@@ -107,6 +107,7 @@
 		private var _slide:Number;							// Note slide
 		private var _deltaSlide:Number;						// Change in slide
 		private var _minFreqency:Number;					// Minimum frequency before stopping
+		private var _muted:Boolean;							// Whether or not min frequency has been attained
 		
 		
 		private var _overtones:int;					// Minimum frequency before stopping
@@ -743,11 +744,12 @@
 				_phase = 0;
 				
 				_minFreqency = p.getParam("minFrequency");
+				_muted=false;
 				_overtones = p.getParam("overtones")*10;
 				_overtoneFalloff = p.getParam("overtoneFalloff");
 								
 				_bitcrush_freq = 1 - Math.pow(p.getParam("bitCrush"),1.0/3.0);				
-				_bitcrush_freq_sweep = -p.getParam("bitCrushSweep")* 0.00002;
+				_bitcrush_freq_sweep = -p.getParam("bitCrushSweep")* 0.000015;
 				_bitcrush_phase=0;
 				_bitcrush_last=0;				
 				
@@ -887,7 +889,7 @@
 				{
 					_period = _maxPeriod;
 					if(_minFreqency > 0.0) {
-							_finished = true;
+							_muted = true;
 					}										
 				}
 				
@@ -1097,7 +1099,7 @@
 					_bitcrush_phase=0;
 					_bitcrush_last=_superSample;	 
 				}
-				_bitcrush_freq= Math.max(Math.min(_bitcrush_freq+_bitcrush_freq_sweep,1),0);
+				_bitcrush_freq = Math.max(Math.min(_bitcrush_freq+_bitcrush_freq_sweep,1),0);
 				
 				_superSample=_bitcrush_last; 				
 			
@@ -1116,6 +1118,11 @@
 				 else
 				 {
 					 _superSample = -Math.pow(-_superSample,_compression_factor);
+				 }
+				 
+				 if (_muted)
+				 {
+					 _superSample = 0;
 				 }
 				 
 				if(waveData)

@@ -3,8 +3,8 @@
 <s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
 				xmlns:mx="library://ns.adobe.com/flex/mx" 
 				xmlns:s="library://ns.adobe.com/flex/spark"
-				valueCommit="OnValueCommit()"
-				 contentBackgroundColor="#FFFFFF" xmlns:local="*">
+				 contentBackgroundColor="#FFFFFF" xmlns:local="*"
+				 creationComplete="CreationComplete(event)">
 	
 	<fx:Script>
 		<![CDATA[
@@ -14,13 +14,9 @@
 			private function CreationComplete(event:Event):void
 			{					
 				//sliders pips wrongly positioned
-				(slider.skin as TickedHSliderSkin).track.skin.invalidateDisplayList();				
-			}
-			
-			private function OnValueCommit():void
-			{				
 				(slider.skin as TickedHSliderSkin).track.skin.invalidateDisplayList();	
-			}
+				slider.value=data.value;
+			}			
 						
 			private function SliderValueChange(event:Event):void
 			{
@@ -60,7 +56,6 @@
 		top="1" 
 		bottom="2" 
 		verticalAlign="top"
-		  creationComplete="CreationComplete(event)"
 		>    
 		<s:CheckBox 
 			id="locked" 
