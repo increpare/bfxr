@@ -85,9 +85,7 @@
 				{
 					this.data.synth = new SfxrSynth();
 					
-					this.data.synth.addEventListener(SfxrSynth.PLAY_COMPLETE,PlayStop,false,0,true);				
-					this.data.synth.addEventListener(SfxrSynth.CACHED,OnSynthCached,false,0,true);	
-					
+					this.data.synth.addEventListener(SfxrSynth.PLAY_COMPLETE,PlayStop,false,0,true);									
 					
 					this.data.absolutePlayCallback= this.PlayCallbackAbsolute;
 					this.data.PlayStartCallback = this.PlayStart;
@@ -116,7 +114,7 @@
 				}
 			}		
 			
-			private function TryUpdateDropdown(play:Boolean = true, modified:Boolean = false):void
+			private function TryUpdateDropdown(play:Boolean = true, modified:Boolean = false, recalcDilation:Boolean=true):void
 			{				
 				if (data==null)
 					return;
@@ -131,14 +129,19 @@
 						if (dropdown.selectedIndex!=i)
 						{
 							dropdown.selectedIndex=i;
-							DropdownChange(null,play,modified,false);
+							DropdownChange(null,play,modified,false,false);
 						}
 						break;
 					}
 				}					
+				
+				if (recalcDilation)
+				{
+					app.mixerInterface.RecalcDilation();
+				}
 			}	
 			
-			private function DropdownChange(event:Event = null,play:Boolean=true, modified:Boolean=true, resetonset:Boolean=false):void
+			private function DropdownChange(event:Event = null,play:Boolean=true, modified:Boolean=true, resetonset:Boolean=false, recalcdilation:Boolean=true):void
 			{				
 				
 				var app:sfxr_interface = this.parentApplication as sfxr_interface;
@@ -168,25 +171,32 @@
 						data.id=row.id;
 					}
 					
+					synth.cacheSound()
+					OnCached(null);
+					
 					if (play && app.playonchange.selected)
 					{
 						PlayStart();
 						app.mixerInterface.Play();
 					}
-					else
+					
+					if (recalcdilation)
 					{
-						synth.cacheSound()
+						app.mixerInterface.RecalcDilation();
 					}
 					
-					app.mixerInterface.RecalcDilation();
 				}//otherwise, clear the sound
 				else
 				{
 					data.id=-1;
 					data.amplitudemodifier=1;
 					data.cached=false;
-					sliderimagecontainer.visible=false;									
-					app.mixerInterface.RecalcDilation();
+					sliderimagecontainer.visible=false;		
+					if (recalcdilation)
+					{
+						app.mixerInterface.RecalcDilation();
+					}
+					
 				}
 				
 				if (modified)
@@ -217,7 +227,7 @@
 				DropdownChange();
 			}
 			
-			private function OnSynthCached(event:Event):void
+			private function OnCached(event:Event=null):void
 			{
 				if (data==null)
 					return;
@@ -226,10 +236,7 @@
 				this.cachingtext.visible=false;
 				sliderimagecontainer.visible=true;
 								
-				var app:sfxr_interface = this.parentApplication as sfxr_interface;
-				
-				//recalcdilation also redraws synthss
-				app.mixerInterface.RecalcDilation();
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;				
 			}
 			
 			private function DrawSynthImage():void
@@ -305,16 +312,15 @@
 				sliderimagecontainer.visible=false;
 				
 				
+				synth.cacheSound()
+				OnCached();
+				
 				var app:sfxr_interface = this.parentApplication as sfxr_interface;
 				if (app.playonchange.selected)
 				{					
 					PlayStart();
 					synth.play(PlayCallback);
-				}
-				else
-				{
-					synth.cacheSound(function():void{},150)
-				}				
+				}		
 			}
 			
 			private function volumechanged(event:Event):void

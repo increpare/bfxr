@@ -923,9 +923,16 @@
              */
             private function clickLoadSound():void
             {
-                _fileRef = new FileReference();
+				_fileRef = new FileReference();
                 _fileRef.addEventListener(Event.SELECT, onSelectSettings);
-                _fileRef.browse([ new FileFilter("SFX Sample Files (*.sfs)", "*.sfs")]);
+				try
+				{				
+					_fileRef.browse([ new FileFilter("SFX Sample Files (*.sfs)", "*.sfs")]);
+				}
+				catch (e:Error)
+				{
+					trace(e.message);
+				}
             }
 			
 			private function clickLoadAll(event:MenuEvent):void
@@ -955,7 +962,14 @@
 			{
 				_fileRef = new FileReference();
 				_fileRef.addEventListener(Event.SELECT, onSelectLoadAllSettings);
-				_fileRef.browse([ new FileFilter("BFXR Sample and Mixer Library (*.bfxr_library)", "*.bfxr_library")]);
+				try
+				{				
+					_fileRef.browse([ new FileFilter("BFXR Sample and Mixer Library (*.bfxr_library)", "*.bfxr_library")]);
+				}
+				catch (e:Error)
+				{
+					trace(e.message);
+				}
 			}
 			
 			private function onSelectLoadAllSettings(e:Event):void
@@ -978,7 +992,7 @@
 				_fileRef.removeEventListener(Event.COMPLETE, onLoadSettings);
 				
 				AddToSoundList("loaded");
-				var lib:SfxLibrary = SfxLibrary.LoadFrom((_fileRef.data as ByteArray).toString());
+				var lib:SfxLibrary = SfxLibrary.LoadFrom(_fileRef.data.toString());
 								
 				//SYNTHS
 				this.soundItems.removeAll();
@@ -1053,7 +1067,14 @@
 				
 				var file:String = lib.Save();				
 				
-				new FileReference().save(file, "sfx.bfxr_library");
+				try
+				{
+					new FileReference().save(file, "sfx.bfxr_library");
+				}
+				catch(e:Error)
+				{
+					trace(e.message);
+				}
 			}
 
             /**
@@ -1077,11 +1098,22 @@
             {
                 _fileRef.removeEventListener(Event.COMPLETE, onLoadSettings);
 
-                AddToSoundList("loaded");
-                synthInterface.Deserialize(_fileRef.data as String);
-                UIUpdateTrigger();
-				synthInterface.OnParameterChanged(true, false);
-                this.DisableApplyButton(false);
+				var dat:String = _fileRef.data.toString();
+				
+				if (dat==null)
+					return;
+				
+				if (dat.indexOf("|") == -1)
+				{
+					synthInterface.DeserializeFromClipboard(dat);
+					tabs.selectedIndex = 0;
+				}	
+				else
+				{
+					mixerInterface.DeserializeFromClipboard(dat);
+					tabs.selectedIndex = 1;
+				}
+				
                 _fileRef = null;
             }
 
@@ -1091,9 +1123,29 @@
              */
             private function clickSaveSound():void
             {
-                var file:String = synthInterface.Serialize();
-
-                new FileReference().save(file, "sfx.sfs");
+				var dat:String;
+				switch (tabs.selectedIndex)
+				{
+					case 0:
+					{
+						dat = synthInterface.Serialize();
+						break;
+					}
+					case 1:
+					{
+						dat = mixerInterface.SerializeClosure();
+						break;
+					}
+				}
+				
+				try
+				{
+					new FileReference().save(dat, "sfx.sfs");
+				}
+				catch(e:Error)
+				{
+					trace(e.message);
+				}
             }
 
             private function SaveWave():void
@@ -1153,7 +1205,7 @@
                     }
                     case 1:
                     {
-						System.setClipboard(mixerInterface.getClipboardString());
+						System.setClipboard(mixerInterface.SerializeClosure());
                         break;
                     }
                 }

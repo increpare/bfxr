@@ -52,6 +52,8 @@ package
 				dat.preset = true;
 				_mixerList.setItemAt(dat, i);
 			}
+		
+			//_app.mixerInterface.RecalcDilation();
 			
 			if (_app.tabs.selectedIndex==1)
 			{
@@ -258,7 +260,8 @@ package
 			return _mixer.params.Serialize();
 		}
 		
-		public function getClipboardString():String
+		//makes sure all data about source synths is up to date and embedded.
+		public function SerializeClosure():String
 		{
 			//collate object data
 			var o:Array = new Array();
