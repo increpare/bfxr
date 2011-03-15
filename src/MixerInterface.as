@@ -46,14 +46,14 @@ package
 			for (var i:int = 0; i < _mixer.params.items.length; i++)
 			{
 				var item:MixerItemParams = _mixer.params.items[i];
-				var dat:MixerListEntryDat = new MixerListEntryDat(item.id);
+				var dat:MixerListEntryDat = new MixerListEntryDat(item.id,_app);
 				dat.amplitudemodifier = item.amplitudemodifier;
 				dat.onset = item.onset;
 				dat.preset = true;
 				_mixerList.setItemAt(dat, i);
 			}
 		
-			//_app.mixerInterface.RecalcDilation();
+			RecalcDilation();
 			
 			if (_app.tabs.selectedIndex==1)
 			{
@@ -116,8 +116,7 @@ package
 			for (i = 0; i < _mixerList.length; i++)
 			{
 				mled = _mixerList.getItemAt(i) as MixerListEntryDat;
-				
-				mled.SetDilationCallback(dilation);
+				mled.dilation=dilation;
 			}
 			
 		}
@@ -203,7 +202,10 @@ package
 			for (var i:int = 0; i < this._mixerList.length; i++)
 			{
 				var mled:MixerListEntryDat = _mixerList.getItemAt(i) as MixerListEntryDat;
-				mled.PlayStartCallback();
+				if (mled.PlayStartCallback!=null)
+				{
+					mled.PlayStartCallback();
+				}
 			}
 		}
 		
@@ -214,7 +216,10 @@ package
 			{
 				var mled:MixerListEntryDat = _mixerList.getItemAt(i) as MixerListEntryDat;
 				mled.synth.stop();
-				mled.PlayStopCallback();
+				if (mled.PlayStopCallback!=null)
+				{
+					mled.PlayStopCallback();
+				}
 			}
 		}
 				
@@ -381,7 +386,7 @@ package
 					// check if synth still exists in list
 					if (_app.GetIndexOfSoundItemWithID(dat.id)<0)
 					{
-						dat.id=-1;
+						dat.setID(-1,_app);
 					}		
 				}
 			}

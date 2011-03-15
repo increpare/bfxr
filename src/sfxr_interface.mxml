@@ -238,7 +238,7 @@
 				mixerlist = new ArrayList();
 				for(var i:int=0;i<MixerParams.CHANNELCOUNT;i++)
 				{
-					var msed:MixerListEntryDat = new MixerListEntryDat(-1);
+					var msed:MixerListEntryDat = new MixerListEntryDat(-1,this);
 					mixerlist.addItem(msed);
 				}
 				

@@ -52,12 +52,19 @@
 				{
 					var app:sfxr_interface = this.parentApplication as sfxr_interface;
 					dropdown.dataProvider=app.soundItems;															
-					TryUpdateDropdown(false,false);
+					TryUpdateDropdown(false,false,false);
 				}
+				
 				if (data==null)
 				{
 					trace("data is null :S ");
 					return;
+				}
+				
+				
+				if (data.dilation!=this.dilation && data.id>=0)
+				{
+					this.SetDilation(data.dilation);
 				}
 				
 				(data as EventDispatcher).addEventListener(MixerListEntryDat.REFRESH_SYNTH,RefreshTrigger);			
@@ -81,19 +88,15 @@
 				var app:sfxr_interface = this.parentApplication as sfxr_interface;
 				
 				//not sure I need both undefined && null here, but whatever
-				if (this.data.synth == undefined || this.data.synth==null)
-				{
-					this.data.synth = new SfxrSynth();
-					
+				if (this.data.absolutePlayCallback == null)
+				{					
 					this.data.synth.addEventListener(SfxrSynth.PLAY_COMPLETE,PlayStop,false,0,true);									
 					
-					this.data.absolutePlayCallback= this.PlayCallbackAbsolute;
+					this.data.absolutePlayCallback = this.PlayCallbackAbsolute;
 					this.data.PlayStartCallback = this.PlayStart;
 					this.data.PlayStopCallback = this.PlayStop;
-					this.data.SetDilationCallback = this.SetDilation;
 				}
 								
-				trace(data.onset);
 				onsetSliderPosition = data.onset;
 				volumeslider.value=data.amplitudemodifier;
 				
@@ -107,11 +110,12 @@
 					}
 				}		
 				
-				if (this.data.id==-1)
-				{					
-					cachingtext.visible=false;
-					sliderimagecontainer.visible=false;
+				if (data.dilation!=this.dilation && data.id>=0)
+				{
+					this.SetDilation(data.dilation);
 				}
+				
+				sliderimagecontainer.visible=data.id>=0;
 			}		
 			
 			private function TryUpdateDropdown(play:Boolean = true, modified:Boolean = false, recalcDilation:Boolean=true):void
@@ -133,12 +137,7 @@
 						}
 						break;
 					}
-				}					
-				
-				if (recalcDilation)
-				{
-					app.mixerInterface.RecalcDilation();
-				}
+				}		
 			}	
 			
 			private function DropdownChange(event:Event = null,play:Boolean=true, modified:Boolean=true, resetonset:Boolean=false, recalcdilation:Boolean=true):void
@@ -159,8 +158,6 @@
 						data.onset=0;
 					}
 					
-					cachingtext.visible=true;
-					sliderimagecontainer.visible=false;
 					if (data.cached!=false)
 					{
 						data.cached=false;
@@ -168,7 +165,7 @@
 					
 					if (data.id!=row.id)
 					{
-						data.id=row.id;
+						data.setID(row.id,app);
 					}
 					
 					synth.cacheSound()
@@ -188,10 +185,9 @@
 				}//otherwise, clear the sound
 				else
 				{
-					data.id=-1;
+					data.setID(-1,app);
 					data.amplitudemodifier=1;
 					data.cached=false;
-					sliderimagecontainer.visible=false;		
 					if (recalcdilation)
 					{
 						app.mixerInterface.RecalcDilation();
@@ -233,8 +229,6 @@
 					return;
 				
 				data.cached=true;
-				this.cachingtext.visible=false;
-				sliderimagecontainer.visible=true;
 								
 				var app:sfxr_interface = this.parentApplication as sfxr_interface;				
 			}
@@ -307,10 +301,7 @@
 				
 				//otherwise, need to cache
 				
-				data.cached=false;
-				this.cachingtext.visible=true;
-				sliderimagecontainer.visible=false;
-				
+				data.cached=false;				
 				
 				synth.cacheSound()
 				OnCached();
@@ -491,6 +482,5 @@
 	<s:DropDownList id="dropdown" x="14" y="10" change="DropdownChange(event)" requireSelection="false"></s:DropDownList>
 	<s:Button x="14" y="43" id="PlayButton" label="Play" click="PlayClick()" enabled="false"/>
 	<s:Button x="92" y="43" id="Deselect" label="X" toolTip="Clears the channel." click="DeselectClick()" width="30" enabled="false"/>
-	<s:Label x="207" y="10" text="Caching" id="cachingtext" width="94" height="54" verticalAlign="middle" visible="false"/>
 
 </s:ItemRenderer>
