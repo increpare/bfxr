@@ -4,9 +4,7 @@
 				xmlns:s="library://ns.adobe.com/flex/spark"
 				
 				 contentBackgroundColor="#CCBDA1" height="74" width="340"
-				 preinitialize="PreInitialize(event)"
 				  creationComplete="CreationComplete(event)"
-				  dataChange="DataChanged(event)"
 				  symbolColor="#CCBDA1">
 	<s:layout>
 		<s:BasicLayout/>
@@ -34,36 +32,20 @@
 			public static const GraphWidth:int=191; 
 			public static const GraphHeight:int=75; 
 			
-			private function PreInitialize(event:Event):void
-			{
-				
-			}
 			private function PlayClick():void
 			{
 				var d:MixerTrackView=MixerTrackView(data);
 				d.OnMixerPlayClick();
-			}			
-	
+			}				
 			
 			private function CreationComplete(event:Event):void
 			{				
 				var app:sfxr_interface = this.parentApplication as sfxr_interface;		
 				dropdown.dataProvider=app.soundItems;
 				dropdown.selectedIndex=-1;
-			}			
+			}	
 			
-			//called when the data in the synth has been modified
-			private function RefreshTrigger(event:Event=null):void
-			{				
-
-			}
-			
-			private function DataChanged(event:FlexEvent = null):void
-			{	
-
-			}		
-			
-			private function DropdownChange(event:Event = null,play:Boolean=true, modified:Boolean=true, resetonset:Boolean=false, recalcdilation:Boolean=true):void
+			private function DropdownChange(event:Event = null):void
 			{				
 				var d:MixerTrackView=MixerTrackView(data);
 				d.trackindex = dropdown.selectedIndex;				
@@ -89,6 +71,8 @@
 			
 			private function sliderImageClick(event:MouseEvent):void
 			{
+				var mtv:MixerTrackView = data as MixerTrackView;
+				mtv.OnMixerStartDrag();
 				sliderClickPosition = sliderimage.globalToLocal(new Point(event.stageX,event.stageY));
 				
 				
@@ -104,6 +88,9 @@
 			
 			private function sliderImageContainerClick(event:MouseEvent):void
 			{
+				var mtv:MixerTrackView = data as MixerTrackView;
+				mtv.OnMixerStartDrag();
+				
 				sliderClickPosition = new Point(sliderimage.width/2);
 				
 				systemManager.getSandboxRoot().addEventListener(MouseEvent.MOUSE_MOVE, 
@@ -190,19 +177,8 @@
 			}
 			
 			public function set onsetSliderPosition(n:Number):void
-			{			
-				var left:Number = 0;
-				var right:Number = (this.sliderimagecontainer.width-this.sliderimage.width);
-				
+			{	
 				sliderimage.x = n;
-			}
-			
-			private function ClampSliderPos():void
-			{
-				var left:Number = 0;
-				var right:Number = (this.sliderimagecontainer.width-this.sliderimage.width);
-				if (sliderimage.x<left) sliderimage.x=left;
-				else if (sliderimage.x>right) sliderimage.x=right;
 			}
 			
 		]]>

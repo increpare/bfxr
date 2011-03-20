@@ -50,8 +50,11 @@
             public var saveManager:SaveManager;
 			public var globalState:GlobalState;
 			public var synthInterface : SynthInterface;
+						
+			[Bindable]
 			public var mixerInterface : MixerInterface;
 
+			[Bindable]
 			public var SoundParameterList : ArrayList;
 	
 			
@@ -228,26 +231,27 @@
 			
 			private function onInitialize():void
 			{							
-				
-			}
-			
-            private function onApplicationComplete():void
-            {					
 				globalState = new GlobalState();
 				synthInterface = new SynthInterface(this,globalState,volumeslider);
 				mixerInterface = new MixerInterface(this,globalState,volumeslider);
 				
-				SoundParameterGroup.dataProvider=SoundParameterList;
-				
 				_time.addEventListener(TimerEvent.TIMER, timerHandler);
-                _time.start();												
+				_time.start();												
+
+				saveManager = new SaveManager(this);
+
+			}
+			
+            private function onApplicationComplete():void
+            {					
 				
-				mixerListComponent.dataProvider = mixerInterface.mixerController.trackViews;
+				//SoundParameterGroup.dataProvider=SoundParameterList;
 				
-				SoundParameterGroup.invalidateDisplayList();
-				SoundParameterGroup.invalidateProperties();
+				//mixerListComponent.dataProvider = mixerInterface.mixerController.trackViews;
 				
-                saveManager = new SaveManager(this);
+				//SoundParameterGroup.invalidateDisplayList();
+				//SoundParameterGroup.invalidateProperties();
+				
 
                 saveManager.LoadData();
 				
@@ -1544,7 +1548,8 @@
 										<s:Scroller height="100%" width="100%">											
 	                                        <s:DataGroup id="SoundParameterGroup"
 	                                            width="100%" height="100%"
-	                                            itemRenderer="components.SoundParameterRowRenderer">
+	                                            itemRenderer="components.SoundParameterRowRenderer"
+												dataProvider="{SoundParameterList}">
 	                                            <s:layout>
 	                                                <s:VerticalLayout 
 	                                                    paddingBottom="0"
@@ -1577,7 +1582,8 @@
                             gap="0">
                             <s:DataGroup id="mixerListComponent"
                                 width="100%" height="372"
-                                itemRenderer="components.MixerRowRenderer">
+                                itemRenderer="components.MixerRowRenderer"
+								dataProvider="{mixerInterface.mixerController.trackViews}">
                                 <s:layout>
                                     <s:VerticalLayout 
                                         horizontalAlign="justify"
@@ -1640,7 +1646,7 @@
                 maximum="1"
                 stepSize="0.01"
                 changeEnd="VolumeChanged(event)"/>
-            <s:Label text="Playback Volume"/>
+            <s:Label text="Master Volume"/>
             <mx:Spacer height="10"/>
             <s:Button id="exportwav"
                 label="Export Wav"

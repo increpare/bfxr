@@ -18,9 +18,10 @@ package
 	import spark.components.HSlider;
 	
 	public class MixerInterface implements ITabManager
-	{
-		
+	{		
+		[Bindable]
 		public var mixerController:MixerController;
+		
 		private var _app:sfxr_interface;
 		private var _globalState:GlobalState;		
 		private var _volumeSlider:HSlider;
@@ -100,7 +101,7 @@ package
 					if (_app.GetIndexOfSoundItemWithID(mtp.data.id)<0)
 					{
 						//if not, then clear
-						mtp.LoadSynth(null);
+						mtp.LoadSynth(null);					
 					}		
 				}
 			}
@@ -138,6 +139,8 @@ package
 			{
 				_app.saveManager.PushLayerList(_app.layerItems);
 			}
+			
+			RefreshUI();
 		}		
 		
 		public function CheckIfSoundsOutOfDate():void
@@ -162,7 +165,9 @@ package
 						}						
 					}
 				}
-			}			
+			}	
+			
+			RefreshUI();
 		}	
 		
 		public function ComponentChangeCallback(tag:String,e:Event):void
@@ -172,6 +177,7 @@ package
 			{
 				case "volume":
 					mixerController.mixerPlayer.volume = _app.volumeslider.value;
+					OnParameterChanged(true,true);
 					break;
 				default:
 					throw new Error("tag not identified : " + tag);	
@@ -244,7 +250,7 @@ package
 			
 			_app.DisableApplyButton(false);	
 		}
-		
+				
 		public function getWavFile():ByteArray
 		{
 			return null;	

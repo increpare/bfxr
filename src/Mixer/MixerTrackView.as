@@ -11,6 +11,7 @@ package Mixer
 		public var OnMixerOnsetClick:Function;
 		public var OnMixerPlayClick:Function;
 		public var OnMixerClearClick:Function;
+		public var OnMixerStartDrag:Function;//used to stop playback
 		
 		public var trackindex:int=-1;		//index, not ID
 		public var volume:Number=0;

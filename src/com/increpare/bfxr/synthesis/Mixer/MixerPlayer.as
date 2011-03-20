@@ -14,7 +14,7 @@ package com.increpare.bfxr.synthesis.Mixer
 	public class MixerPlayer extends EventDispatcher implements ISerializable
 	{
 		public var id:int = -1;
-		public var volume:Number = -10;
+		public var volume:Number = 1;
 		public var tracks:Vector.<MixerTrackPlayer>;
 		
 		public function MixerPlayer() 
@@ -95,7 +95,7 @@ package com.increpare.bfxr.synthesis.Mixer
 					
 					var b:ByteArray = new ByteArray();
 										
-					var silentbytes:int = int(tracks[i].data.offset*44100)*4;
+					var silentbytes:int = int(tracks[i].data.onset*44100)*4;
 					
 					// create starting silence.
 					while(silentbytes>0)
@@ -115,6 +115,11 @@ package com.increpare.bfxr.synthesis.Mixer
 				
 				Mix();
 			}			
+			
+			if (_preparedsounds.length==0)
+			{
+				return;
+			}
 			
 			if (_channel)
 			{
@@ -166,6 +171,8 @@ package com.increpare.bfxr.synthesis.Mixer
 							}
 						}
 						
+						val*=volume;
+						
 						if (val >= (1<<7))
 							val=1<<7;
 						if (val<= -(1<<7))
@@ -183,11 +190,12 @@ package com.increpare.bfxr.synthesis.Mixer
 						{
 							if (_preparedsounds[i].position<_preparedsounds[i].length-unitsize)
 							{
-								val += _preparedsounds[i].readByte()*tracks[i].data.volume;
+								val += _preparedsounds[i].readShort()*tracks[i].data.volume;
 								added=true;
 							}
 						}
 						
+						val*=volume;						
 						
 						if (val >= (1<<15))
 							val=1<<15;
@@ -206,17 +214,19 @@ package com.increpare.bfxr.synthesis.Mixer
 						{
 							if (_preparedsounds[i].position<_preparedsounds[i].length-unitsize)
 							{
-								valf += _preparedsounds[i].readByte()*tracks[i].data.volume;
+								valf += _preparedsounds[i].readFloat()*tracks[i].data.volume;
 								added=true;
 							}
 						}
+						
+						valf*=volume;
 						
 						_waveData.writeFloat(valf);
 					}
 					break;
 			}
 		}
-		
+						
 		private function onSoundData(e:SampleDataEvent) : void
 		{		
 			if (_updateCallback!=null)

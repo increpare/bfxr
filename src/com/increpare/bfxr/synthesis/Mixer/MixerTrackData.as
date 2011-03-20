@@ -5,7 +5,7 @@ package com.increpare.bfxr.synthesis.Mixer
 	public class MixerTrackData implements ISerializable
 	{
 		public var id:int			= -1 ; // id of target track
-		public var offset:Number	=  0 ;
+		public var onset:Number	=  0 ;
 		public var volume:Number	=  1 ;
 		public var synthdata:String	= "" ; // if this is "", then track not set
 		
@@ -18,7 +18,7 @@ package com.increpare.bfxr.synthesis.Mixer
 			var result:String="";
 			result += id.toString()+"|";
 			result += synthdata+"|";
-			result += offset+"|";
+			result += onset+"|";
 			result += volume;
 			return result;
 		}
@@ -28,7 +28,7 @@ package com.increpare.bfxr.synthesis.Mixer
 			var ar:Array = settings.split("|");
 			id = int(ar[0]);
 			synthdata = ar[1];
-			offset = Number(ar[2]);
+			onset = Number(ar[2]);
 			volume = Number(ar[3]);
 		}
 	}

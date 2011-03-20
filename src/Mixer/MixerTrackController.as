@@ -34,11 +34,12 @@ package Mixer
 			
 			_trackPlayer.synth.addEventListener(SfxrSynth.PLAY_COMPLETE,PlayCallback_OnFinished);				
 			
-			mtv.OnMixerDropdownClick=this.OnMixerDropdownClick;
-			mtv.OnMixerVolumeClick=this.OnMixerVolumeClick;
-			mtv.OnMixerOnsetClick=this.OnMixerMixerOnsetClick;
-			mtv.OnMixerPlayClick=this.OnPlayClick;
-			mtv.OnMixerClearClick=this.OnMixerClearClick;
+			mtv.OnMixerDropdownClick=	this.OnMixerDropdownClick;
+			mtv.OnMixerVolumeClick=		this.OnMixerVolumeClick;
+			mtv.OnMixerOnsetClick=		this.OnMixerMixerOnsetClick;
+			mtv.OnMixerPlayClick=		this.OnPlayClick;
+			mtv.OnMixerClearClick=		this.OnMixerClearClick;
+			mtv.OnMixerStartDrag=		this.OnMixerStartDrag;
 		}
 		
 		/* 
@@ -63,10 +64,66 @@ package Mixer
 			_app.mixerInterface.OnParameterChanged(true,true);
 		}		
 		
-		private function OnMixerVolumeClick():void 
-		{ 
+		public function DrawWave():void
+		{
+				
+			var mtp:MixerTrackPlayer = _trackPlayer;
+			var mtv:MixerTrackView = _trackView;
 			
+			if (mtp.IsSet()==false)
+			{
+				mtv.graphic=null;
+				return;
+			}
+			
+			var trackLength:Number = _parent.TrackLength();
+			
+			mtv.onset = mtp.data.onset*MixerRowRenderer.GraphWidth/trackLength;			
+			
+			var sliderimage:Bitmap = new Bitmap();				
+			sliderimage.bitmapData = new BitmapData(mtp.synth.GetLength()*MixerRowRenderer.GraphWidth/trackLength,MixerRowRenderer.GraphHeight,false,0xe7d1a7);
+			sliderimage.width = sliderimage.bitmapData.width;
+			sliderimage.height = sliderimage.bitmapData.height;
+			
+			var synth:SfxrSynth = mtp.synth;
+			var cachedWave:ByteArray = mtp.synth.cachedWave;
+			var dilation:Number=10;
+			var length:Number = Math.max(3,cachedWave.length*dilation/(4*44100.0));
+			
+			var d:int = int(cachedWave.length/(4*sliderimage.width))*4;
+			var points : Vector.<Number> = new Vector.<Number>();
+			var amplitudemodifier:Number =  mtp.data.volume;
+			for (var j:int=0;j<sliderimage.width-1;j++)
+			{
+				//sample fivepoints in this range, and take the max
+				
+				cachedWave.position = int(cachedWave.length/(sliderimage.width*4))*j*4; 
+				
+				var curmax:Number=0;
+				for (var k:int=0;k<10;k++)
+				{
+					var cand:Number = Math.abs(cachedWave.readFloat());
+					if (cand>curmax)
+						curmax=cand;
+					cachedWave.position=cachedWave.position+int(d/(4*10))*4-4;
+				}
+				//scale + clamp
+				curmax=Math.min(curmax*amplitudemodifier,4);
+				points.push(curmax);
+			}						
+			
+			for (j=0;j<sliderimage.width-1;j++)
+			{					
+				sliderimage.bitmapData.fillRect(new Rectangle(j,sliderimage.height/2-points[j]*sliderimage.height/2,1,2*points[j]*sliderimage.height/2),0x000000);
+			}
+			mtv.graphic=sliderimage;
+		}
+		
+		private function OnMixerVolumeClick():void 
+		{ 			
+			_trackPlayer.data.volume = _trackView.volume;		
 			_app.mixerInterface.OnParameterChanged(true,true);
+			DrawWave();			
 		}
 		
 		private function OnMixerMixerOnsetClick():void 
@@ -75,7 +132,7 @@ package Mixer
 			
 			var tl:Number = _parent.TrackLength();
 			
-			_trackPlayer.data.offset = _trackView.onset * tl / MixerRowRenderer.GraphWidth;
+			_trackPlayer.data.onset = _trackView.onset * tl / MixerRowRenderer.GraphWidth;
 			_app.mixerInterface.OnParameterChanged(true,true);
 		}
 		
@@ -106,6 +163,11 @@ package Mixer
 		{ 			
 			_trackView.trackindex=-1;
 			OnMixerDropdownClick();
+		}
+		
+		private function OnMixerStartDrag():void
+		{
+			_parent.MixerStopAll();
 		}
 		
 		public function MixerTrackController(app:sfxr_interface)
