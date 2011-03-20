@@ -1,8 +1,8 @@
 package com.increpare.bfxr
 {
 	import com.increpare.bfxr.synthesis.Mixer;
-	import com.increpare.bfxr.synthesis.PlayerInterface;
-	import com.increpare.bfxr.synthesis.SfxrSynth;
+	import com.increpare.bfxr.synthesis.IPlayerInterface;
+	import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
 
 	public class Bfxr
 	{
@@ -36,7 +36,7 @@ package com.increpare.bfxr
 		
 		private var _synth:SfxrSynth;		
 		private var _mixer:Mixer;
-		private var _active:PlayerInterface;
+		private var _active:IPlayerInterface;
 		
 		public function Bfxr(data:String="")
 		{			

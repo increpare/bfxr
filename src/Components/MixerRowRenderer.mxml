@@ -14,9 +14,10 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import com.increpare.bfxr.synthesis.SfxrSynth;
+			import Mixer.MixerTrackView;
 			
-			import dataClasses.MixerListEntryDat;
+			import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
+			
 			import dataClasses.SoundData;
 			
 			import mx.binding.utils.BindingUtils;
@@ -30,296 +31,58 @@
 			import spark.components.supportClasses.ListBase;
 			import spark.skins.spark.CheckBoxSkin;
 			
-			private function PlayClick():void
-			{
-				if (dropdown.selectedIndex>=0)
-				{					
-					var app:sfxr_interface = this.parentApplication as sfxr_interface;
-					app.mixerInterface.MixerPlayStop();
-					PlayStart();
-					data.synth.play(PlayCallback);
-				}
-			}			
+			public static const GraphWidth:int=191; 
+			public static const GraphHeight:int=75; 
 			
 			private function PreInitialize(event:Event):void
 			{
-				trace("preinit");
+				
 			}
+			private function PlayClick():void
+			{
+				var d:MixerTrackView=MixerTrackView(data);
+				d.OnMixerPlayClick();
+			}			
+	
 			
 			private function CreationComplete(event:Event):void
-			{
-				if (dropdown.dataProvider==null)
-				{
-					var app:sfxr_interface = this.parentApplication as sfxr_interface;
-					dropdown.dataProvider=app.soundItems;															
-					TryUpdateDropdown(false,false,false);
-				}
-				
-				if (data==null)
-				{
-					trace("data is null :S ");
-					return;
-				}
-				
-				
-				if (data.dilation!=this.dilation && data.id>=0)
-				{
-					this.SetDilation(data.dilation);
-				}
-				
-				(data as EventDispatcher).addEventListener(MixerListEntryDat.REFRESH_SYNTH,RefreshTrigger);			
+			{				
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;		
+				dropdown.dataProvider=app.soundItems;
+				dropdown.selectedIndex=-1;
 			}			
 			
 			//called when the data in the synth has been modified
 			private function RefreshTrigger(event:Event=null):void
 			{				
-				DropdownChange(null,true,true);		
+
 			}
 			
 			private function DataChanged(event:FlexEvent = null):void
 			{	
-				var enableComponents:Boolean = dropdown.selectedIndex>=0;
-				Deselect.enabled = enableComponents;
-				PlayButton.enabled = enableComponents;
-				volumeslider.enabled = enableComponents;
-				
-				if (this.data ==null)
-					return;
-				var app:sfxr_interface = this.parentApplication as sfxr_interface;
-				
-				//not sure I need both undefined && null here, but whatever
-				if (this.data.absolutePlayCallback == null)
-				{					
-					this.data.synth.addEventListener(SfxrSynth.PLAY_COMPLETE,PlayStop,false,0,true);									
-					
-					this.data.absolutePlayCallback = this.PlayCallbackAbsolute;
-					this.data.PlayStartCallback = this.PlayStart;
-					this.data.PlayStopCallback = this.PlayStop;
-				}
-								
-				onsetSliderPosition = data.onset;
-				volumeslider.value=data.amplitudemodifier;
-				
-				if (dropdown.dataProvider!=null)
-				{
-					//only call if something has changed.
-					var row:SoundData = dropdown.selectedItem;
-					if ( (row==null && data.id!=-1) || (row!=null && data.id!=row.id))
-					{
-						TryUpdateDropdown();
-					}
-				}		
-				
-				if (data.dilation!=this.dilation && data.id>=0)
-				{
-					this.SetDilation(data.dilation);
-				}
-				
-				sliderimagecontainer.visible=data.id>=0;
+
 			}		
-			
-			private function TryUpdateDropdown(play:Boolean = true, modified:Boolean = false, recalcDilation:Boolean=true):void
-			{				
-				if (data==null)
-					return;
-				
-				var app:sfxr_interface = this.parentApplication as sfxr_interface;
-				
-				for (var i:int=0;i<app.soundItems.length;i++)
-				{
-					var o:Object = app.soundItems.getItemAt(i);
-					if (o.id==this.data.id)
-					{
-						if (dropdown.selectedIndex!=i)
-						{
-							dropdown.selectedIndex=i;
-							DropdownChange(null,play,modified,false,false);
-						}
-						break;
-					}
-				}		
-			}	
 			
 			private function DropdownChange(event:Event = null,play:Boolean=true, modified:Boolean=true, resetonset:Boolean=false, recalcdilation:Boolean=true):void
 			{				
-				
-				var app:sfxr_interface = this.parentApplication as sfxr_interface;
-				app.mixerInterface.MixerPlayStop();
-				var synth:SfxrSynth = data.synth;
-				
-				if (dropdown.selectedIndex>=0)
-				{
-					var row:Object = dropdown.dataProvider.getItemAt(dropdown.selectedIndex);
-					
-					data.synth.params.Deserialize(row.data);					
-					
-					if (resetonset)
-					{
-						data.onset=0;
-					}
-					
-					if (data.cached!=false)
-					{
-						data.cached=false;
-					}
-					
-					if (data.id!=row.id)
-					{
-						data.setID(row.id,app);
-					}
-					
-					synth.cacheSound()
-					OnCached(null);
-					
-					if (play && app.playonchange.selected)
-					{
-						PlayStart();
-						app.mixerInterface.Play();
-					}
-					
-					if (recalcdilation)
-					{
-						app.mixerInterface.RecalcDilation();
-					}
-					
-				}//otherwise, clear the sound
-				else
-				{
-					data.setID(-1,app);
-					data.amplitudemodifier=1;
-					data.cached=false;
-					if (recalcdilation)
-					{
-						app.mixerInterface.RecalcDilation();
-					}
-					
-				}
-				
-				if (modified)
-				{
-					app.mixerInterface.ComponentChangeCallback("id",null);
-				}
-			}
-			
-			private var dilation:Number=15;
-					
-			public function SetDilation(newDilation:Number):void
-			{
-//				if (dilation==newDilation)
-//					return;
-				
-				dilation=newDilation;
-				
-				var synth:SfxrSynth = data.synth;
-				
-				DrawSynthImage();
-				
-				DataChanged();
+				var d:MixerTrackView=MixerTrackView(data);
+				d.trackindex = dropdown.selectedIndex;				
+				d.OnMixerDropdownClick();			
 			}
 			
 			private function DeselectClick():void
 			{
-				dropdown.selectedIndex=-1;				
-				DropdownChange();
-			}
-			
-			private function OnCached(event:Event=null):void
-			{
-				if (data==null)
-					return;
-				
-				data.cached=true;
-								
-				var app:sfxr_interface = this.parentApplication as sfxr_interface;				
-			}
-			
-			private function DrawSynthImage():void
-			{
-				if (data.id==-1)
-				{
-					return;
-				}
-				trace("drawing synth image");
-				//200 points should be enuff
-				//sliderimage.width=synth.
-				var synth:SfxrSynth = data.synth;
-				var cachedWave:ByteArray = synth.cachedWave;
-				var length:Number = cachedWave.length/(4*44100.0);
-				
-				sliderimage.width=Math.max(Math.round(length*dilation),3);//let's just say this is the case for now
-				var d:int = int(cachedWave.length/(4*sliderimage.width))*4;
-				var points : Vector.<Number> = new Vector.<Number>();
-				var amplitudemodifier:Number =  data.amplitudemodifier;
-				for (var i:int=0;i<sliderimage.width-1;i++)
-				{
-					//sample fivepoints in this range, and take the max
-					
-					cachedWave.position = int(cachedWave.length/(sliderimage.width*4))*i*4; 
-					
-					var curmax:Number=0;
-					for (var j:int=0;j<10;j++)
-					{
-						var cand:Number = Math.abs(cachedWave.readFloat());
-						if (cand>curmax)
-							curmax=cand;
-						cachedWave.position=cachedWave.position+int(d/(4*10))*4-4;
-					}
-					//scale + clamp
-					curmax=Math.min(curmax*amplitudemodifier,1);
-					points.push(curmax);
-				}
-				
-				/*				
-				var rightmostzero:int=points.length;
-				//find rightmost non-zero value
-				for (i=points.length-1;i>=0;i--)
-				{
-					if (Math.abs(points[i])>0.0001)
-					{
-						rightmostzero=Math.min(i+1,points.length);
-						break;
-					}
-				}*/
-				
-				sliderimage.width=Math.round(points.length);
-				sliderimage.graphics.clear();
-				sliderimage.graphics.beginFill(0xe7d1a7,1.0);
-				sliderimage.graphics.drawRect(0,0,sliderimage.width,sliderimage.height);
-				sliderimage.graphics.beginFill(0x000000,1.0);
-				for (i=0;i<sliderimage.width;i++)
-				{					
-					sliderimage.graphics.drawRect(i,sliderimage.height/2-points[i]*sliderimage.height/2,1,2*points[i]*sliderimage.height/2);
-				}
-
-			}
-			
-			private function SynthRefresh():void
-			{
-				var synth:SfxrSynth = data.synth;
-				if (!synth.Dirty())
-					return; // dont' need to do anything
-				
-				//otherwise, need to cache
-				
-				data.cached=false;				
-				
-				synth.cacheSound()
-				OnCached();
-				
-				var app:sfxr_interface = this.parentApplication as sfxr_interface;
-				if (app.playonchange.selected)
-				{					
-					PlayStart();
-					synth.play(PlayCallback);
-				}		
-			}
+				var d:MixerTrackView=MixerTrackView(data);
+				dropdown.selectedIndex=-1;
+				d.trackindex = -1;				
+				d.OnMixerDropdownClick();		
+			}						
 			
 			private function volumechanged(event:Event):void
 			{
-				data.amplitudemodifier=volumeslider.value;
-				var app:sfxr_interface = this.parentApplication as sfxr_interface;												
-				app.mixerInterface.ComponentChangeCallback("volume",null);
-				DrawSynthImage();
+				var d:MixerTrackView=MixerTrackView(data);
+				d.volume = volumeslider.value;
+				d.OnMixerVolumeClick();
 			}						
 			
 			private var sliderClickPosition:Point;
@@ -390,12 +153,12 @@
 			
 			private function PlayCallback(playingtime:Number):void
 			{
-				playline.x=Math.min(sliderimage.x+int(playingtime*dilation),sliderimagecontainer.width-3);
+				playline.x=Math.min(sliderimage.x+playingtime,sliderimagecontainer.width-3);
 			}
 			
 			public function PlayCallbackAbsolute(playingtime:Number):void
 			{
-				playline.x=Math.min(int(playingtime*dilation),sliderimagecontainer.width-3);
+				playline.x=Math.min(playingtime,sliderimagecontainer.width-3);
 			}
 			
 			public function PlayStart():void
@@ -411,19 +174,19 @@
 			
 			private function SliderImageChangeEnd():void
 			{				
-				data.onset=onsetSliderPosition;		
-				var app:sfxr_interface = this.parentApplication as sfxr_interface;							
-				app.mixerInterface.ComponentChangeCallback("onset",null);
+				var app:sfxr_interface = this.parentApplication as sfxr_interface;	
+				
+				var d:MixerTrackView=MixerTrackView(data);
+				d.onset = onsetSliderPosition;
+				d.OnMixerOnsetClick();	
 			}
-			
-			public var onsettimescale:Number=1;
-			
+						
 			public function get onsetSliderPosition():Number
 			{
 				var left:Number = 0;
 				var right:Number = (this.sliderimagecontainer.width-this.sliderimage.width);
 				
-				return this.sliderimage.x*onsettimescale/(dilation);
+				return this.sliderimage.x;
 			}
 			
 			public function set onsetSliderPosition(n:Number):void
@@ -431,9 +194,7 @@
 				var left:Number = 0;
 				var right:Number = (this.sliderimagecontainer.width-this.sliderimage.width);
 				
-				sliderimage.x = Math.round(n/(onsettimescale/(dilation)));
-
-				ClampSliderPos();
+				sliderimage.x = n;
 			}
 			
 			private function ClampSliderPos():void
@@ -448,14 +209,14 @@
 	</fx:Script>
 	
 	<s:Rect top="0" verticalCenter="0" bottom="0" left="0" horizontalCenter="0" right="0">
-		<s:fill><s:SolidColor color="{ ((data.bggroup=='0') ? 0xffccbda1 : 0xffe7d1a7)  }" /></s:fill>	
+		<s:fill><s:SolidColor color="0xffccbda1" /></s:fill>	
 	</s:Rect>
 	
-	<s:BorderContainer width="191" backgroundColor="0xccbda1" backgroundAlpha="1.0" right="0" mouseDown="sliderImageContainerClick(event)"  id="sliderimagecontainer" visible="false" top="0" height="75">		
+	<s:BorderContainer width="191" backgroundColor="0xccbda1" backgroundAlpha="1.0" right="0" mouseDown="sliderImageContainerClick(event)"  id="sliderimagecontainer" visible="{data.graphic!=null}" top="0" height="75">		
 		<s:layout>
 			<s:BasicLayout/>
 		</s:layout>
-		<mx:Image x="0" y="0"  mouseDown="sliderImageClick(event)" scaleContent="false" width="76" height="100%" id="sliderimage"/>
+		<mx:Image x="{data.onset}" y="0"  mouseDown="sliderImageClick(event)" source="{data.graphic}" visible="{data.graphic!=null}" scaleContent="false" height="100%" id="sliderimage"/>
 		
 		
 		
@@ -465,7 +226,7 @@
 			</s:stroke>		
 		</s:Rect>	
 		
-		<s:Line id="playline" top="0" xFrom="0" yFrom="0" xTo="0"  yTo="71"  x="0" visible="false">
+		<s:Line id="playline" top="0" xFrom="0" yFrom="0" xTo="0"  yTo="71"  x="{data.playbarposition}" visible="{data.playbarposition>=0}">
 			<s:stroke>
 				<mx:SolidColorStroke color="0" alpha="1.0"/>			
 			</s:stroke>
@@ -478,9 +239,9 @@
 			<mx:SolidColorStroke color="0"/>
 		</s:stroke>		
 	</s:Rect>	
-	<s:VSlider x="130" y="10" height="54" id="volumeslider" value="1" minimum="0" maximum="2" changeEnd="volumechanged(event)" stepSize=".01" enabled="false"/>
-	<s:DropDownList id="dropdown" x="14" y="10" change="DropdownChange(event)" requireSelection="false"></s:DropDownList>
-	<s:Button x="14" y="43" id="PlayButton" label="Play" click="PlayClick()" enabled="false"/>
-	<s:Button x="92" y="43" id="Deselect" label="X" toolTip="Clears the channel." click="DeselectClick()" width="30" enabled="false"/>
+	<s:VSlider x="130" y="10" height="54" id="volumeslider" value="{data.volume}" minimum="0" maximum="2" changeEnd="volumechanged(event)" stepSize=".01" enabled="{data.trackindex>=0}"/>
+	<s:DropDownList id="dropdown" x="14" y="10" selectedIndex="{data.trackindex}" change="DropdownChange(event)" requireSelection="false"></s:DropDownList>
+	<s:Button x="14" y="43" enabled="{data.trackindex>=0}" id="PlayButton" label="Play" click="PlayClick()" />
+	<s:Button x="92" y="43" enabled="{data.trackindex>=0}" id="Deselect" label="X" toolTip="Clears the channel." click="DeselectClick()" width="30" />
 
 </s:ItemRenderer>

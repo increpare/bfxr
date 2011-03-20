@@ -19,16 +19,11 @@
     </s:layout>
     <fx:Script>
         <![CDATA[
-			import com.increpare.bfxr.synthesis.Mixer;
-			import com.increpare.bfxr.synthesis.MixerParams;
-			import com.increpare.bfxr.synthesis.MixerSoundData;
-			import com.increpare.bfxr.synthesis.SfxrParams;
-			import com.increpare.bfxr.synthesis.SfxrSynth;
+			import com.increpare.bfxr.synthesis.*;
 			
 			import components.SoundParameterRowRenderer;
 			
 			import dataClasses.LayerData;
-			import dataClasses.MixerListEntryDat;
 			import dataClasses.SfxLibrary;
 			import dataClasses.SoundData;
 			
@@ -57,7 +52,6 @@
 			public var synthInterface : SynthInterface;
 			public var mixerInterface : MixerInterface;
 
-			public var mixerlist : ArrayList;
 			public var SoundParameterList : ArrayList;
 	
 			
@@ -233,14 +227,7 @@
             }
 			
 			private function onInitialize():void
-			{				
-				
-				mixerlist = new ArrayList();
-				for(var i:int=0;i<MixerParams.CHANNELCOUNT;i++)
-				{
-					var msed:MixerListEntryDat = new MixerListEntryDat(-1,this);
-					mixerlist.addItem(msed);
-				}
+			{							
 				
 			}
 			
@@ -248,14 +235,14 @@
             {					
 				globalState = new GlobalState();
 				synthInterface = new SynthInterface(this,globalState,volumeslider);
-				mixerInterface = new MixerInterface(this,globalState,volumeslider,mixerlist);
+				mixerInterface = new MixerInterface(this,globalState,volumeslider);
 				
 				SoundParameterGroup.dataProvider=SoundParameterList;
 				
 				_time.addEventListener(TimerEvent.TIMER, timerHandler);
                 _time.start();												
 				
-				mixerListComponent.dataProvider = mixerlist;
+				mixerListComponent.dataProvider = mixerInterface.mixerController.trackViews;
 				
 				SoundParameterGroup.invalidateDisplayList();
 				SoundParameterGroup.invalidateProperties();
@@ -333,6 +320,7 @@
                 DisableApplyButton(true);								
             }
 
+			//* also sets the modified state for the selected item in the lists
             public function EnableApplyButton(changesMade:Boolean = false):void
             {
                 applybutton.enabled = true;
@@ -403,11 +391,11 @@
                     var sounddescr:String = unescape(tail.substr(2));
 					if (sounddescr.indexOf("|")==-1)
 					{
-                    	return synthInterface.Deserialize(sounddescr);
+                    	synthInterface.Deserialize(sounddescr);
 					}
 					else
 					{
-						return mixerInterface.Deserialize(sounddescr);
+						mixerInterface.Deserialize(sounddescr);
 					}
 				}
                 catch (e:Error)
@@ -1133,7 +1121,7 @@
 					}
 					case 1:
 					{
-						dat = mixerInterface.SerializeClosure();
+						dat = mixerInterface.Serialize();
 						break;
 					}
 				}
@@ -1205,7 +1193,7 @@
                     }
                     case 1:
                     {
-						System.setClipboard(mixerInterface.SerializeClosure());
+						System.setClipboard(mixerInterface.Serialize());
                         break;
                     }
                 }

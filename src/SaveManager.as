@@ -3,7 +3,7 @@ package
 	import flash.net.SharedObject;
 	
 	import mx.collections.ArrayList;
-	import com.increpare.bfxr.synthesis.SfxrSynth;
+	import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
 	import dataClasses.LayerData;
 	import dataClasses.SoundData;
 	
@@ -262,7 +262,7 @@ package
 			if (_saveDat==null)
 			{
 				_saveDat = SharedObject.getLocal("com.increpare.bfxr");
-				//_saveDat.clear();
+				_saveDat.clear();
 				
 				if (_saveDat.data.version == undefined )
 				{			

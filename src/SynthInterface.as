@@ -1,7 +1,7 @@
 package
 {
-    import com.increpare.bfxr.synthesis.SfxrParams;
-    import com.increpare.bfxr.synthesis.SfxrSynth;
+    import com.increpare.bfxr.synthesis.Synthesizer.SfxrParams;
+    import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
     
     import components.SoundParameterRowRenderer;
     
@@ -157,9 +157,9 @@ package
 			return _synth.params.Serialize();
 		}
 		
-		public function Deserialize(str:String):Boolean
+		public function Deserialize(str:String):void
 		{
-			return _synth.params.Deserialize(str);
+			_synth.params.Deserialize(str);
 		}
 		
 		public function DeserializeFromClipboard(str:String):void

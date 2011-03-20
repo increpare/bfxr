@@ -1,13 +1,11 @@
 package
 {
-	import com.increpare.bfxr.synthesis.Mixer;
-	import com.increpare.bfxr.synthesis.MixerItemParams;
-	import com.increpare.bfxr.synthesis.MixerParams;
-	import com.increpare.bfxr.synthesis.MixerSoundData;
-	import com.increpare.bfxr.synthesis.SfxrSynth;
+	import Mixer.MixerController;
+	
+	import com.increpare.bfxr.synthesis.*;
+	import com.increpare.bfxr.synthesis.Mixer.*;
 	
 	import dataClasses.LayerData;
-	import dataClasses.MixerListEntryDat;
 	import dataClasses.SoundData;
 	
 	import flash.events.Event;
@@ -18,120 +16,62 @@ package
 	import mx.events.FlexEvent;
 	
 	import spark.components.HSlider;
-
+	
 	public class MixerInterface implements ITabManager
 	{
-		private var _mixer:Mixer;
 		
-		private var _globalState:GlobalState;
-		
+		public var mixerController:MixerController;
+		private var _app:sfxr_interface;
+		private var _globalState:GlobalState;		
 		private var _volumeSlider:HSlider;
 		
-		private var _app:sfxr_interface;
-		
-		private var _mixerList:ArrayList;
-		
-		public function MixerInterface(app:sfxr_interface, globalState:GlobalState,volumeSlider:HSlider,mixerList:ArrayList)
-		{			
+		public function MixerInterface(app:sfxr_interface, globalState:GlobalState,volumeSlider:HSlider)
+		{
 			_app=app;
 			_globalState = globalState;
 			_volumeSlider = volumeSlider;
-			_mixer = new Mixer();
-			_mixer.addEventListener(SfxrSynth.PLAY_COMPLETE, MixerPlayStop);
-			_mixerList=mixerList;
+			mixerController = new MixerController(_app);
 		}
+		
+		public function Play():void
+		{
+			mixerController.Play();
+		}
+		
 		
 		public function RefreshUI():void
 		{
-			for (var i:int = 0; i < _mixer.params.items.length; i++)
-			{
-				var item:MixerItemParams = _mixer.params.items[i];
-				var dat:MixerListEntryDat = new MixerListEntryDat(item.id,_app);
-				dat.amplitudemodifier = item.amplitudemodifier;
-				dat.onset = item.onset;
-				dat.preset = true;
-				_mixerList.setItemAt(dat, i);
-			}
-		
-			RecalcDilation();
-			
-			if (_app.tabs.selectedIndex==1)
-			{
-				UpdateSharedComponents();
-			}
-		}					
-		
-		public function RecalcDilation():void
-		{
-			var mled:MixerListEntryDat;
-			
-			var maxlength:Number = 0.1;
-			//step 1: find max dilation
-			for (var i:int = 0; i < _mixerList.length; i++)
-			{
-				mled = _mixerList.getItemAt(i) as MixerListEntryDat;
-				if (mled.id==-1)
-				{
-					continue;
-				}
-				
-				var cand:Number = mled.synth.GetLength();
-				if (cand > maxlength)
-				{
-					maxlength = cand;
-				}
-			}
-			
-			//clamp onsets where needed
-			
-			var clamped:Boolean=false;
-			for (i = 0; i < _mixerList.length; i++)
-			{
-				mled = _mixerList.getItemAt(i) as MixerListEntryDat;
-				if (mled.id==-1)
-				{
-					continue;
-				}
-				
-				var len:Number = mled.synth.GetLength();
-				trace(len + " : " + i + " : " + mled.id + " : " +mled.synth.params.Serialize());
-				if (mled.onset + len > 2*maxlength)
-				{
-					mled.onset = 2*maxlength-len;
-					clamped=true;
-				}
-			}
-			
-			if (clamped)
-			{				
-				_app.mixerInterface.ComponentChangeCallback("onset",null);
-			}
-			
-			//find the appropriate dilation value
-			const boxwidth:Number = 191; //double-check, eh?
-			//dilation => 1 second = d pixels
-			var dilation:Number = boxwidth / (2 * maxlength);
-			
-			//let all the data things know
-			for (i = 0; i < _mixerList.length; i++)
-			{
-				mled = _mixerList.getItemAt(i) as MixerListEntryDat;
-				mled.dilation=dilation;
-			}
-			
+			//the following calls UpdateSharedComponents
+			mixerController.RefreshUI();			
 		}
 		
-		// called when synth and visuals have been synced
-		// audible if we want to retrigger a play 
-		//(e.g. changing lock status of a field shouldn't trigger a replay)
+		public function UpdateSharedComponents():void
+		{		
+			_app.modifyexisting.enabled=false;
+			
+			_app.volumeslider.value = mixerController.mixerPlayer.volume;
+			
+			var trackFound:Boolean=false;
+			for (var i:int=0;i<mixerController.mixerPlayer.tracks.length;i++)
+			{
+				var mtp:MixerTrackPlayer = mixerController.mixerPlayer.tracks[i];
+				if (mtp.IsSet())
+				{
+					trackFound=true;
+					break;
+				}
+			}
+			
+			_app.PlayButton.enabled=trackFound;			
+		}
+		
 		public function OnParameterChanged(audible:Boolean = true, underlyingModification:Boolean = true, forceplay:Boolean = false):void
 		{
 			//apply applications to selected item's data
 			if (underlyingModification)
 			{
 				var ld:LayerData = _app.layerItems.getItemAt(_app.layerList.selectedIndex) as LayerData;
-				ld.data = _mixer.params.Serialize();
-				
+				ld.data = mixerController.Serialize() ;				
 				_app.EnableApplyButton(true);				
 			}
 			
@@ -147,171 +87,121 @@ package
 			}
 		}
 		
+		public function RemoveOrphanSounds():void
+		{
+			var mtp:MixerTrackPlayer;
+			
+			for (var i:int=0;i<mixerController.mixerPlayer.tracks.length;i++)
+			{
+				mtp = mixerController.mixerPlayer.tracks[i];
+				if (mtp.IsSet())
+				{
+					// check if synth still exists in list
+					if (_app.GetIndexOfSoundItemWithID(mtp.data.id)<0)
+					{
+						//if not, then clear
+						mtp.LoadSynth(null);
+					}		
+				}
+			}
+			
+			//changes made above will be remade in list data...no biggie I guess...
+			var changedany:Boolean=false;
+			//remove references in other mixes as well
+			for (i=0;i<_app.layerItems.length;i++)
+			{
+				var changed:Boolean=false;
+				var ld:LayerData = LayerData(_app.layerItems.getItemAt(i));
+				var mp:MixerPlayer = new MixerPlayer();
+				mp.Deserialize(ld.data);
+				for (var j:int=0;j<mp.tracks.length;j++)
+				{
+					mtp = mp.tracks[j];
+					if (mtp.IsSet())
+					{						
+						if( _app.GetIndexOfSoundItemWithID(mtp.data.id)<0)
+						{
+							mtp.LoadSynth(null);
+							changed=true;
+							changedany=true;
+						}
+					}
+				}
+				if (changed)
+				{					
+					ld.data=mp.Serialize();
+					ld.dispatchEvent(new FlexEvent(FlexEvent.CHANGE_END));
+				}
+			}
+			
+			if (changedany)
+			{
+				_app.saveManager.PushLayerList(_app.layerItems);
+			}
+		}		
 		
-		public function UpdateSharedComponents():void
-		{			
-			_app.modifyexisting.enabled=false;
-
-			_app.volumeslider.value = _mixer.params.volume;
+		public function CheckIfSoundsOutOfDate():void
+		{
+			var modified:Boolean=false;
+			for (var i:int=0;i<mixerController.mixerPlayer.tracks.length;i++)
+			{
+				var mtp:MixerTrackPlayer = mixerController.mixerPlayer.tracks[i];
+				if (mtp.data.id>=0)
+				{
+					var index:int = _app.GetIndexOfSoundItemWithID(mtp.data.id);
+					// check if synth still exists in list
+					if (index>=0)
+					{
+						var sd:SoundData = _app.soundItems.getItemAt(index) as SoundData;
 						
-			var trackFound:Boolean=false;
-			for (var i:int=0;i<_mixerList.length;i++)
-			{
-				var dat:MixerListEntryDat = _mixerList.getItemAt(i) as MixerListEntryDat;
-				if (dat.id>=0)
-				{
-					trackFound=true;
-					break;
+						//compare strings (should only really compare audible parts...not locking stuff...but that can wait
+						if (mtp.synth.params.Serialize()!=sd.data)
+						{
+							//they're not the same, need to update
+							mtp.LoadSynth(sd);
+						}						
+					}
 				}
-			}
-				
-			_app.PlayButton.enabled=trackFound;
-		}
+			}			
+		}	
 		
-		public function Play():void
-		{
-			_mixer.Clear();
-			for (var i:int = 0; i < _mixerList.length; i++)
-			{
-				var dat:MixerListEntryDat = _mixerList.getItemAt(i) as MixerListEntryDat;
-				//synth.();
-				if (dat.id>=0)
-				{
-					var msd:MixerSoundData = new MixerSoundData(dat.id,dat.data, dat.synth.cachedWave, dat.onset, dat.amplitudemodifier);
-					_mixer.AddTrack(msd);
-				}
-			}
-			
-			MixerPlayStart();
-			_mixer.play(MixerPlayCallback);
-		}
-		
-		private function MixerPlayCallback(n:Number):void
-		{
-			
-			for (var i:int = 0; i < _mixerList.length; i++)
-			{
-				var mled:MixerListEntryDat = _mixerList.getItemAt(i) as MixerListEntryDat;
-				mled.absolutePlayCallback(n);
-			}
-		}
-
-		public function MixerPlayStart():void
-		{
-			MixerPlayStop();
-			for (var i:int = 0; i < this._mixerList.length; i++)
-			{
-				var mled:MixerListEntryDat = _mixerList.getItemAt(i) as MixerListEntryDat;
-				if (mled.PlayStartCallback!=null)
-				{
-					mled.PlayStartCallback();
-				}
-			}
-		}
-		
-		public function MixerPlayStop(event:Event = null):void
-		{
-			_mixer.stop();
-			for (var i:int = 0; i < this._mixerList.length; i++)
-			{
-				var mled:MixerListEntryDat = _mixerList.getItemAt(i) as MixerListEntryDat;
-				mled.synth.stop();
-				if (mled.PlayStopCallback!=null)
-				{
-					mled.PlayStopCallback();
-				}
-			}
-		}
-				
 		public function ComponentChangeCallback(tag:String,e:Event):void
 		{
-			var audible:Boolean=true;
 			
 			switch (tag)
 			{
 				case "volume":
-					_mixer.params.volume = _app.volumeslider.value;
-					
-					for (var i:int = 0; i < this._mixerList.length; i++)
-					{
-						var msd:MixerListEntryDat = _mixerList.getItemAt(i) as MixerListEntryDat;
-						_mixer.params.items[i].amplitudemodifier = msd.amplitudemodifier;
-					}
+					mixerController.mixerPlayer.volume = _app.volumeslider.value;
 					break;
-				case "onset":
-					for (i = 0; i < this._mixerList.length; i++)
-					{
-						msd = _mixerList.getItemAt(i) as MixerListEntryDat;
-						_mixer.params.items[i].onset = msd.onset;
-					}
-					break;
-				case "id":
-					audible=true;
-					for (i = 0; i < this._mixerList.length; i++)
-					{
-						msd = _mixerList.getItemAt(i) as MixerListEntryDat;
-						_mixer.params.items[i].id = msd.id;
-					}
-					break;					
 				default:
-					throw new Error("tag not identified");					
+					throw new Error("tag not identified : " + tag);	
 			}
-			OnParameterChanged(audible);
 		}
-		
 		
 		public function Serialize():String
 		{
-			return _mixer.params.Serialize();
+			return mixerController.Serialize();
 		}
 		
-		//makes sure all data about source synths is up to date and embedded.
-		public function SerializeClosure():String
+		public function Deserialize(data:String):void
 		{
-			//collate object data
-			var o:Array = new Array();
-			for (var i:int = 0; i < _mixer.params.items.length; i++)
-			{
-				var mpi:MixerItemParams = _mixer.params.items[i];
-				
-				if (((mpi.id in o) == false) && (mpi.id>=0))
-				{
-					var soundindex:int = _app.GetIndexOfSoundItemWithID(mpi.id);
-					o[mpi.id] = (_app.soundItems.getItemAt(soundindex) as SoundData).data;
-				}
-			}			
-			
-			//update data in the mixer
-			for (i=0;i<_mixer.params.items.length;i++)
-			{
-				var mip:MixerItemParams = _mixer.params.items[i];
-				mip.data = o[mip.id];
-			}
-			
-			//mixer string first
-			var result:String  = _mixer.params.Serialize();
-
-			return result;
+			mixerController.Deserialize(data);
 		}
 		
-		//the clipboard string also includes the data of all sounds attached to it.
-		public function DeserializeFromClipboard(str:String):void
-		{	
+		public function DeserializeFromClipboard(data:String):void
+		{
 			//now push the  mixer settings and load them as if you had clicked on them
 			_app.AddToLayerList("Pasted", true);
 			
-			//set basic mixer data
-			_mixer.params.items = new Vector.<MixerItemParams>();
-			
 			//if synth IDs overlap, then rename
-			_mixer.params.Deserialize(str);
+			mixerController.Deserialize(data);
 			
 			//1: get list of IDs used
 			var idlist:Vector.<int> = new Vector.<int>;
 			var descriptions:Vector.<String> = new Vector.<String>;
-			for (i=0;i<_mixer.params.items.length;i++)
+			for (i=0;i<mixerController.mixerPlayer.tracks.length;i++)
 			{
-				var id:int=_mixer.params.items[i].id;
+				var id:int=mixerController.mixerPlayer.tracks[i].data.id;
 				
 				if (id==-1)
 				{
@@ -321,7 +211,7 @@ package
 				if (idlist.indexOf(id)==-1)
 				{
 					idlist.push(id);
-					descriptions.push(_mixer.params.items[i].data);
+					descriptions.push(mixerController.mixerPlayer.tracks[i].data.synthdata);
 				}
 			}
 			
@@ -333,11 +223,11 @@ package
 				{
 					//then calculate new id and change all references to this id
 					var newid:int=_app.saveManager.GetID();
-					for (var j:int=0;j<_mixer.params.items.length;j++)
+					for (var j:int=0;j<mixerController.mixerPlayer.tracks.length;j++)
 					{
-						if (_mixer.params.items[j].id==id)
+						if (mixerController.mixerPlayer.tracks[j].data.id==id)
 						{
-							_mixer.params.items[j].id=newid;
+							mixerController.mixerPlayer.tracks[j].data.id=newid;
 						}
 					}
 					id=newid;
@@ -352,100 +242,16 @@ package
 			OnParameterChanged(false,true);
 			RefreshUI();
 			
-			_app.DisableApplyButton(false);
+			_app.DisableApplyButton(false);	
 		}
-		
-		public function Deserialize(str:String):Boolean
-		{
-			return _mixer.params.Deserialize(str);
-		}		
 		
 		public function getWavFile():ByteArray
-		{			
-			_mixer.Clear();
-			for (var i:int = 0; i < _mixerList.length; i++)
-			{
-				var dat:MixerListEntryDat = _mixerList.getItemAt(i) as MixerListEntryDat;
-				if (dat.id>=0)
-				{
-					var msd:MixerSoundData = new MixerSoundData(dat.id, dat.data, dat.synth.getWavFile(_globalState.sampleRate,_globalState.bitDepth), dat.onset, dat.amplitudemodifier);
-					_mixer.AddTrack(msd);
-				}
-			}
-			
-			return _mixer.getWavFile(_globalState.sampleRate,_globalState.bitDepth);
+		{
+			return null;	
 		}
 		
-		public function RemoveOrphanSounds():void
-		{
-			for (var i:int=0;i<_mixerList.length;i++)
-			{
-				var dat:MixerListEntryDat = _mixerList.getItemAt(i) as MixerListEntryDat;
-				if (dat.id>=0)
-				{
-					// check if synth still exists in list
-					if (_app.GetIndexOfSoundItemWithID(dat.id)<0)
-					{
-						dat.setID(-1,_app);
-					}		
-				}
-			}
-			
-			var changedany:Boolean=false;
-			//remove references in other mixes as well
-			for (i=0;i<_app.layerItems.length;i++)
-			{
-				var changed:Boolean=false;
-				var ld:LayerData = LayerData(_app.layerItems.getItemAt(i));
-				var mp:MixerParams = new MixerParams();
-				mp.Deserialize(ld.data);
-				for (var j:int=0;j<mp.items.length;j++)
-				{
-					var mip:MixerItemParams = mp.items[j];
-					if (mip.id>=0 && _app.GetIndexOfSoundItemWithID(mip.id)<0)
-					{
-						mip.id=-1;
-						changed=true;
-						changedany=true;
-					}
-				}
-				if (changed)
-				{					
-					ld.data=mp.Serialize();
-					ld.dispatchEvent(new FlexEvent(FlexEvent.CHANGE_END));
-				}
-			}
-			
-			if (changedany)
-			{
-				_app.saveManager.PushLayerList(_app.layerItems);
-			}
-		}
 		
-		public function CheckIfSoundsOutOfDate():void
-		{
-			for (var i:int=0;i<_mixerList.length;i++)
-			{
-				var dat:MixerListEntryDat = _mixerList.getItemAt(i) as MixerListEntryDat;
-				if (dat.id>=0)
-				{
-					var index:int = _app.GetIndexOfSoundItemWithID(dat.id);
-					// check if synth still exists in list
-					if (index>=0)
-					{
-						var sd:SoundData = _app.soundItems.getItemAt(index) as SoundData;
-						
-						//compare strings (should only really compare audible parts...not locking stuff...but that can wait
-						if (dat.synth.params.Serialize()!=sd.data)
-						{
-							//they're not the same, need to update
-							dat.dispatchEvent(new Event(MixerListEntryDat.REFRESH_SYNTH));
-						}
-						
-					}
-				}
-			}			
-		}	
 		
+				
 	}
 }
