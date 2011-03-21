@@ -251,7 +251,7 @@ package
 		
 		public function getWavFile():ByteArray
 		{
-			return _synth.getWavFile(_globalState.sampleRate,_globalState.bitDepth);
+			return _synth.getWavFile();
 		}
     }
 }

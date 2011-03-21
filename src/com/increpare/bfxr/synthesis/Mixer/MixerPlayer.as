@@ -3,6 +3,7 @@ package com.increpare.bfxr.synthesis.Mixer
 	import com.increpare.bfxr.synthesis.IPlayerInterface;
 	import com.increpare.bfxr.synthesis.ISerializable;
 	import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
+	import com.increpare.bfxr.synthesis.WaveWriter;
 	
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
@@ -77,10 +78,8 @@ package com.increpare.bfxr.synthesis.Mixer
 		private var _preparedvolumes:Vector.<Number>; //stores corresponding volumes
 		private static var _zeros:ByteArray;
 		
-		public function play(updateCallback:Function=null):void
+		private function PrepareMixForPlay():void
 		{
-			_updateCallback=updateCallback;
-			
 			var description:String = this.Serialize();
 			if (_lastplayeddata!=description)
 			{
@@ -97,7 +96,7 @@ package com.increpare.bfxr.synthesis.Mixer
 					}
 					
 					var b:ByteArray = new ByteArray();
-										
+					
 					var silentbytes:int = int(tracks[i].data.onset*44100)*4;
 					
 					// create starting silence.
@@ -118,7 +117,14 @@ package com.increpare.bfxr.synthesis.Mixer
 				}
 				
 				Mix();
-			}			
+			}		
+		}
+		
+		public function play(updateCallback:Function=null):void
+		{
+			_updateCallback=updateCallback;
+			
+			PrepareMixForPlay();	
 			
 			if (_preparedsounds.length==0)
 			{
@@ -155,56 +161,18 @@ package com.increpare.bfxr.synthesis.Mixer
 		 * @param	bitDepth		Bit depth to generate the .wav at	
 		 * @return					Wave in a .wav file
 		 */
-		public function getWavFile(sampleRate:uint = 44100, bitDepth:uint = 16):ByteArray
+		public function getWavFile():ByteArray
 		{
 			stop();			
 			
-			var waveDataBody : ByteArray = getWavByteArray(sampleRate,bitDepth);
+			PrepareMixForPlay();			
 			
-			if (sampleRate != 44100) sampleRate = 22050;
-			if (bitDepth != 16) bitDepth = 8;
+			var ww:WaveWriter = new WaveWriter(true,32);
 			
-			var soundLength:uint = waveDataBody.length;
-			//if (bitDepth == 16) soundLength *= 2;
-			//if (sampleRate == 22050) soundLength /= 2;
+			ww.addSamples(_waveData);
+			ww.finalize();
 			
-			var filesize:int = 36 + soundLength;
-			var blockAlign:int = bitDepth / 8;
-			var bytesPerSec:int = sampleRate * blockAlign;
-			
-			var wav:ByteArray = new ByteArray();
-			
-			// Header
-			wav.endian = Endian.BIG_ENDIAN;
-			wav.writeUnsignedInt(0x52494646);		// Chunk ID "RIFF"
-			wav.endian = Endian.LITTLE_ENDIAN;
-			wav.writeUnsignedInt(filesize);			// Chunck Data Size
-			wav.endian = Endian.BIG_ENDIAN;
-			wav.writeUnsignedInt(0x57415645);		// RIFF Type "WAVE"
-			
-			// Format Chunk
-			wav.endian = Endian.BIG_ENDIAN;
-			wav.writeUnsignedInt(0x666D7420);		// Chunk ID "fmt "
-			wav.endian = Endian.LITTLE_ENDIAN;
-			wav.writeUnsignedInt(16);				// Chunk Data Size
-			wav.writeShort(1);						// Compression Code PCM
-			wav.writeShort(1);						// Number of channels
-			wav.writeUnsignedInt(sampleRate);		// Sample rate
-			wav.writeUnsignedInt(bytesPerSec);		// Average bytes per second
-			wav.writeShort(blockAlign);				// Block align
-			wav.writeShort(bitDepth);				// Significant bits per sample
-			
-			// Data Chunk
-			wav.endian = Endian.BIG_ENDIAN;
-			wav.writeUnsignedInt(0x64617461);		// Chunk ID "data"
-			wav.endian = Endian.LITTLE_ENDIAN;
-			wav.writeUnsignedInt(soundLength);		// Chunk Data Size
-			
-			wav.writeBytes(waveDataBody);
-			
-			wav.position = 0;
-			
-			return wav;
+			return ww.outBuffer;
 		}
 		
 		private function getWavByteArray(sampleRate:uint = 44100, bitDepth:uint = 16):ByteArray
@@ -224,12 +192,14 @@ package com.increpare.bfxr.synthesis.Mixer
 				
 				var b:ByteArray = new ByteArray();
 				
-				var silentbytes:int= int(tracks[i].data.onset*44100);
+				var silentbytes:uint= uint(tracks[i].data.onset*44100);
+				silentbytes -= (silentbytes%4);
+				trace("silence for track " + i.toString() + " : " + silentbytes);
 				
-				if (bitDepth==16)
-					silentbytes*=2;
-				if (sampleRate == 44100)
-					silentbytes*=2;	
+				//if (bitDepth==16)
+				//	silentbytes*=2;
+				//if (sampleRate == 22050)
+				//	silentbytes/=2;	
 				
 				// create starting silence.
 				while(silentbytes>0)
@@ -242,7 +212,7 @@ package com.increpare.bfxr.synthesis.Mixer
 				}
 				
 				
-				var synthwavefile:ByteArray = tracks[i].synth.getWavFile(sampleRate,bitDepth); 
+				var synthwavefile:ByteArray = tracks[i].synth.getWavFile(); 
 				//assumes sourcesounds already populated by wav-compatible waves
 				// 36 = skip past header info
 				b.writeBytes(synthwavefile,36);				

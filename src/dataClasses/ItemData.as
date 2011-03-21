@@ -28,15 +28,6 @@ package dataClasses
 			return result;
 		}
 		
-		public function ToObject():Object
-		{
-			var o:Object = new Object();
-			o.label=label;
-			o.data=data;
-			o.id=id;
-			return o;
-		}
-		
 		public function Serialize():String
 		{
 			return label+":"+data+":"+id;

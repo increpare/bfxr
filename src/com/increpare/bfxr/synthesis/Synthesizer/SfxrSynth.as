@@ -1,5 +1,8 @@
 ﻿package com.increpare.bfxr.synthesis.Synthesizer 
 {
+	import com.increpare.bfxr.synthesis.IPlayerInterface;
+	import com.increpare.bfxr.synthesis.WaveWriter;
+	
 	import flash.display.Shape;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
@@ -10,7 +13,6 @@
 	import flash.utils.ByteArray;
 	import flash.utils.Endian;
 	import flash.utils.getTimer;
-	import com.increpare.bfxr.synthesis.IPlayerInterface;
 
 	/**
 	 * SfxrSynth
@@ -1164,60 +1166,20 @@
 		
 		/**
 		 * Returns a ByteArray of the wave in the form of a .wav file, ready to be saved out
-		 * @param	sampleRate		Sample rate to generate the .wav at	
-		 * @param	bitDepth		Bit depth to generate the .wav at	
 		 * @return					Wave in a .wav file
 		 */
-		public function getWavFile(sampleRate:uint = 44100, bitDepth:uint = 16):ByteArray
+		public function getWavFile():ByteArray
 		{
 			stop();
 			
-			reset(true);
+			reset(true);			
+						
+			var ww:WaveWriter = new WaveWriter(true,32);
 			
-			if (sampleRate != 44100) sampleRate = 22050;
-			if (bitDepth != 16) bitDepth = 8;
+			ww.addSamples(this.cachedWave);
+			ww.finalize();
 			
-			var soundLength:uint = _envelopeFullLength;
-			if (bitDepth == 16) soundLength *= 2;
-			if (sampleRate == 22050) soundLength /= 2;
-			
-			var filesize:int = 36 + soundLength;
-			var blockAlign:int = bitDepth / 8;
-			var bytesPerSec:int = sampleRate * blockAlign;
-			
-			var wav:ByteArray = new ByteArray();
-			
-			// Header
-			wav.endian = Endian.BIG_ENDIAN;
-			wav.writeUnsignedInt(0x52494646);		// Chunk ID "RIFF"
-			wav.endian = Endian.LITTLE_ENDIAN;
-			wav.writeUnsignedInt(filesize);			// Chunck Data Size
-			wav.endian = Endian.BIG_ENDIAN;
-			wav.writeUnsignedInt(0x57415645);		// RIFF Type "WAVE"
-			
-			// Format Chunk
-			wav.endian = Endian.BIG_ENDIAN;
-			wav.writeUnsignedInt(0x666D7420);		// Chunk ID "fmt "
-			wav.endian = Endian.LITTLE_ENDIAN;
-			wav.writeUnsignedInt(16);				// Chunk Data Size
-			wav.writeShort(1);						// Compression Code PCM
-			wav.writeShort(1);						// Number of channels
-			wav.writeUnsignedInt(sampleRate);		// Sample rate
-			wav.writeUnsignedInt(bytesPerSec);		// Average bytes per second
-			wav.writeShort(blockAlign);				// Block align
-			wav.writeShort(bitDepth);				// Significant bits per sample
-			
-			// Data Chunk
-			wav.endian = Endian.BIG_ENDIAN;
-			wav.writeUnsignedInt(0x64617461);		// Chunk ID "data"
-			wav.endian = Endian.LITTLE_ENDIAN;
-			wav.writeUnsignedInt(soundLength);		// Chunk Data Size
-			
-			synthWave(wav, _envelopeFullLength, false, sampleRate, bitDepth);
-			
-			wav.position = 0;
-			
-			return wav;
+			return ww.outBuffer;
 		}
 	}
 }

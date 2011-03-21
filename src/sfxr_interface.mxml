@@ -82,10 +82,6 @@
 
             private function CommitGlobal():void
             {
-				/*
-				globalState.bitDepth=int((bitdepth.selectedItem as GenericListEntry).data);
-				globalState.sampleRate=int((samplerate.selectedItem as GenericListEntry).data);
-				globalState.playOnChange=playonchange.selected;*/
 				globalState.selectedSoundItemID=GetSelectedSoundItemID();
 				globalState.selectedLayerItemID=GetSelectedLayerItemID();
 				saveManager.commitGlobal(globalState);
@@ -274,8 +270,6 @@
 
                 saveManager.LoadData();
 				
-                samplerate.selectedIndex = saveManager.samplerate;
-                bitdepth.selectedIndex = saveManager.bitdepth;
                 playonchange.selected = saveManager.playonchange;//not sure why this isn't triggering OnPlayOnChangeChange :/
 				globalState.playOnChange=playonchange.selected;
 								
@@ -327,12 +321,6 @@
 				{
 					SelectItemInLayerList(0,false);
 				}
-				
-                samplerate.dataProvider = samplerates;
-                samplerate.selectedIndex = 0;
-
-                bitdepth.dataProvider = bitdepths;
-                bitdepth.selectedIndex = 0;
 
                 mixerInterface.OnParameterChanged(false);
                 synthInterface.OnParameterChanged(false);
@@ -670,7 +658,7 @@
             }
 
             /** returns -1 if no item found */
-            private function GetIndexOfLayerItemWithID(id:int):int
+            public function GetIndexOfLayerItemWithID(id:int):int
             {
                 for (var i:int = 0; i < layerItems.length; i++)
                 {
@@ -1053,8 +1041,6 @@
 			{
 				playonchange.selected = globalState.playOnChange;
 				modifyexisting.selected = globalState.modifyExisting;
-				bitdepth.selectedIndex = globalState.bitDepth == 16 ? 0 : 1;
-				samplerate.selectedIndex = globalState.sampleRate == 44100 ? 0 : 1;
 			}
 			
 			private function clickSaveAll(event:MenuEvent):void
@@ -1677,29 +1663,6 @@
             <s:Button id="exportwav"
                 label="Export Wav"
                 click="SaveWave()"/>
-            <s:BorderContainer 
-                width="193" height="62"
-                backgroundColor="#CCBDA1">
-                <s:layout>
-                    <s:VerticalLayout 
-                        horizontalAlign="justify"
-                        paddingBottom="5"
-                        paddingLeft="5"
-                        paddingRight="5"
-                        paddingTop="5"
-                        gap="5"/>
-                </s:layout>
-                <s:DropDownList id="samplerate"
-					valueCommit="globalState.OnSampleRateChange(event)"
-					change="CommitGlobal()"
-					requireSelection="true">
-                </s:DropDownList>
-                <s:DropDownList id="bitdepth"
-					valueCommit="globalState.OnBitDepthChange(event)"
-					change="CommitGlobal()"
-					requireSelection="true">
-                </s:DropDownList>
-            </s:BorderContainer>      
             <mx:PopUpMenuButton 
             	dataProvider="{loadoptions}"
             	labelField="@label" 

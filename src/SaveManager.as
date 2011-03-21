@@ -45,8 +45,6 @@ package
 		public function commitGlobal(gs:GlobalState ):void
 		{
 			//don't need to worry about tripping over other people's values			
-			_saveDat.data.samplerate = gs.sampleRate;
-			_saveDat.data.bitdepth = gs.bitDepth;
 			_saveDat.data.playonchange = gs.playOnChange;
 			_saveDat.data.selectedSoundItemID = gs.selectedSoundItemID;	
 			_saveDat.data.selectedLayerItemID = gs.selectedLayerItemID;			

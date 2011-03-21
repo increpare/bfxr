@@ -254,7 +254,7 @@ package
 		public function getWavFile():ByteArray
 		{
 			
-			return mixerController.mixerPlayer.getWavFile(_globalState.sampleRate,_globalState.bitDepth);
+			return mixerController.mixerPlayer.getWavFile();
 		}
 		
 		

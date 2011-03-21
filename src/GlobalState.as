@@ -13,25 +13,9 @@ package
 	{
 		public var playOnChange:Boolean
 		public var modifyExisting:Boolean;
-		public var sampleRate:int;
-		public var bitDepth:int;
 		public var selectedSoundItemID:int;
 		public var selectedLayerItemID:int;
-		
-		public function OnSampleRateChange(event:Event):void
-		{
-			var ddl:DropDownList = event.target as DropDownList;
-			var gle:GenericListEntry = ddl.selectedItem as GenericListEntry;
-			sampleRate = int(gle.data);
-		}
-		
-		public function OnBitDepthChange(event:Event):void
-		{
-			var ddl:DropDownList = event.target as DropDownList;
-			var gle:GenericListEntry = ddl.selectedItem as GenericListEntry;
-			bitDepth = int(gle.data);			
-		}
-		
+				
 		public function OnLayerListSelectionChanged(event:Event):void
 		{
 			var ddl:List = event.target as List;
@@ -81,8 +65,6 @@ package
 		{
 			return playOnChange.toString()+","
 					+modifyExisting.toString()+","
-					+sampleRate.toString()+","
-					+bitDepth.toString()+","
 					+selectedSoundItemID.toString()+","
 					+selectedLayerItemID.toString();
 		}
@@ -92,10 +74,8 @@ package
 			var ar:Array = dat.split(",");
 			playOnChange=ar[0]=="false"?false:true;
 			modifyExisting=ar[1]=="false"?false:true;
-			sampleRate=ar[2];
-			bitDepth=ar[3];
-			selectedSoundItemID=ar[4];
-			selectedLayerItemID=ar[5];
+			selectedSoundItemID=ar[2];
+			selectedLayerItemID=ar[3];
 		}
 	}
 }
