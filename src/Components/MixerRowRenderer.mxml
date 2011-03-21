@@ -209,7 +209,7 @@
 			</s:stroke>		
 		</s:Rect>	
 		
-		<s:Line id="playline" top="0" xFrom="0" yFrom="0" xTo="0"  yTo="71"  x="{data.playbarposition}" visible="{data.playbarposition>=0}">
+		<s:Line id="playline" top="0" xFrom="0" yFrom="0" xTo="0"  yTo="71"  x="{Math.min(data.playbarposition,sliderimagecontainer.width-2)}" visible="{data.playbarposition>=0}">
 			<s:stroke>
 				<mx:SolidColorStroke color="0" alpha="1.0"/>			
 			</s:stroke>

@@ -24,13 +24,11 @@ package
 		
 		private var _app:sfxr_interface;
 		private var _globalState:GlobalState;		
-		private var _volumeSlider:HSlider;
 		
-		public function MixerInterface(app:sfxr_interface, globalState:GlobalState,volumeSlider:HSlider)
+		public function MixerInterface(app:sfxr_interface, globalState:GlobalState)
 		{
 			_app=app;
 			_globalState = globalState;
-			_volumeSlider = volumeSlider;
 			mixerController = new MixerController(_app);
 		}
 		
@@ -158,7 +156,7 @@ package
 						var sd:SoundData = _app.soundItems.getItemAt(index) as SoundData;
 						
 						//compare strings (should only really compare audible parts...not locking stuff...but that can wait
-						if (mtp.synth.params.Serialize()!=sd.data)
+						if (mtp.data.synthdata!=sd.data)
 						{
 							//they're not the same, need to update
 							mtp.LoadSynth(sd);

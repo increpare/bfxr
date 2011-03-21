@@ -43,7 +43,7 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		// real name, decription
 		//   grouping,name, default, min, max, 
 		["Wave Type","Shape of the wave.",
-			0,"waveType",2,0,WAVETYPECOUNT+0.9999], // the 6.999 thing is because this is really an int parameter...		
+			0,"waveType",2,0,WAVETYPECOUNT-0.0001], // the 6.999 thing is because this is really an int parameter...		
 		
 		["Master Volume","Overall volume of the sound",
 			1,"masterVolume",0.5,0,1], 	
@@ -61,7 +61,7 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		
 		["Frequency","Base note of the sound.",
 			2,"startFrequency",0.3,0,1], 		
-		["Frequency Cutoff","If sliding, the sound will stop at this frequency, to prevent really low notes.",
+		["Frequency Cutoff","If sliding, the sound will stop at this frequency, to prevent really low notes.  If unlocked, this is set to zero during randomization.",
 			2,"minFrequency",0.0,0,1], 		
 		
 		["Frequency Slide","Slides the frequency up or down",
@@ -497,13 +497,12 @@ package com.increpare.bfxr.synthesis.Synthesizer
 				dutySweep:3,
 				flangerOffset:3,
 				flangerSweep:3,
-				lpFilterCutoff:3,
+				lpFilterCutoff:0.3,
 				lpFilterSweep:3,
 				hpFilterCutoff:5,
 				hpFilterSweep:5,
 				bitCrush:4,			
-				bitCrushSweep:5,
-				minFrequency:7
+				bitCrushSweep:5
 			}
 			
 		/**
@@ -531,6 +530,14 @@ package com.increpare.bfxr.synthesis.Synthesizer
 			
 			paramsDirty = true;
 			
+			if (!lockedParam("repeatSpeed"))
+			{
+				if (Math.random()<0.5)
+					setParam("repeatSpeed",0);
+			}
+					
+			if (!lockedParam("minFrequency"))
+				setParam("minFrequency",0);
 			
 			if (!lockedParam("startFrequency"))
 				setParam("startFrequency",  	(Math.random() < 0.5) ? pow(Math.random()*2-1, 2) : (pow(Math.random() * 0.5, 3) + 0.5));

@@ -143,7 +143,7 @@ package Mixer
 		{
 			var i:int;
 			for (i=0;i<mixerPlayer.tracks.length;i++)
-			{
+			{				
 				var mtc:MixerTrackController = this.trackControllers[i];
 				mtc.DrawWave();
 			}

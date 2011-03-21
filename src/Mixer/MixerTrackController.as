@@ -58,6 +58,11 @@ package Mixer
 			else
 			{
 				//won't be hidden unless made null.
+				_trackPlayer.data.onset=0;
+				_trackView.onset=0;
+				_trackPlayer.data.volume=1;
+				_trackView.volume=1;
+				
 				_trackPlayer.LoadSynth(null);
 				_parent.RecalcTrackLength();
 			}
@@ -81,7 +86,7 @@ package Mixer
 			mtv.onset = mtp.data.onset*MixerRowRenderer.GraphWidth/trackLength;			
 			
 			var sliderimage:Bitmap = new Bitmap();				
-			sliderimage.bitmapData = new BitmapData(mtp.synth.GetLength()*MixerRowRenderer.GraphWidth/trackLength,MixerRowRenderer.GraphHeight,false,0xe7d1a7);
+			sliderimage.bitmapData = new BitmapData(Math.max(1,mtp.synth.GetLength()*MixerRowRenderer.GraphWidth/trackLength),MixerRowRenderer.GraphHeight,false,0xe7d1a7);
 			sliderimage.width = sliderimage.bitmapData.width;
 			sliderimage.height = sliderimage.bitmapData.height;
 			
@@ -122,8 +127,8 @@ package Mixer
 		private function OnMixerVolumeClick():void 
 		{ 			
 			_trackPlayer.data.volume = _trackView.volume;		
-			_app.mixerInterface.OnParameterChanged(true,true);
 			DrawWave();			
+			_app.mixerInterface.OnParameterChanged(true,true);
 		}
 		
 		private function OnMixerMixerOnsetClick():void 

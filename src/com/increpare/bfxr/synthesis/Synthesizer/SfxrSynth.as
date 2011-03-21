@@ -392,6 +392,7 @@
 							
 							this.dispatchEvent(new Event(SfxrSynth.CACHED));
 							dispatchEvent(new Event(SfxrSynth.PLAY_COMPLETE));
+							updateCallback=null;
 						}
 						
 						_waveDataBytes = _cachedWave.length - _waveDataPos;
@@ -423,7 +424,7 @@
 		{
 			if (Dirty())
 				this.cacheSound();
-			
+			_cachedWave.position=0;
 			return _cachedWave;
 		}		
 		
@@ -1170,15 +1171,11 @@
 		 */
 		public function getWavFile():ByteArray
 		{
-			stop();
-			
-			reset(true);			
-						
-			var ww:WaveWriter = new WaveWriter(true,32);
-			
-			ww.addSamples(this.cachedWave);
-			ww.finalize();
-			
+			stop();								
+			var ww:WaveWriter = new WaveWriter(true,32);			
+			var cw:ByteArray = cachedWave;			
+			ww.addSamples(cw);			
+			ww.finalize();			
 			return ww.outBuffer;
 		}
 	}

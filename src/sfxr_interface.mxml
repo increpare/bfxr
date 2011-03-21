@@ -228,8 +228,8 @@
 			private function onInitialize():void
 			{							
 				globalState = new GlobalState();
-				synthInterface = new SynthInterface(this,globalState,volumeslider);
-				mixerInterface = new MixerInterface(this,globalState,volumeslider);
+				synthInterface = new SynthInterface(this,globalState);
+				mixerInterface = new MixerInterface(this,globalState);
 				
 				_time.addEventListener(TimerEvent.TIMER, timerHandler);
 				_time.start();												
@@ -290,9 +290,7 @@
 
                 if (TryLoadFromURL())
                 {
-                    UIUpdateTrigger();
-                    synthInterface.OnParameterChanged(true, false);
-                    AddToSoundList("Linked", true);
+                   //it takes care of its own stuff
                 }
                 else
                 {
@@ -389,7 +387,6 @@
 
             private function TryLoadFromURL():Boolean
             {
-
                 var base:String = ExternalInterface.call('window.location.href.toString');
                 var ar:Array = base.split("?");
                 if (ar.length != 2)
@@ -400,20 +397,17 @@
                 {
                     var tail:String = ar[1] as String;
                     var sounddescr:String = unescape(tail.substr(2));
-					if (sounddescr.indexOf("|")==-1)
-					{
-                    	synthInterface.Deserialize(sounddescr);
-					}
-					else
-					{
-						mixerInterface.Deserialize(sounddescr);
-					}
+					FromClipboard(sounddescr);
 				}
                 catch (e:Error)
                 {
                     trace(e.message);
                 }
 
+				UIUpdateTrigger();
+				synthInterface.OnParameterChanged(true, false);
+				AddToSoundList("Linked", true);
+				
                 return true;
             }
 
@@ -686,13 +680,13 @@
 				
                 lastmanipulation = b.label;
 
-                if (tabs.selectedIndex == 1 || globalState.modifyExisting==false)
-                {
-                    clickApplySound();
-                }
-
                 synthInterface.RefreshUI();
-                synthInterface.OnParameterChanged(true,false);
+                synthInterface.OnParameterChanged(true,true);
+				
+				if (tabs.selectedIndex == 1 || globalState.modifyExisting==false)
+				{
+					clickApplySound();
+				}
 
             }
 
@@ -1221,18 +1215,24 @@
 				if (pasted==null)
 					return;
 				
-                if (pasted.indexOf("|") == -1)
-                {
-					synthInterface.DeserializeFromClipboard(pasted);
-					tabs.selectedIndex = 0;
-                }
-                else
-                {
-					mixerInterface.DeserializeFromClipboard(pasted);
-                    tabs.selectedIndex = 1;
-                }
+                FromClipboard(pasted);
             }
 
+			/** Creates a new sound item from the passed text. */
+			private function FromClipboard(str:String):void
+			{
+				if (str.indexOf("|") == -1)
+				{
+					synthInterface.DeserializeFromClipboard(str);
+					tabs.selectedIndex = 0;
+				}
+				else
+				{
+					mixerInterface.DeserializeFromClipboard(str);
+					tabs.selectedIndex = 1;
+				}
+			}
+			
             private function OnTabChanged(event:Event):void
             {
                 switch (tabs.selectedIndex)

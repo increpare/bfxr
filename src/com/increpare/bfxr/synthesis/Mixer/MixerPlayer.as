@@ -57,7 +57,7 @@ package com.increpare.bfxr.synthesis.Mixer
 		{
 			var ar:Array = settings.split(">");
 			id = int(ar[0]);
-			volume = int(ar[1]);
+			volume = Number(ar[1]);
 			for (var i:int=2;i<ar.length;i++)
 			{
 				var s:String = ar[i];
@@ -97,7 +97,7 @@ package com.increpare.bfxr.synthesis.Mixer
 					
 					var b:ByteArray = new ByteArray();
 					
-					var silentbytes:int = int(tracks[i].data.onset*44100)*4;
+					var silentbytes:int = int(tracks[i].data.onset*44100/2)*4*2;//ensure multiple of 8...
 					
 					// create starting silence.
 					while(silentbytes>0)
@@ -174,62 +174,7 @@ package com.increpare.bfxr.synthesis.Mixer
 			
 			return ww.outBuffer;
 		}
-		
-		private function getWavByteArray(sampleRate:uint = 44100, bitDepth:uint = 16):ByteArray
-		{
-			//synth all individual wave files
-			var waves : Vector.<ByteArray> = new Vector.<ByteArray>();			
-			
-			_lastplayeddata=null;//so it'll regenerate them with proper data on next play, rather than playing back the wav file data.
-			_preparedsounds = new Vector.<ByteArray>();
-			_preparedvolumes = new Vector.<Number>();			
-			for (var i:int=0;i<tracks.length;i++)
-			{
-				if (tracks[i].IsSet()==false)
-				{
-					continue;
-				}
 				
-				var b:ByteArray = new ByteArray();
-				
-				var silentbytes:uint= uint(tracks[i].data.onset*44100);
-				silentbytes -= (silentbytes%4);
-				trace("silence for track " + i.toString() + " : " + silentbytes);
-				
-				//if (bitDepth==16)
-				//	silentbytes*=2;
-				//if (sampleRate == 22050)
-				//	silentbytes/=2;	
-				
-				// create starting silence.
-				while(silentbytes>0)
-				{
-					var bytestocopy:int=Math.min(silentbytes,_zeros.length);
-					
-					b.writeBytes(_zeros,0,bytestocopy);
-					
-					silentbytes-=bytestocopy;
-				}
-				
-				
-				var synthwavefile:ByteArray = tracks[i].synth.getWavFile(); 
-				//assumes sourcesounds already populated by wav-compatible waves
-				// 36 = skip past header info
-				b.writeBytes(synthwavefile,36);				
-				
-				b.position=0;
-				_preparedsounds.push(b);
-				_preparedvolumes.push(tracks[i].data.volume);
-			}
-			
-			//now to mix
-			Mix(bitDepth==16 ? 2 : 1);
-			
-			
-			return _waveData;
-		}
-
-		
 		/** param is whether to work in bytes, shorts, or floats (1,2,4)*/
 		private function Mix(unitsize:int=4):void
 		{
@@ -310,17 +255,19 @@ package com.increpare.bfxr.synthesis.Mixer
 					}
 					break;
 			}
+			
+			_waveData.position=0;
 		}
 						
 		private function onSoundData(e:SampleDataEvent) : void
-		{		
-			if (_updateCallback!=null)
-			{
-				_updateCallback(_waveDataPos/(4*44100));
-			}
-			
+		{					
 			if (_caching)
 			{
+				if (_updateCallback!=null)
+				{
+					_updateCallback(_waveDataPos/(4*44100));
+				}
+				
 				if(_waveDataPos + _waveDataBytes > _waveDataLength)
 				{
 					_waveDataBytes = _waveDataLength - _waveDataPos;
@@ -330,10 +277,10 @@ package com.increpare.bfxr.synthesis.Mixer
 				if(_waveDataBytes > 0) e.data.writeBytes(_waveData, _waveDataPos, _waveDataBytes);
 				
 				//if too short..append data
-				if (e.data.length<_waveDataBytes) 
+				if (e.data.position<24576) 
 				{
 					_caching=false;
-					while (e.data.length<_waveDataBytes)
+					while (e.data.position<24576)
 					{
 						e.data.writeFloat(0.0);
 					}

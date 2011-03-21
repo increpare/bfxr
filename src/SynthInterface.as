@@ -28,18 +28,12 @@ package
 
 		private var _globalState:GlobalState;
 		
-		private var _volumeSlider:HSlider;
-		
-		private var _lockWave : CheckBox;
-		
 		private var _app:sfxr_interface;
 		
-        public function SynthInterface(app:sfxr_interface, globalState:GlobalState,volumeSlider:HSlider)
+        public function SynthInterface(app:sfxr_interface, globalState:GlobalState)
         {
 			_app=app;
 			_globalState = globalState;
-			_volumeSlider = volumeSlider;
-			_lockWave = app.lockwave;
             _synth = new SfxrSynth();
 			_synth.params.randomize();	
 			
@@ -114,10 +108,10 @@ package
 					_synth.params.setParam(sprd.tag, sprd.value);
 					break;
 				case "wavetype":    
-					_synth.params.setParamLocked("waveType", _lockWave.selected);					
+					_synth.params.setParamLocked("waveType", _app.lockwave.selected);					
 					break;
 				case "volume":					
-					_synth.params.setParam("masterVolume", _volumeSlider.value);
+					_synth.params.setParam("masterVolume", _app.volumeslider.value);
 					break;
 				default:
 					throw new Error("tag not identified");
