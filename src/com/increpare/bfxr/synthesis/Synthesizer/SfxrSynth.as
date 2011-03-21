@@ -212,6 +212,8 @@
 		 */
 		public function play(updateCallback:Function = null,volume:Number=1):void
 		{
+			trace ("playing : " + this.params.Serialize());
+			
 			if (_cachingAsync) return;
 			
 			this.updateCallback = updateCallback;

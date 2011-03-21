@@ -122,9 +122,12 @@
 
             private var ba:ByteArray = new ByteArray();
 
+			private var broken:Boolean = false;
             private function timerHandler(event:TimerEvent):void
             {
-				/*
+				if(broken)
+					return;
+				
 				//gives sandbox violation if other stuff going on :(
 				try
 				{
@@ -145,9 +148,9 @@
 				}
 				catch (e:Error)
 				{
+					broken=true;
 					trace(e.message);
-				}
-				*/
+				}				
             }
 
             private function keyDown(event:KeyboardEvent):void
@@ -911,6 +914,25 @@
 					}
 				}
             }
+			
+			private function ResetMasterVolume(event:Event):void
+			{
+				switch (tabs.selectedIndex)
+				{
+					case 0:
+					{
+						volumeslider.value=0.5;
+						VolumeChanged(event);					
+						break;
+					}
+					case 1:
+					{
+						volumeslider.value=1.0;
+						VolumeChanged(event);	
+						break;
+					}
+				}
+			}
 
             private var _fileRef:FileReference; // File reference for loading in sfs file
 
@@ -1118,15 +1140,18 @@
             private function clickSaveSound():void
             {
 				var dat:String;
+				var name:String;
 				switch (tabs.selectedIndex)
 				{
 					case 0:
 					{
+						name = (soundList.selectedItem as SoundData).label;
 						dat = synthInterface.Serialize();
 						break;
 					}
 					case 1:
 					{
+						name = (layerList.selectedItem as LayerData).label;
 						dat = mixerInterface.Serialize();
 						break;
 					}
@@ -1134,7 +1159,7 @@
 				
 				try
 				{
-					new FileReference().save(dat, "sfx.sfs");
+					new FileReference().save(dat, name+".sfs");
 				}
 				catch(e:Error)
 				{
@@ -1492,38 +1517,49 @@
                                         <s:ToggleButton id="W4"
                                             width="65"
                                             label="Triangle"
-                                            change="synthInterface.WaveformSelect(event)"/>
+                                            change="synthInterface.WaveformSelect(event)"
+											toolTip="Triangle waves are robust at all frequencies, stand out quite well in most situations, and have a clear, resonant quality."
+											/>
                                         <s:ToggleButton id="W2"
                                             x="37.9" y="40.9" width="65"
                                             label="Sin"
-                                            change="synthInterface.WaveformSelect(event)"/>
+                                            change="synthInterface.WaveformSelect(event)"
+											toolTip="Sin waves are the most elementary of all wave-types.  However, they can be sensitive to context (background noise or accoustics can drown them out sometimes), so be careful."
+											/>
                                         <s:ToggleButton id="W0"
                                             width="65"
                                             label="Square"
+											toolTip="Square waves can be quite powerful.  They have two extra properties, Square Duty and Duty Sweep, that can further control the timbre of the wave"
                                             change="synthInterface.WaveformSelect(event)"/>
                                         <s:ToggleButton id="W1"
                                             width="65"
                                             label="Saw"
+											toolTip="Saw waves are raspy mother-fuckers."
                                             change="synthInterface.WaveformSelect(event)"/>
                                         <s:ToggleButton id="W8"
                                             width="65"
                                             label="Breaker"
+											toolTip="These are defined by a quadratic equation (a=t*t%1, giving a toothed-shaped), making them a little more hi-fi than other wave-types on this list.  For the most part, like a smoother triangle wave."											
                                             change="synthInterface.WaveformSelect(event)"/>
                                         <s:ToggleButton id="W6"
                                             width="65"
                                             label="Tan"
+											toolTip="A potentially crazy wave.  Does strange things.  Tends to produce plenty of distortion	 (because the basic shape goes outside of the standard waveform range - giving pre-amp)."											
                                             change="synthInterface.WaveformSelect(event)"/>
                                         <s:ToggleButton id="W7"
                                             width="65"
                                             label="Whistle"
+											toolTip="A sin wave with an extra wav overlayed at a lower amplitude and 20x the frequency,"											
                                             change="synthInterface.WaveformSelect(event)"/>
                                         <s:ToggleButton id="W3"
                                             x="32.35" y="61.6" width="65"
                                             label="White"
+											toolTip="White noise is your bog standard random number stream.  Quite hard-sounding, compared to pink noise."										
                                             change="synthInterface.WaveformSelect(event)"/>
                                         <s:ToggleButton id="W5"
                                             x="95.9" y="62.05" width="65"
                                             label="Pink "
+											toolTip="Pink noise is a stream of random numbers with a filtered frequency spectrum to make it softer than white noise."											
                                             change="synthInterface.WaveformSelect(event)"/>
                                     </s:TileGroup>
                                 </s:HGroup>
@@ -1655,7 +1691,7 @@
                 maximum="1"
                 stepSize="0.01"
                 changeEnd="VolumeChanged(event)"/>
-            <s:Label text="Master Volume"/>
+            <s:Label text="Master Volume" click="ResetMasterVolume(event)"/>
             <mx:Spacer height="10"/>
             <s:Button id="exportwav"
                 label="Export Wav"
@@ -1667,6 +1703,7 @@
             	id="loadmenu"
             	creationComplete="{Menu(loadmenu.popUp).selectedIndex=0;}"
             	label="Load from Disk"
+				toolTip="Loads a particular synthesized sound or mix from your hard disk in the bfxr file format."
             	itemClick="clickLoadAll(event)"
             	/>
             <mx:PopUpMenuButton 
@@ -1676,6 +1713,7 @@
             	id="savemenu"
             	creationComplete="{Menu(savemenu.popUp).selectedIndex=0;}"
             	label="Save to Disk"
+				toolTip="Save the current synthesized sound or mix to your hard disk in the bfxr file format."
             	itemClick="clickSaveAll(event)"
             	/>
             <s:Button id="linkbutton"
