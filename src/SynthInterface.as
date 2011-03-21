@@ -108,7 +108,8 @@ package
 					_synth.params.setParam(sprd.tag, sprd.value);
 					break;
 				case "wavetype":    
-					_synth.params.setParamLocked("waveType", _app.lockwave.selected);					
+					_synth.params.setParamLocked("waveType", _app.lockwave.selected);
+					audible=false;					
 					break;
 				case "volume":					
 					_synth.params.setParam("masterVolume", _app.volumeslider.value);

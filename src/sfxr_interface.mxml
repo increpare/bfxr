@@ -226,15 +226,17 @@
             }
 			
 			private function onInitialize():void
-			{							
-				globalState = new GlobalState();
+			{					
+				saveManager = new SaveManager(this);				
+				saveManager.LoadData();
+				globalState = saveManager.loadGlobal();
+				
 				synthInterface = new SynthInterface(this,globalState);
 				mixerInterface = new MixerInterface(this,globalState);
 				
 				_time.addEventListener(TimerEvent.TIMER, timerHandler);
 				_time.start();												
 
-				saveManager = new SaveManager(this);
 
 			}
 			
@@ -265,14 +267,8 @@
 				//mixerListComponent.dataProvider = mixerInterface.mixerController.trackViews;
 				
 				//SoundParameterGroup.invalidateDisplayList();
-				//SoundParameterGroup.invalidateProperties();
-				
-
-                saveManager.LoadData();
-				
-                playonchange.selected = saveManager.playonchange;//not sure why this isn't triggering OnPlayOnChangeChange :/
-				globalState.playOnChange=playonchange.selected;
-								
+				//SoundParameterGroup.invalidateProperties();				
+												
 				soundList.dataProvider = soundItems;
 				layerList.dataProvider = layerItems;
 				
@@ -325,8 +321,9 @@
 				
 				synthInterface.RefreshUI();
 				mixerInterface.RefreshUI();
+				OnGlobalParameterChanged();
 								
-                DisableApplyButton(true);								
+                DisableApplyButton(true);				
             }
 
 			//* also sets the modified state for the selected item in the lists
@@ -1393,7 +1390,7 @@
                     label="Modify existing"
                     selected="false"
 					toolTip="Whether to modify current tracks when a preset is clicked, as opposed to creating a new one."
-					valueCommit="globalState.OnModifyExistingChange(event)"
+					valueCommit="{this.globalState.OnModifyExistingChange(event); saveManager.commitGlobal(globalState);}"
                 change="CommitGlobal()"
                 />
             </s:BorderContainer>
@@ -1442,7 +1439,7 @@
                     width="170" height="100%"
                     click="soundListSelectionChanged(event)"
                     itemRenderer="components.SoundListItemRenderer"
-					valueCommit="this.globalState.OnSoundListSelectionChanged(event)"
+					valueCommit="{this.globalState.OnSoundListSelectionChanged(event); saveManager.commitGlobal(globalState);}"
                     contentBackgroundColor="#CCBDA1"
                     requireSelection="true"/>
 
@@ -1612,7 +1609,7 @@
                                 requireSelection="true"
                                 itemRenderer="components.LayerListItemRenderer"
                                 contentBackgroundColor="#CCBDA1"								
-								valueCommit="globalState.OnLayerListSelectionChanged(event)"
+								valueCommit="{this.globalState.OnLayerListSelectionChanged(event); saveManager.commitGlobal(globalState);}"
 								/>
                         </s:VGroup>
                     </s:NavigatorContent>
@@ -1646,7 +1643,7 @@
             <s:CheckBox id="playonchange"
                 label="Play On Change"
                 selected="true"
-				valueCommit="globalState.OnPlayOnChangeChange(event)"
+				valueCommit="{this.globalState.OnPlayOnChangeChange(event); saveManager.commitGlobal(globalState);}"
 				change="CommitGlobal()"
 				/>
             <s:Button 

@@ -369,6 +369,10 @@
 							{
 								_cachingMutation = -1;
 							}
+							
+							this.dispatchEvent(new Event(SfxrSynth.CACHED));
+							dispatchEvent(new Event(SfxrSynth.PLAY_COMPLETE));
+							updateCallback=null;
 						}
 						
 						_waveDataBytes = _cachedMutation.length - _waveDataPos;
@@ -389,6 +393,14 @@
 							while (_cachedWave.length<24576) _cachedWave.writeFloat(0.0);
 							
 							_cachingNormal = false;							
+							
+							
+							if ((length = _cachedWave.length) < 24576)
+							{
+								// If the sound is smaller than the buffer length, add silence to allow it to play
+								_cachedWave.position = length;														
+								while (_cachedWave.length<24576) _cachedWave.writeFloat(0.0);
+							}
 							
 							this.dispatchEvent(new Event(SfxrSynth.CACHED));
 							dispatchEvent(new Event(SfxrSynth.PLAY_COMPLETE));

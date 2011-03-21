@@ -74,8 +74,8 @@ package
 			var ar:Array = dat.split(",");
 			playOnChange=ar[0]=="false"?false:true;
 			modifyExisting=ar[1]=="false"?false:true;
-			selectedSoundItemID=ar[2];
-			selectedLayerItemID=ar[3];
+			selectedSoundItemID=int(ar[2]);
+			selectedLayerItemID=int(ar[3]);
 		}
 	}
 }

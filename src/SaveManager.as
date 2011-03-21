@@ -1,11 +1,15 @@
 package
 {
-	import flash.net.SharedObject;
-	
-	import mx.collections.ArrayList;
 	import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
+	
 	import dataClasses.LayerData;
 	import dataClasses.SoundData;
+	
+	import flash.net.SharedObject;
+	
+	import flashx.textLayout.elements.GlobalSettings;
+	
+	import mx.collections.ArrayList;
 	
 	public class SaveManager
 	{
@@ -46,10 +50,28 @@ package
 		{
 			//don't need to worry about tripping over other people's values			
 			_saveDat.data.playonchange = gs.playOnChange;
+			_saveDat.data.modifyExisting = gs.modifyExisting;
 			_saveDat.data.selectedSoundItemID = gs.selectedSoundItemID;	
 			_saveDat.data.selectedLayerItemID = gs.selectedLayerItemID;			
 			OnChange();	
 		}
+		
+		
+		public function loadGlobal():GlobalState
+		{
+			var gs:GlobalState = new GlobalState();
+			
+			if (_saveDat.data.playonchange !== undefined)
+			{
+				gs.playOnChange = _saveDat.data.playonchange;
+				gs.modifyExisting = _saveDat.data.modifyExisting;
+				gs.selectedSoundItemID = _saveDat.data.selectedSoundItemID;	
+				gs.selectedLayerItemID = _saveDat.data.selectedLayerItemID;
+			}
+			
+			return gs;
+		}
+		
 		
 		public function LoadSavedSoundsFromSharedObject(soundList:ArrayList):void
 		{
@@ -273,7 +295,10 @@ package
 					_saveDat.data.samplerate = 0;
 					_saveDat.data.bitdepth = 0;
 					_saveDat.data.playonchange = true;
+					_saveDat.data.modifyExisting = false;
 				}
+				
+				loadGlobal()
 				
 				OnChange();	
 			}

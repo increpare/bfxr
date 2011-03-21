@@ -1,7 +1,8 @@
 package com.increpare.bfxr.synthesis.Synthesizer   
 {
-	import mx.utils.StringUtil;
 	import com.increpare.bfxr.synthesis.ISerializable;
+	
+	import mx.utils.StringUtil;
 
 	/**
 	 * SfxrParams
@@ -491,8 +492,6 @@ package com.increpare.bfxr.synthesis.Synthesizer
 				sustainPunch:2,
 				overtones:3,
 				overtoneFalloff:0.25,
-				slide:5,
-				deltaSlide:3,
 				vibratoDepth:3,
 				dutySweep:3,
 				flangerOffset:3,
@@ -535,7 +534,20 @@ package com.increpare.bfxr.synthesis.Synthesizer
 				if (Math.random()<0.5)
 					setParam("repeatSpeed",0);
 			}
-					
+						
+			if (!lockedParam("slide"))
+			{
+				r=Math.random()*2-1;
+				r=Math.pow(r,5);
+				setParam("slide",r);
+			}
+			if (!lockedParam("deltaSlide"))
+			{
+				r=Math.random()*2-1;
+				r=Math.pow(r,3);
+				setParam("deltaSlide",r);
+			}
+			
 			if (!lockedParam("minFrequency"))
 				setParam("minFrequency",0);
 			
