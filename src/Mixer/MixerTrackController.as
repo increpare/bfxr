@@ -165,6 +165,7 @@ package Mixer
 			OnMixerDropdownClick();
 		}
 		
+		/* called when a person starts changing the onset or volume, stops play */
 		private function OnMixerStartDrag():void
 		{
 			_parent.MixerStopAll();

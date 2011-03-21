@@ -243,17 +243,18 @@ package
 				_app.AddToSoundList("Sound",true,false,id);
 				_app.synthInterface.Deserialize(descriptions[i]);
 				_app.synthInterface.OnParameterChanged(true,true);
+				_app.clickApplySound();
 			}			
-			
+				
 			OnParameterChanged(false,true);
-			RefreshUI();
-			
-			_app.DisableApplyButton(false);	
+			_app.clickApplyLayer();
+			RefreshUI();			
 		}
 				
 		public function getWavFile():ByteArray
 		{
-			return null;	
+			
+			return mixerController.mixerPlayer.getWavFile(_globalState.sampleRate,_globalState.bitDepth);
 		}
 		
 		

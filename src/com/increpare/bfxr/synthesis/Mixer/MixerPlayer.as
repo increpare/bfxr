@@ -10,6 +10,7 @@ package com.increpare.bfxr.synthesis.Mixer
 	import flash.media.Sound;
 	import flash.media.SoundChannel;
 	import flash.utils.ByteArray;
+	import flash.utils.Endian;
 
 	public class MixerPlayer extends EventDispatcher implements ISerializable
 	{
@@ -73,6 +74,7 @@ package com.increpare.bfxr.synthesis.Mixer
 		private var _waveDataBytes:int=-1;
 		private var _waveDataPos:uint=0;
 		private var _preparedsounds:Vector.<ByteArray>;
+		private var _preparedvolumes:Vector.<Number>; //stores corresponding volumes
 		private static var _zeros:ByteArray;
 		
 		public function play(updateCallback:Function=null):void
@@ -86,6 +88,7 @@ package com.increpare.bfxr.synthesis.Mixer
 				
 				//copy tracks over and add whitespace
 				_preparedsounds = new Vector.<ByteArray>();
+				_preparedvolumes = new Vector.<Number>();
 				for (var i:int=0;i<tracks.length;i++)
 				{
 					if (tracks[i].IsSet()==false)
@@ -111,6 +114,7 @@ package com.increpare.bfxr.synthesis.Mixer
 					
 					b.position=0;
 					_preparedsounds.push(b);
+					_preparedvolumes.push(tracks[i].data.volume);
 				}
 				
 				Mix();
@@ -145,6 +149,117 @@ package com.increpare.bfxr.synthesis.Mixer
 			}
 		}
 		
+		/**
+		 * Returns a ByteArray of the wave in the form of a .wav file, ready to be saved out
+		 * @param	sampleRate		Sample rate to generate the .wav at	
+		 * @param	bitDepth		Bit depth to generate the .wav at	
+		 * @return					Wave in a .wav file
+		 */
+		public function getWavFile(sampleRate:uint = 44100, bitDepth:uint = 16):ByteArray
+		{
+			stop();			
+			
+			var waveDataBody : ByteArray = getWavByteArray(sampleRate,bitDepth);
+			
+			if (sampleRate != 44100) sampleRate = 22050;
+			if (bitDepth != 16) bitDepth = 8;
+			
+			var soundLength:uint = waveDataBody.length;
+			//if (bitDepth == 16) soundLength *= 2;
+			//if (sampleRate == 22050) soundLength /= 2;
+			
+			var filesize:int = 36 + soundLength;
+			var blockAlign:int = bitDepth / 8;
+			var bytesPerSec:int = sampleRate * blockAlign;
+			
+			var wav:ByteArray = new ByteArray();
+			
+			// Header
+			wav.endian = Endian.BIG_ENDIAN;
+			wav.writeUnsignedInt(0x52494646);		// Chunk ID "RIFF"
+			wav.endian = Endian.LITTLE_ENDIAN;
+			wav.writeUnsignedInt(filesize);			// Chunck Data Size
+			wav.endian = Endian.BIG_ENDIAN;
+			wav.writeUnsignedInt(0x57415645);		// RIFF Type "WAVE"
+			
+			// Format Chunk
+			wav.endian = Endian.BIG_ENDIAN;
+			wav.writeUnsignedInt(0x666D7420);		// Chunk ID "fmt "
+			wav.endian = Endian.LITTLE_ENDIAN;
+			wav.writeUnsignedInt(16);				// Chunk Data Size
+			wav.writeShort(1);						// Compression Code PCM
+			wav.writeShort(1);						// Number of channels
+			wav.writeUnsignedInt(sampleRate);		// Sample rate
+			wav.writeUnsignedInt(bytesPerSec);		// Average bytes per second
+			wav.writeShort(blockAlign);				// Block align
+			wav.writeShort(bitDepth);				// Significant bits per sample
+			
+			// Data Chunk
+			wav.endian = Endian.BIG_ENDIAN;
+			wav.writeUnsignedInt(0x64617461);		// Chunk ID "data"
+			wav.endian = Endian.LITTLE_ENDIAN;
+			wav.writeUnsignedInt(soundLength);		// Chunk Data Size
+			
+			wav.writeBytes(waveDataBody);
+			
+			wav.position = 0;
+			
+			return wav;
+		}
+		
+		private function getWavByteArray(sampleRate:uint = 44100, bitDepth:uint = 16):ByteArray
+		{
+			//synth all individual wave files
+			var waves : Vector.<ByteArray> = new Vector.<ByteArray>();			
+			
+			_lastplayeddata=null;//so it'll regenerate them with proper data on next play, rather than playing back the wav file data.
+			_preparedsounds = new Vector.<ByteArray>();
+			_preparedvolumes = new Vector.<Number>();			
+			for (var i:int=0;i<tracks.length;i++)
+			{
+				if (tracks[i].IsSet()==false)
+				{
+					continue;
+				}
+				
+				var b:ByteArray = new ByteArray();
+				
+				var silentbytes:int= int(tracks[i].data.onset*44100);
+				
+				if (bitDepth==16)
+					silentbytes*=2;
+				if (sampleRate == 44100)
+					silentbytes*=2;	
+				
+				// create starting silence.
+				while(silentbytes>0)
+				{
+					var bytestocopy:int=Math.min(silentbytes,_zeros.length);
+					
+					b.writeBytes(_zeros,0,bytestocopy);
+					
+					silentbytes-=bytestocopy;
+				}
+				
+				
+				var synthwavefile:ByteArray = tracks[i].synth.getWavFile(sampleRate,bitDepth); 
+				//assumes sourcesounds already populated by wav-compatible waves
+				// 36 = skip past header info
+				b.writeBytes(synthwavefile,36);				
+				
+				b.position=0;
+				_preparedsounds.push(b);
+				_preparedvolumes.push(tracks[i].data.volume);
+			}
+			
+			//now to mix
+			Mix(bitDepth==16 ? 2 : 1);
+			
+			
+			return _waveData;
+		}
+
+		
 		/** param is whether to work in bytes, shorts, or floats (1,2,4)*/
 		private function Mix(unitsize:int=4):void
 		{
@@ -166,7 +281,7 @@ package com.increpare.bfxr.synthesis.Mixer
 						{
 							if (_preparedsounds[i].position<_preparedsounds[i].length-unitsize)
 							{
-								val += _preparedsounds[i].readByte()*tracks[i].data.volume;
+								val += _preparedsounds[i].readByte()*_preparedvolumes[i];
 								added=true;
 							}
 						}
@@ -190,7 +305,7 @@ package com.increpare.bfxr.synthesis.Mixer
 						{
 							if (_preparedsounds[i].position<_preparedsounds[i].length-unitsize)
 							{
-								val += _preparedsounds[i].readShort()*tracks[i].data.volume;
+								val += _preparedsounds[i].readShort()*_preparedvolumes[i];
 								added=true;
 							}
 						}
@@ -214,7 +329,7 @@ package com.increpare.bfxr.synthesis.Mixer
 						{
 							if (_preparedsounds[i].position<_preparedsounds[i].length-unitsize)
 							{
-								valf += _preparedsounds[i].readFloat()*tracks[i].data.volume;
+								valf += _preparedsounds[i].readFloat()*_preparedvolumes[i];
 								added=true;
 							}
 						}

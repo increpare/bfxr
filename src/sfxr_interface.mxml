@@ -242,8 +242,27 @@
 
 			}
 			
+			private function hasModifiedData():Boolean
+			{
+				var i:int;
+				for (i=0;i<soundItems.length;i++)
+				{
+					var sd:SoundData = soundItems.getItemAt(i) as SoundData;
+					if (sd.modified)
+						return true;
+				}
+				for (i=0;i<layerItems.length;i++)
+				{
+					var ld:LayerData = layerItems.getItemAt(i) as LayerData;
+					if (ld.modified)
+						return true;
+				}
+				
+				return false;
+			}
             private function onApplicationComplete():void
             {					
+				ExternalInterface.addCallback("hasModifiedData",hasModifiedData);
 				
 				//SoundParameterGroup.dataProvider=SoundParameterList;
 				
@@ -685,7 +704,7 @@
                 }
 
                 synthInterface.RefreshUI();
-                synthInterface.OnParameterChanged();
+                synthInterface.OnParameterChanged(true,false);
 
             }
 
@@ -706,7 +725,7 @@
                 }
             }
 
-            protected function clickApplySound():void
+            public function clickApplySound():void
             {
                 //save changes
                 var index:int = this.soundList.selectedIndex;
@@ -717,10 +736,13 @@
                 //s.data=_synth.params.Serialize();
                 saveManager.UpdateSoundItem(s);
 
-                DisableApplyButton(true);
+				if (tabs.selectedIndex==0)
+				{
+                	DisableApplyButton(true);
+				}
             }
 
-            protected function clickApplyLayer():void
+            public function clickApplyLayer():void
             {
                 //save changes
                 var index:int = this.layerList.selectedIndex;
@@ -779,6 +801,9 @@
 
                 mixerInterface.Deserialize(l.data);
 
+				mixerInterface.RemoveOrphanSounds();
+				mixerInterface.CheckIfSoundsOutOfDate();
+				
                 UIUpdateTrigger();
 				mixerInterface.OnParameterChanged(true, true);
                 DisableApplyButton(true);
@@ -1166,6 +1191,7 @@
 
             private function SaveMixerWave():void
             {	
+				mixerInterface.mixerController.MixerStopAll();
 				var file:ByteArray = mixerInterface.getWavFile();	
 				
                 new FileReference().save(file, "sfx.wav");

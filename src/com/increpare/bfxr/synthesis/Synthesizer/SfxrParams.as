@@ -92,7 +92,7 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		["Pitch Jump Onset 2","When the note shift happens.",
 			7,"changeSpeed2",0,0,1], 		
 		
-		["Square Duty","ontrols the ratio between the up and down states of the square wave, changing the tibre .",
+		["Square Duty","Controls the ratio between the up and down states of the square wave, changing the tibre .",
 			8,"squareDuty",0,0,1], 		
 		["Duty Sweep","Sweeps the duty up or down",
 			8,"dutySweep",0,-1,1], 		

@@ -36,6 +36,33 @@
 		    
         <script type="text/javascript" src="swfobject.js"></script>
         <script type="text/javascript">
+        function thisMovie(movieName) {
+	         if (navigator.appName.indexOf("Microsoft") != -1) {
+	             return window[movieName];
+	         } else {
+	             return document[movieName];
+	         }
+	     }
+	        
+        
+        function beforeunloadcallback(e) {
+        	if (thisMovie("sfxr_interface").hasModifiedData()) {
+			if(!e) e = window.event;
+			//e.cancelBubble is supported by IE - this will kill the bubbling process.
+			e.cancelBubble = true;
+			e.returnValue = 'There are unapplied changes.  Are you sure you want to leave?'; //This is displayed on the dialog
+		
+			//e.stopPropagation works in Firefox.
+			if (e.stopPropagation) {
+				e.stopPropagation();
+				e.preventDefault();
+			}
+		}
+	}
+        window.onbeforeunload=beforeunloadcallback;
+        
+        </script>
+        <script type="text/javascript">
             <!-- For version detection, set to min. required Flash Player version, or 0 (or 0.0.0), for no version detection. --> 
             var swfVersionStr = "10.0.0";
             <!-- To use express install, set to playerProductInstall.swf, otherwise the empty string. -->
