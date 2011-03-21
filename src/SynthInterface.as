@@ -162,7 +162,8 @@ package
 			_app.AddToSoundList("Paste", true);
 			Deserialize(str);
 			RefreshUI();
-			OnParameterChanged(true, false);
+			OnParameterChanged(true, true);
+			_app.clickApplySound();
 		}
 		
 		public function WaveformSelect(event:Event):void

@@ -212,7 +212,7 @@
 		 */
 		public function play(updateCallback:Function = null,volume:Number=1):void
 		{
-			trace ("playing : " + this.params.Serialize());
+			trace("playing : " + this.params.Serialize());
 			
 			if (_cachingAsync) return;
 			
@@ -706,7 +706,7 @@
 			_slide = 1.0 - p.getParam("slide") * p.getParam("slide") * p.getParam("slide") * 0.01;
 			_deltaSlide = -p.getParam("deltaSlide") * p.getParam("deltaSlide") * p.getParam("deltaSlide") * 0.000001;
 			
-			if (p.getParam("waveType") == 0)
+			if (int(p.getParam("waveType")) == 0)
 			{
 				_squareDuty = 0.5 - p.getParam("squareDuty") * 0.5;
 				_dutySweep = -p.getParam("dutySweep") * 0.00005;
@@ -744,7 +744,7 @@
 				
 				_masterVolume = p.getParam("masterVolume") * p.getParam("masterVolume");
 				
-				_waveType = p.getParam("waveType");
+				_waveType = uint(p.getParam("waveType"));
 				
 				if (p.getParam("sustainTime") < 0.01) p.setParam("sustainTime", 0.01);
 				

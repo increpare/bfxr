@@ -515,15 +515,12 @@ package com.increpare.bfxr.synthesis.Synthesizer
 			{
 				if (!lockedParam(param))
 				{
-					if (Math.random()<0.5)
-					{
-						var min:Number = getMin(param);
-						var max:Number = getMax(param);
-						var r:Number = Math.random();
-						if (param in RandomizationPower)
-							r=Math.pow(r,RandomizationPower[param]);
-						_params[param] = min  + (max-min)*r;
-					}
+					var min:Number = getMin(param);
+					var max:Number = getMax(param);
+					var r:Number = Math.random();
+					if (param in RandomizationPower)
+						r=Math.pow(r,RandomizationPower[param]);
+					_params[param] = min  + (max-min)*r;
 				}
 			}
 			
