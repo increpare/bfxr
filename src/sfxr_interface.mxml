@@ -42,6 +42,7 @@
 			import mx.logging.Log;
 			import mx.logging.LogEventLevel;
 			import mx.logging.targets.TraceTarget;
+			import mx.utils.StringUtil;
 			import mx.utils.URLUtil;
 			
 			import spark.components.VScrollBar;
@@ -405,8 +406,6 @@
                 }
 
 				UIUpdateTrigger();
-				synthInterface.OnParameterChanged(true, false);
-				AddToSoundList("Linked", true);
 				
                 return true;
             }
@@ -667,13 +666,40 @@
 
             private var lastmanipulation:String = "Randomize";
 
+			private function stripTrailingNumbers(s:String):String
+			{
+				var result:String = s;
+				const nums:String="0123456789";
+				for (var i:int=result.length-1;i>=0;i--)
+				{
+					var k:int = nums.indexOf(result.charAt(i));
+					if (k>=0)
+					{
+						result = result.substr(0,result.length-1);
+					}
+					else
+					{
+						break;
+					}
+				}
+				return result;
+			}
             protected function clickPreset(event:MouseEvent):void
             {
                 var b:Button = event.target as Button;
-
+							
                 if (tabs.selectedIndex == 1 || globalState.modifyExisting==false)
                 {
-                    AddToSoundList(b.label, true);
+					var newsoundname:String=b.label;
+					if (b.id=="mutate")
+					{
+						//give the new item the same name as the old one
+						var sd:SoundData = SoundData(soundList.selectedItem);
+						newsoundname = stripTrailingNumbers(sd.label);
+						
+					}
+					
+                    AddToSoundList(newsoundname, true);
                 }
 				
 				synthInterface.GeneratePreset(b.id);
@@ -793,18 +819,26 @@
 
             protected function clickNew(event:MouseEvent):void
             {
-
+				var name:String;
                 switch (tabs.selectedIndex)
                 {
                     case 0:
                     {
-                        AddToSoundList(lastmanipulation, true, false);
+						var sd:SoundData = SoundData(soundList.selectedItem);
+						
+						name = stripTrailingNumbers(sd.label);
+						
+                        AddToSoundList(name, true, false);
                         DisableApplyButton(false);
                         break;
                     }
                     case 1:
                     {
-                        AddToLayerList("Mix", true);
+						var ld:LayerData = LayerData(layerList.selectedItem);
+						
+						name = stripTrailingNumbers(ld.label);
+						
+                        AddToLayerList(name, true);
                         DisableApplyButton(false);
                         break;
                     }
@@ -1233,7 +1267,7 @@
 
             protected function clickPasteButton():void
             {
-                var pasted:String = ExternalInterface.call('function(){return prompt();}');
+                var pasted:String = ExternalInterface.call('function(){return prompt("Enter sound text below:");}');
 				if (pasted==null)
 					return;
 				
@@ -1301,16 +1335,17 @@
             protected function clickLinkButton():void
             {
                 var base:String = ExternalInterface.call('window.location.href.toString');
-                base = base.split("?")[0];
 
-                var myurl:String = base;
+                var myurl:String = base.split("?")[0];
 				
 				switch (tabs.selectedIndex)
 				{
 					case 0:
 						myurl += "?s=" + escape(synthInterface.Serialize());
+						break;
 					case 1:
 						myurl += "?s=" + escape(mixerInterface.Serialize());
+						break;
 				}
 				
                 System.setClipboard(myurl);
@@ -1409,7 +1444,7 @@
                     label="Randomize"
                     click="clickPreset(event)"/>
                 <s:Button id="mutate"
-                    label="Mutate"
+                    label="Mutation"
                     click="clickPreset(event)"/>
                 <s:CheckBox id="modifyexisting"
                     label="Modify existing"

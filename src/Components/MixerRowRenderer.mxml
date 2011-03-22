@@ -195,14 +195,12 @@
 		<s:fill><s:SolidColor color="0xffccbda1" /></s:fill>	
 	</s:Rect>
 	
-	<s:BorderContainer width="191" backgroundColor="0xccbda1" backgroundAlpha="1.0" right="0" mouseDown="sliderImageContainerClick(event)"  id="sliderimagecontainer" visible="{data.graphic!=null}" top="0" height="75">		
+	<s:BorderContainer useHandCursor="true"  buttonMode="true" width="191" backgroundColor="0xccbda1" backgroundAlpha="1.0" right="0" mouseDown="sliderImageContainerClick(event)"  id="sliderimagecontainer" visible="{data.graphic!=null}" top="0" height="75">		
 		<s:layout>
 			<s:BasicLayout/>
 		</s:layout>
-		<mx:Image x="{data.onset}" y="0"  mouseDown="sliderImageClick(event)" source="{data.graphic}" visible="{data.graphic!=null}" scaleContent="false" height="100%" id="sliderimage"/>
-		
-		
-		
+		<mx:Image x="{data.onset}" y="0" useHandCursor="true"  buttonMode="true" mouseDown="sliderImageClick(event)" source="{data.graphic}" visible="{data.graphic!=null}" scaleContent="false" height="100%" id="sliderimage"/>
+						
 		<s:Rect top="-1" bottom="-2" left="-1" right="-1">
 			<s:stroke>
 				<mx:SolidColorStroke color="0"/>
