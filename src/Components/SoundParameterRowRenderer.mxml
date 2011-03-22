@@ -9,6 +9,7 @@
 	<fx:Script>
 		<![CDATA[
 			import dataClasses.SoundListRowData;
+			
 			import spark.skins.spark.CheckBoxSkin;
 			
 			private function CreationComplete(event:Event):void
@@ -61,11 +62,11 @@
 			id="locked" 
 			toolTip="Lock field during randomization/mutation?" 
 			verticalCenter="0" 
-			skinClass="spark.skins.spark.CheckBoxSkin"			 
+			skinClass="components.LockCheckBoxSkin"		 
 		 	change="OnLockButtonChanged(event)"
 			selected="{data.locked}"
 			 height="17"
-			 />                
+			 />    
 		<s:Label 		
 			id = "fieldlabel"
 			toolTip = "{data.tooltip}"

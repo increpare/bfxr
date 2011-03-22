@@ -219,7 +219,7 @@ package
 		
 		public function UpdateSharedComponents():void
 		{			
-			_app.modifyexisting.enabled=true;
+			_app.createNew.enabled=true;
 			_app.volumeslider.value = _synth.params.getParam("masterVolume");
 			_app.PlayButton.enabled=true;
 		}

@@ -425,18 +425,23 @@
                 }
 
                 var index:int = soundItems.getItemIndex(dat);
+				var removingSelected:Boolean = index==soundList.selectedIndex;
+				
                 var sd:SoundData = soundItems.getItemAt(index) as SoundData;
                 soundItems.removeItemAt(index);
                 //items.dispatchEvent(FlexEvent.REMOVE);
                 saveManager.RemoveSoundItemWithID(sd.id);
 
-                var newindex:int = index;
-                if (newindex == soundItems.length)
-                {
-                    newindex--;
-                }
-                SelectItemInSoundList(newindex, index == soundItems.length);
-				
+				if (removingSelected)
+				{
+             	   	var newindex:int = index;
+              	  	if (newindex == soundItems.length)
+					{
+						newindex--;
+					}
+					SelectItemInSoundList(newindex,true);					
+				}
+                
 				if(tabs.selectedIndex==1)
 				{
 					mixerInterface.RemoveOrphanSounds();
@@ -451,17 +456,22 @@
                 }
 
                 var index:int = layerItems.getItemIndex(dat);
+				var removingSelected:Boolean = index==layerList.selectedIndex;
+				
                 var ld:LayerData = layerItems.getItemAt(index) as LayerData;
                 layerItems.removeItemAt(index);
                 //items.dispatchEvent(FlexEvent.REMOVE);
-                saveManager.RemoveLayerItemWithID(ld.id);
-
-                var newindex:int = index;
-                if (newindex == layerItems.length)
-                {
-                    newindex--;
-                }
-                SelectItemInLayerList(newindex, index == layerItems.length);
+                saveManager.RemoveLayerItemWithID(ld.id);								
+				
+				if (removingSelected)
+				{
+					var newindex:int = index;
+					if (newindex == layerItems.length)
+					{
+						newindex--;
+					}
+					SelectItemInLayerList(newindex,true);					
+				}				
             }
 
             public function RenameSoundData(sd:SoundData):void
@@ -688,7 +698,7 @@
             {
                 var b:Button = event.target as Button;
 							
-                if (tabs.selectedIndex == 1 || globalState.modifyExisting==false)
+                if (tabs.selectedIndex == 1 || globalState.createNew==true)
                 {
 					var newsoundname:String=b.label;
 					if (b.id=="mutate")
@@ -709,7 +719,7 @@
                 synthInterface.RefreshUI();
                 synthInterface.OnParameterChanged(true,true);
 				
-				if (tabs.selectedIndex == 1 || globalState.modifyExisting==false)
+				if (tabs.selectedIndex == 1 || globalState.createNew==true)
 				{
 					clickApplySound();
 				}
@@ -1087,7 +1097,7 @@
 			private function OnGlobalParameterChanged():void
 			{
 				playonchange.selected = globalState.playOnChange;
-				modifyexisting.selected = globalState.modifyExisting;
+				createNew.selected = globalState.createNew;
 			}
 			
 			private function clickSaveAll(event:MenuEvent):void
@@ -1446,11 +1456,11 @@
                 <s:Button id="mutate"
                     label="Mutation"
                     click="clickPreset(event)"/>
-                <s:CheckBox id="modifyexisting"
-                    label="Modify existing"
+                <s:CheckBox id="createNew"
+                    label="Create New Sound"
                     selected="false"
 					toolTip="Whether to modify current tracks when a preset is clicked, as opposed to creating a new one."
-					valueCommit="{this.globalState.OnModifyExistingChange(event); saveManager.commitGlobal(globalState);}"
+					valueCommit="{this.globalState.OnCreateNewChange(event); saveManager.commitGlobal(globalState);}"
                 change="CommitGlobal()"
                 />
             </s:BorderContainer>
@@ -1541,6 +1551,7 @@
                                 <s:HGroup 
                                     x="0" y="0" width="100%" height="100%" paddingLeft="2" paddingTop="2" paddingRight="2" paddingBottom="2">
                                     <s:CheckBox id="lockwave"
+										skinClass="components.LockCheckBoxSkin"	
                                         toolTip="Lock field during randomization/mutation?"
                                         change="synthInterface.ComponentChangeCallback('wavetype',event)"/>
                                     <s:TileGroup 

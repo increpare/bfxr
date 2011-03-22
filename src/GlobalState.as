@@ -12,7 +12,7 @@ package
 	public class GlobalState
 	{
 		public var playOnChange:Boolean
-		public var modifyExisting:Boolean;
+		public var createNew:Boolean;
 		public var selectedSoundItemID:int;
 		public var selectedLayerItemID:int;
 				
@@ -50,10 +50,10 @@ package
 		}
 		
 		
-		public function OnModifyExistingChange(event:Event):void
+		public function OnCreateNewChange(event:Event):void
 		{
 			var cb:CheckBox = event.target as CheckBox;
-			modifyExisting = cb.selected;
+			createNew = cb.selected;
 		}
 		
 		
@@ -64,7 +64,7 @@ package
 		public function Serialize():String
 		{
 			return playOnChange.toString()+","
-					+modifyExisting.toString()+","
+					+createNew.toString()+","
 					+selectedSoundItemID.toString()+","
 					+selectedLayerItemID.toString();
 		}
@@ -73,7 +73,7 @@ package
 		{
 			var ar:Array = dat.split(",");
 			playOnChange=ar[0]=="false"?false:true;
-			modifyExisting=ar[1]=="false"?false:true;
+			createNew=ar[1]=="false"?false:true;
 			selectedSoundItemID=int(ar[2]);
 			selectedLayerItemID=int(ar[3]);
 		}

@@ -46,7 +46,7 @@ package
 		
 		public function UpdateSharedComponents():void
 		{		
-			_app.modifyexisting.enabled=false;
+			_app.createNew.enabled=false;
 			
 			_app.volumeslider.value = mixerController.mixerPlayer.volume;
 			

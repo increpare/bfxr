@@ -50,7 +50,7 @@ package
 		{
 			//don't need to worry about tripping over other people's values			
 			_saveDat.data.playonchange = gs.playOnChange;
-			_saveDat.data.modifyExisting = gs.modifyExisting;
+			_saveDat.data.createNew = gs.createNew;
 			_saveDat.data.selectedSoundItemID = gs.selectedSoundItemID;	
 			_saveDat.data.selectedLayerItemID = gs.selectedLayerItemID;			
 			OnChange();	
@@ -64,7 +64,7 @@ package
 			if (_saveDat.data.playonchange !== undefined)
 			{
 				gs.playOnChange = _saveDat.data.playonchange;
-				gs.modifyExisting = _saveDat.data.modifyExisting;
+				gs.createNew = _saveDat.data.createNew;
 				gs.selectedSoundItemID = _saveDat.data.selectedSoundItemID;	
 				gs.selectedLayerItemID = _saveDat.data.selectedLayerItemID;
 			}
@@ -295,7 +295,7 @@ package
 					_saveDat.data.samplerate = 0;
 					_saveDat.data.bitdepth = 0;
 					_saveDat.data.playonchange = true;
-					_saveDat.data.modifyExisting = false;
+					_saveDat.data.createNew = true;
 				}
 				
 				loadGlobal()
