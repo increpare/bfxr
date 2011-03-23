@@ -123,6 +123,18 @@
 				event.stopImmediatePropagation();
 			}				
 			
+			protected function onEditKeyDown(event:KeyboardEvent):void
+			{
+				//unmodified
+				switch (event.keyCode)
+				{
+					case 13: //enter
+					{
+						onChange(event);
+						break;
+					}
+				}
+			}
 		]]>
 	</fx:Script>
 	
@@ -140,13 +152,14 @@
 				 focusOut="onChange(event)"	
 				 top="1"  bottom="1" left="1" right="0" minWidth="25"
 				 restrict="A-Za-z 0-9"
+				 keyDown="onEditKeyDown(event)"
 				 />
 	
 	<s:Button id="removeBtn"
 			  width="30"
 			  label="X"		
 			  visible="true"
-			  right="1"
+			  right="2"
 			  top="2"
 			  mouseDown="gobble(event)"
 			  click="removeItem(event)"

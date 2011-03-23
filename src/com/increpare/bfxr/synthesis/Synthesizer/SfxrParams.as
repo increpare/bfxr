@@ -89,9 +89,9 @@ package com.increpare.bfxr.synthesis.Synthesizer
 			5,"changeSpeed",0,0,1], 		
 		
 		["Pitch Jump Amount 2","Jump in pitch, either up or down.",
-			7,"changeAmount2",0,-1,1], 	
+			5,"changeAmount2",0,-1,1], 	
 		["Pitch Jump Onset 2","When the note shift happens.",
-			7,"changeSpeed2",0,0,1], 		
+			5,"changeSpeed2",0,0,1], 		
 		
 		["Square Duty","Square waveform only : Controls the ratio between the up and down states of the square wave, changing the tibre .",
 			8,"squareDuty",0,0,1], 		

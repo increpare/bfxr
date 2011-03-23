@@ -192,7 +192,7 @@ package
 			mixerController.Deserialize(data);
 		}
 		
-		public function DeserializeFromClipboard(data:String):void
+		public function DeserializeFromClipboard(data:String,allowplay:Boolean=true):void
 		{
 			//now push the  mixer settings and load them as if you had clicked on them
 			_app.AddToLayerList("Pasted", true);
@@ -240,11 +240,11 @@ package
 				//add new id to list
 				_app.AddToSoundList("Sound",true,false,id);
 				_app.synthInterface.Deserialize(descriptions[i]);
-				_app.synthInterface.OnParameterChanged(true,true);
+				_app.synthInterface.OnParameterChanged(false,true);
 				_app.clickApplySound();
 			}			
-				
-			OnParameterChanged(false,true);
+			
+			OnParameterChanged(allowplay,true);
 			_app.clickApplyLayer();
 			RefreshUI();			
 		}

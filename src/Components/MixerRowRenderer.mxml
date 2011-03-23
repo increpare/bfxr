@@ -5,7 +5,7 @@
 				
 				 contentBackgroundColor="#CCBDA1" height="74" width="340"
 				  creationComplete="CreationComplete(event)"
-				  symbolColor="#CCBDA1">
+				  symbolColor="#CCBDA1" focusColor="#CCBDA1" rollOverColor="#CCBDA1">
 	<s:layout>
 		<s:BasicLayout/>
 	</s:layout>
@@ -191,37 +191,46 @@
 		]]>
 	</fx:Script>
 	
-	<s:Rect top="0" verticalCenter="0" bottom="0" left="0" horizontalCenter="0" right="0">
-		<s:fill><s:SolidColor color="0xffccbda1" /></s:fill>	
-	</s:Rect>
-	
-	<s:BorderContainer useHandCursor="true"  buttonMode="true" width="191" backgroundColor="0xccbda1" backgroundAlpha="1.0" right="0" mouseDown="sliderImageContainerClick(event)"  id="sliderimagecontainer" visible="{data.graphic!=null}" top="0" height="75">		
+	<s:BorderContainer borderVisible="false" useHandCursor="true"  buttonMode="true" width="191" backgroundColor="0xccbda1" backgroundAlpha="1.0" right="0" mouseDown="sliderImageContainerClick(event)"  id="sliderimagecontainer" visible="{data.graphic!=null}" top="0" height="74">		
 		<s:layout>
 			<s:BasicLayout/>
 		</s:layout>
 		<mx:Image x="{data.onset}" y="0" useHandCursor="true"  buttonMode="true" mouseDown="sliderImageClick(event)" source="{data.graphic}" visible="{data.graphic!=null}" scaleContent="false" height="100%" id="sliderimage"/>
-						
-		<s:Rect top="-1" bottom="-2" left="-1" right="-1">
+			
+		<s:Line top="0" bottom="1" xFrom="0" xTo="0">
 			<s:stroke>
-				<mx:SolidColorStroke color="0"/>
+				<mx:SolidColorStroke color="#696969"/>
 			</s:stroke>		
-		</s:Rect>	
+		</s:Line>	
 		
 		<s:Line id="playline" top="0" xFrom="0" yFrom="0" xTo="0"  yTo="71"  x="{Math.min(data.playbarposition,sliderimagecontainer.width-2)}" visible="{data.playbarposition>=0}">
 			<s:stroke>
 				<mx:SolidColorStroke color="0" alpha="1.0"/>			
 			</s:stroke>
 		</s:Line>
+		
+		<mx:Image x="{sliderimage.x-10}" alpha="{sliderimage.x>20?1:Math.max(0,sliderimage.x-10)/10}"  y="0" source="resources/leftarrow.png" width="15"/>
+		<mx:Image x="{sliderimage.x+sliderimage.width}" 
+				  alpha="{sliderimage.x+sliderimage.width+20>sliderimagecontainer.width?Math.max(0,10-(sliderimage.x+sliderimage.width+20-sliderimagecontainer.width))/10:1}" y="0" source="resources/rightarrow.png" width="15"/>
+
 	</s:BorderContainer>
 	
 	
-	<s:Rect top="0" bottom="-1" left="0" right="0">
+	
+	<s:Line  top="-1" left="-1" right="0" >		
 		<s:stroke>
-			<mx:SolidColorStroke color="0"/>
-		</s:stroke>		
-	</s:Rect>	
+			<s:SolidColorStroke weight="1" color="#696969"/>
+		</s:stroke>				
+	</s:Line>
+	
+	<s:Line  bottom="0" left="-1" right="0" >		
+		<s:stroke>
+			<s:SolidColorStroke weight="1" color="#696969"/>
+		</s:stroke>				
+	</s:Line>
+	
 	<s:VSlider x="130" y="10" height="54" id="volumeslider" value="{data.volume}" minimum="0" maximum="2" changeStart="volumechangedStart(event)" changeEnd="volumechanged(event)" stepSize=".01" enabled="{data.trackindex>=0}"/>
-	<s:DropDownList id="dropdown" x="14" y="10" selectedIndex="{data.trackindex}" change="DropdownChange(event)" requireSelection="false"></s:DropDownList>
+	<s:DropDownList id="dropdown" x="14"  y="10" selectedIndex="{data.trackindex}" change="DropdownChange(event)" requireSelection="false" borderVisible="true" enabled="true" contentBackgroundAlpha="1.0" symbolColor="#212121"></s:DropDownList>
 	<s:Button x="14" y="43" enabled="{data.trackindex>=0}" id="PlayButton" label="Play" click="PlayClick()" />
 	<s:Button x="92" y="43" enabled="{data.trackindex>=0}" id="Deselect" label="X" toolTip="Clears the channel." click="DeselectClick()" width="30" />
 

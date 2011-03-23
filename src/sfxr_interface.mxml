@@ -17,6 +17,7 @@
     <s:layout>
         <s:BasicLayout/>
     </s:layout>
+    <fx:Style source="sfxr_interface_1.css"/>
     <fx:Script>
         <![CDATA[
 			import com.increpare.bfxr.synthesis.*;
@@ -281,11 +282,11 @@
 
                 if (saveManager.selectedSoundItemID >= 0)
                 {
-                    SelectItemInSoundListByID(saveManager.selectedSoundItemID);
+                    SelectItemInSoundListByID(saveManager.selectedSoundItemID,false);
                 }
                 else if (soundItems.length > 0)
                 {
-                    SelectItemInSoundList(0);
+                    SelectItemInSoundList(0,false);
                 }
 
                 if (TryLoadFromURL())
@@ -398,7 +399,7 @@
                 {
                     var tail:String = ar[1] as String;
                     var sounddescr:String = unescape(tail.substr(2));
-					FromClipboard(sounddescr);
+					FromClipboard(sounddescr,false);
 				}
                 catch (e:Error)
                 {
@@ -1231,8 +1232,9 @@
             protected function SaveSoundWave():void
             {
 				var file:ByteArray = synthInterface.getWavFile();					                
-
-                new FileReference().save(file, "sfx.wav");
+				var name:String = (soundList.selectedItem as SoundData).label;					
+				
+                new FileReference().save(file, name + ".wav");
             }
 
             private function SaveMixerWave():void
@@ -1240,7 +1242,9 @@
 				mixerInterface.mixerController.MixerStopAll();
 				var file:ByteArray = mixerInterface.getWavFile();	
 				
-                new FileReference().save(file, "sfx.wav");
+				var name:String = (layerList.selectedItem as LayerData).label;
+						
+                new FileReference().save(file, name + ".wav");
             }
 
 
@@ -1285,16 +1289,16 @@
             }
 
 			/** Creates a new sound item from the passed text. */
-			private function FromClipboard(str:String):void
+			private function FromClipboard(str:String,allowplay:Boolean=true):void
 			{
 				if (str.indexOf("|") == -1)
 				{
-					synthInterface.DeserializeFromClipboard(str);
+					synthInterface.DeserializeFromClipboard(str,allowplay);
 					tabs.selectedIndex = 0;
 				}
 				else
 				{
-					mixerInterface.DeserializeFromClipboard(str);
+					mixerInterface.DeserializeFromClipboard(str,allowplay);
 					tabs.selectedIndex = 1;
 				}
 			}
@@ -1409,25 +1413,25 @@
         left="0" right="-0" top="0" bottom="0"
         horizontalCenter="0"
         verticalAlign="justify"
-        verticalCenter="0">
+        verticalCenter="0" gap="1">
         <s:VGroup 
             width="160" height="591"
             horizontalAlign="justify"
-            paddingBottom="1"
-            paddingLeft="1"
-            paddingRight="1"
-            paddingTop="1">
+            paddingBottom="0"
+            paddingLeft="0"
+            paddingRight="-2"
+            paddingTop="0" gap="1">
             <s:BorderContainer 
-                width="200" height="272"
+                width="200" height="584"
                 backgroundColor="#CCBDA1">
                 <s:layout>
                     <s:VerticalLayout 
                         horizontalAlign="justify"
-                        paddingBottom="2"
-                        paddingLeft="2"
-                        paddingRight="2"
-                        paddingTop="2"
-                        gap="6"/>
+                        paddingBottom="3"
+                        paddingLeft="3"
+                        paddingRight="3"
+                        paddingTop="3"
+                        gap="5"/>
                 </s:layout>
                 <s:Button id="generatePickupCoin"
                     label="Pickup/coin"
@@ -1459,38 +1463,30 @@
                 <s:CheckBox id="createNew"
                     label="Create New Sound"
                     selected="false"
-					toolTip="Whether to modify current tracks when a preset is clicked, as opposed to creating a new one."
+					toolTip="Whether to create a new synth when a preset button is clicked, as opposed to modifying an existing one."
 					valueCommit="{this.globalState.OnCreateNewChange(event); saveManager.commitGlobal(globalState);}"
                 change="CommitGlobal()"
                 />
-            </s:BorderContainer>
-            <s:BorderContainer 
-                width="200" height="85"
-                backgroundColor="#CCBDA1"
-                contentBackgroundColor="#CCBDA1">
-                <s:layout>
-                    <s:VerticalLayout 
-                        horizontalAlign="justify"
-                        paddingBottom="1"
-                        paddingLeft="1"
-                        paddingRight="1"
-                        paddingTop="1"
-                        gap="6"/>
-                </s:layout>
+				<s:Line left="-10" right="-10" yFrom="0" yTo="0"  maskType="clip" >		
+					<s:stroke>
+						<s:SolidColorStroke   weight="1" color="#696969"/>									
+					</s:stroke>				
+				</s:Line>
+				
                 <s:Button id="applybutton"
                     enabled="false"
-                    label="Apply"
+                    label="{tabs.selectedIndex==0 ? 'Apply Synth' : 'Apply Mix'}"
                     click="clickApply(event)"/>
                 <s:Button id="revertbutton"
                     enabled="false"
-                    label="Revert"
+                    label="{tabs.selectedIndex==0 ? 'Revert Synth' : 'Revert Mix'}"
 					toolTip="Revert to the last applied data"
                     click="clickRevert(event)"/>
                 <s:Button id="duplicatebutton"
-                    label="Duplicate"
+                    label="{tabs.selectedIndex==0 ? 'Duplicate Synth' : 'Duplicate Mix'}"
 					toolTip="Create a new sound based on the data in the currently selected one."
                     click="clickNew(event)"/>
-            </s:BorderContainer>
+				
             <s:BorderContainer 
                 width="200" height="100%"
                 backgroundColor="#CCBDA1"
@@ -1498,10 +1494,10 @@
                 <s:layout>
                     <s:VerticalLayout 
                         horizontalAlign="justify"
-                        paddingBottom="0"
-                        paddingLeft="0"
-                        paddingRight="0"
-                        paddingTop="0"
+                        paddingBottom="-4"
+                        paddingLeft="-4"
+                        paddingRight="-4"
+                        paddingTop="-2"
                         gap="0"/>
                 </s:layout>
 
@@ -1514,6 +1510,7 @@
                     requireSelection="true"/>
 
             </s:BorderContainer>
+			</s:BorderContainer>
         </s:VGroup>
         <mx:ViewStack id="viewstack1"
             width="343" height="100%">
@@ -1527,41 +1524,41 @@
                     verticalCenter="0"
                     creationPolicy="all"
 					change="OnTabChanged(event)"
-					contentBackgroundColor="#CCBDA1">
+					contentBackgroundColor="#CCBDA1" paddingTop="0" paddingLeft="0" paddingRight="0" chromeColor="#CCCCCC">
                     <s:NavigatorContent 
                         width="100%" height="100%"
                         label="Make"						
-                        contentBackgroundColor="#CCBDA1">
+                        contentBackgroundColor="#CCBDA1" chromeColor="#CCCCCC">
                         <s:layout>
                             <s:HorizontalLayout verticalAlign="justify"/>
                         </s:layout>
                         <s:VGroup id="square"
                             width="100%" height="100%"
                             horizontalAlign="justify"
-                            paddingBottom="1"
-                            paddingLeft="1"
-                            paddingRight="1"
-                            paddingTop="1">
+                            paddingBottom="0"
+                            paddingLeft="0"
+                            paddingRight="0"
+                            paddingTop="0" gap="0">
                             <s:BorderContainer 
                                 width="293" height="73"
-                                backgroundColor="#CCBDA1">
+                                backgroundColor="#CCBDA1" borderVisible="false">
                                 <s:layout>
                                     <s:BasicLayout/>
                                 </s:layout>
                                 <s:HGroup 
-                                    x="0" y="0" width="100%" height="100%" paddingLeft="2" paddingTop="2" paddingRight="2" paddingBottom="2">
+                                    x="0" y="0" width="100%" height="100%" paddingLeft="2" paddingTop="3" paddingRight="2" paddingBottom="2">
                                     <s:CheckBox id="lockwave"
-										skinClass="components.LockCheckBoxSkin"	
+										skinClass="skins.LockCheckBoxSkin"	
                                         toolTip="Lock field during randomization/mutation?"
-                                        change="synthInterface.ComponentChangeCallback('wavetype',event)"/>
+                                        change="synthInterface.ComponentChangeCallback('wavetype',event)" height="69" width="20"/>
                                     <s:TileGroup 
                                         width="100%" height="100%"
-                                        verticalGap="1"
+                                        verticalGap="2"
                                         requestedRowCount="2"
                                         requestedColumnCount="3"
-                                        columnWidth="98">
+                                        columnWidth="100" horizontalGap="5">
                                         <s:ToggleButton id="W4"
-                                            width="65"
+                                            width="70"
                                             label="Triangle"
                                             change="synthInterface.WaveformSelect(event)"
 											toolTip="Triangle waves are robust at all frequencies, stand out quite well in most situations, and have a clear, resonant quality."
@@ -1609,7 +1606,13 @@
                                             change="synthInterface.WaveformSelect(event)"/>
                                     </s:TileGroup>
                                 </s:HGroup>
-                            </s:BorderContainer>
+                            </s:BorderContainer>                            
+							<s:Line left="-10" right="-10" yFrom="0" yTo="0"  maskType="clip" >		
+								<s:stroke>
+									<s:SolidColorStroke   weight="1" color="#696969"/>									
+								</s:stroke>				
+							</s:Line>
+							
                             <s:HGroup 
                                 width="100%" height="100%"
                                 paddingBottom="0"
@@ -1617,36 +1620,38 @@
                                 paddingRight="0"
                                 paddingTop="0"
                                 verticalAlign="justify"
-                                gap="0">
+                                gap="0">								
                                 <s:VGroup 
                                     width="100%" height="100%"
                                     paddingBottom="0"
                                     paddingLeft="0"
                                     paddingRight="0"
-                                    paddingTop="0">
+                                    paddingTop="0">																								
                                     <s:BorderContainer 
                                         width="100%" height="100%"
                                         backgroundColor="#CCBDA1"
                                         borderVisible="false"
-                                        dropShadowVisible="false">
+                                        dropShadowVisible="false">																				
+										
                                         <s:layout>
                                             <s:VerticalLayout 
                                                 paddingBottom="0"
                                                 paddingLeft="0"
-                                                paddingRight="0"
+                                                paddingRight="-1"
                                                 paddingTop="0"/>
                                         </s:layout>
 										<s:Scroller height="100%" width="100%">											
 	                                        <s:DataGroup id="SoundParameterGroup"
 	                                            width="100%" height="100%"
 	                                            itemRenderer="components.SoundParameterRowRenderer"
-												dataProvider="{SoundParameterList}">
+												dataProvider="{SoundParameterList}"
+												>
 	                                            <s:layout>
 	                                                <s:VerticalLayout 
 	                                                    paddingBottom="0"
-	                                                    paddingLeft="1"
+	                                                    paddingLeft="0"
 	                                                    paddingRight="0"
-	                                                    paddingTop="1"
+	                                                    paddingTop="0"
 	                                                    useVirtualLayout="false"
 	                                                    gap="0"/>
 	                                            </s:layout>    
@@ -1654,14 +1659,14 @@
 										</s:Scroller>
                                     </s:BorderContainer>
                                 </s:VGroup>
-                                
+								
 
                             </s:HGroup>
                         </s:VGroup>
                     </s:NavigatorContent>
                     <s:NavigatorContent 
                         width="100%" height="100%"
-                        label="Mixer">
+                        label="Mixer" chromeColor="#CCCCCC">
                         <s:layout>
                             <s:BasicLayout/>
                         </s:layout>
@@ -1670,9 +1675,9 @@
                             horizontalAlign="justify"
                             horizontalCenter="0"
                             verticalCenter="0"
-                            gap="0">
+                            gap="0" paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0">
                             <s:DataGroup id="mixerListComponent"
-                                width="100%" height="372"
+                                width="100%" height="370"
                                 itemRenderer="components.MixerRowRenderer"
 								dataProvider="{mixerInterface.mixerController.trackViews}">
                                 <s:layout>
@@ -1685,14 +1690,15 @@
                                         gap="0"/>
                                 </s:layout>
                             </s:DataGroup>
-                            <s:List id="layerList"
-                                width="170" height="100%"
-                                change="layerListSelectionChanged(event)"
-                                requireSelection="true"
-                                itemRenderer="components.LayerListItemRenderer"
-                                contentBackgroundColor="#CCBDA1"								
-								valueCommit="{this.globalState.OnLayerListSelectionChanged(event); saveManager.commitGlobal(globalState);}"
-								/>
+                            <s:BorderContainer width="100%" height="100%" borderVisible="false">
+								<s:List id="layerList"
+										change="layerListSelectionChanged(event)"
+										requireSelection="true"
+										itemRenderer="components.LayerListItemRenderer"
+										contentBackgroundColor="#CCBDA1"								
+										valueCommit="{this.globalState.OnLayerListSelectionChanged(event); saveManager.commitGlobal(globalState);}"
+										 borderVisible="true" right="-1" left="-1" top="-1" bottom="-1"/>
+                            </s:BorderContainer>                            
                         </s:VGroup>
                     </s:NavigatorContent>
                 </mx:TabNavigator>
@@ -1702,10 +1708,10 @@
         <s:VGroup 
             y="-55" width="124" height="740"
             horizontalAlign="justify"
-            paddingBottom="5"
-            paddingLeft="5"
-            paddingRight="5"
-            paddingTop="0">
+            paddingBottom="1"
+            paddingLeft="2"
+            paddingRight="0"
+            paddingTop="0" gap="1">
             <s:BorderContainer 
                 width="112" height="200"
                 backgroundColor="#CCBDA1"
@@ -1722,56 +1728,61 @@
                 <mx:Image id="equalizer"
                     width="83" height="197"/>
             </s:BorderContainer>
-            <s:CheckBox id="playonchange"
-                label="Play On Change"
-                selected="true"
-				valueCommit="{this.globalState.OnPlayOnChangeChange(event); saveManager.commitGlobal(globalState);}"
-				change="CommitGlobal()"
-				/>
-            <s:Button 
-                label="Play"
-				id="PlayButton"
-                click="PlayClick(event)"/>
-            <s:HSlider id="volumeslider"
-				minimum="0"
-                maximum="1"
-                stepSize="0.01"
-                changeEnd="VolumeChanged(event)"/>
-            <s:Label text="Master Volume" click="ResetMasterVolume(event)"/>
-            <mx:Spacer height="10"/>
-            <s:Button id="exportwav"
-                label="Export Wav"
-                click="SaveWave()"/>
-            <mx:PopUpMenuButton 
-            	dataProvider="{loadoptions}"
-            	labelField="@label" 
-            	showRoot="false" 
-            	id="loadmenu"
-            	creationComplete="{Menu(loadmenu.popUp).selectedIndex=0;}"
-            	label="Load from Disk"
-				toolTip="Loads a particular synthesized sound or mix from your hard disk in the bfxr file format."
-            	itemClick="clickLoadAll(event)"
-            	/>
-            <mx:PopUpMenuButton 
-            	dataProvider="{saveoptions}"
-            	labelField="@label" 
-            	showRoot="false" 
-            	id="savemenu"
-            	creationComplete="{Menu(savemenu.popUp).selectedIndex=0;}"
-            	label="Save to Disk"
-				toolTip="Save the current synthesized sound or mix to your hard disk in the bfxr file format."
-            	itemClick="clickSaveAll(event)"
-            	/>
-            <s:Button id="linkbutton"
-                label="Copy"
-                click="clickCopyButton()"/>
-            <s:Button id="linkbutton0"
-                label="Paste"
-                click="clickPasteButton()"/>
-            <mx:Spacer height="22"/>
-            <s:Button id="linkbutton1"
-                label="Copy Link"
-                click="clickLinkButton()"/>	
+            <s:BorderContainer width="200" height="383" backgroundColor="#CCBDA1" contentBackgroundColor="#CCBDA1" borderVisible="false">
+                <s:layout>
+                    <s:VerticalLayout gap="5" horizontalAlign="justify" paddingLeft="1" paddingRight="1" paddingTop="1" paddingBottom="0"/>
+                </s:layout>
+                <s:CheckBox id="playonchange"
+                    label="Play On Change"
+                    selected="true"
+                valueCommit="{this.globalState.OnPlayOnChangeChange(event); saveManager.commitGlobal(globalState);}"
+                change="CommitGlobal()"
+                />
+                <s:Button 
+                    label="Play"
+                id="PlayButton"
+                    click="PlayClick(event)"/>
+                <s:HSlider id="volumeslider"
+                minimum="0"
+                    maximum="1"
+                    stepSize="0.01"
+                    changeEnd="VolumeChanged(event)"/>
+                <s:Label text="Master Volume" click="ResetMasterVolume(event)"/>
+                <mx:Spacer height="10"/>
+                <s:Button id="exportwav"
+                    label="Export Wav"
+                    click="SaveWave()"/>
+                <mx:PopUpMenuButton 
+                	dataProvider="{loadoptions}"
+                	labelField="@label" 
+                	showRoot="false" 
+                	id="loadmenu"
+                	creationComplete="{Menu(loadmenu.popUp).selectedIndex=0;}"
+                	label="Load from Disk"
+                toolTip="Loads a particular synthesized sound or mix from your hard disk in the bfxr file format."
+                	itemClick="clickLoadAll(event)"
+                	/>
+                <mx:PopUpMenuButton 
+                	dataProvider="{saveoptions}"
+                	labelField="@label" 
+                	showRoot="false" 
+                	id="savemenu"
+                	creationComplete="{Menu(savemenu.popUp).selectedIndex=0;}"
+                	label="Save to Disk"
+                toolTip="Save the current synthesized sound or mix to your hard disk in the bfxr file format."
+                	itemClick="clickSaveAll(event)"
+                	/>
+                <s:Button id="linkbutton"
+                    label="Copy"
+                    click="clickCopyButton()"/>
+                <s:Button id="linkbutton0"
+                    label="Paste"
+                    click="clickPasteButton()"/>
+                <mx:Spacer height="22"/>
+                <s:Button id="linkbutton1"
+                    label="Copy Link"
+                    click="clickLinkButton()"/>
+            </s:BorderContainer>
         </s:VGroup>
     </s:HGroup>
 </s:Application>

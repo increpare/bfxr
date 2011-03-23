@@ -157,12 +157,12 @@ package
 			_synth.params.Deserialize(str);
 		}
 		
-		public function DeserializeFromClipboard(str:String):void
+		public function DeserializeFromClipboard(str:String,allowplay:Boolean=true):void
 		{			
 			_app.AddToSoundList("Paste", true);
 			Deserialize(str);
 			RefreshUI();
-			OnParameterChanged(true, true);
+			OnParameterChanged(allowplay, true);
 			_app.clickApplySound();
 		}
 		

@@ -3,11 +3,14 @@
 <s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
 				xmlns:mx="library://ns.adobe.com/flex/mx" 
 				xmlns:s="library://ns.adobe.com/flex/spark"
-				 contentBackgroundColor="#FFFFFF" xmlns:local="*"
-				 creationComplete="CreationComplete(event)">
+				contentBackgroundColor="#FFFFFF" xmlns:local="*"
+				creationComplete="CreationComplete(event)"				 
+				chromeColor="#cccccc"
+				width="327">
 	
 	<fx:Script>
 		<![CDATA[
+			import skins.TickedHSliderSkin;
 			import dataClasses.SoundListRowData;
 			
 			import spark.skins.spark.CheckBoxSkin;
@@ -42,14 +45,19 @@
 	<s:Rect width="100%" height="100%">
 		<s:fill><s:SolidColor color="{ (data.odd ? 0xffccbda1 : 0xffe7d1a7)  }" /></s:fill>	
 	</s:Rect>
-	<s:Rect top="-1" bottom="0" left="-1" right="0">
+	
+	
+	<s:Line  top="-1" left="-1" right="0" >		
 		<s:stroke>
-			<s:LinearGradientStroke rotation="90" weight="1">
-				<s:GradientEntry color="0"  />
-				<s:GradientEntry color="0"  />
-			</s:LinearGradientStroke>
-		</s:stroke>		
-	</s:Rect>
+			<s:SolidColorStroke weight="1" color="#696969"/>
+		</s:stroke>				
+	</s:Line>
+	
+	<s:Line  bottom="0" left="-1" right="0" >		
+		<s:stroke>
+			<s:SolidColorStroke weight="1" color="#696969"/>
+		</s:stroke>				
+	</s:Line>
 	<s:HGroup 
 		verticalCenter="0" 
 		left="2" 
@@ -62,7 +70,7 @@
 			id="locked" 
 			toolTip="Lock field during randomization/mutation?" 
 			verticalCenter="0" 
-			skinClass="components.LockCheckBoxSkin"		 
+			skinClass="skins.LockCheckBoxSkin"		 
 		 	change="OnLockButtonChanged(event)"
 			selected="{data.locked}"
 			 height="17"
@@ -79,9 +87,9 @@
 			click="LabelClick()"
 			/>    
 		<s:HSlider
-			  skinClass="components.TickedHSliderSkin"
+			  skinClass="skins.TickedHSliderSkin"
 			id="slider" 
-			width="116" 
+			width="120" 
 			minimum="{data.min}" 
 			maximum="{data.max}"			
 			value="{data.value}"

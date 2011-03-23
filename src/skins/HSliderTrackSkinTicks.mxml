@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SparkSkin xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:s="library://ns.adobe.com/flex/spark">
+
+    <fx:Metadata>
+    <![CDATA[ 
+        [HostComponent("spark.components.Button")]
+    ]]>
+    </fx:Metadata> 
+    
+    <fx:Script>
+        <![CDATA[
+			import dataClasses.SoundListRowData;
+			
+			import spark.components.Group;
+			import spark.components.supportClasses.ItemRenderer;
+
+            /**
+            * Probably a better way of doing this
+            */
+            override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void {
+                super.updateDisplayList(unscaledWidth, unscaledHeight);
+                drawTicks();
+            }
+            
+            /**
+             * This is very naive, and it could be made more efficient
+             */
+            public function drawTicks():void {
+                
+                // dig up to the custom Slider's skin to find information on the thumbGroup size
+                // and the stepSize, minimum, maximum values of the custom slider
+                var sliderSkin:TickedHSliderSkin = (this.hostComponent.parentDocument as TickedHSliderSkin);
+                
+				
+                var thumbGroupWidth:Number = sliderSkin.thumb.width;
+                var numberOfTicks:Number = 10;//(sliderSkin.hostComponent.maximum - sliderSkin.hostComponent.minimum)*10;
+                var tickSpacing:Number = ((width - thumbGroupWidth) / numberOfTicks);
+				
+				var min:Number = sliderSkin.hostComponent.minimum;
+				var max:Number = sliderSkin.hostComponent.maximum;
+				
+				var defaultval:Number = 
+					((sliderSkin.hostComponent.parent.parent as ItemRenderer).data as SoundListRowData).defaultvalue;
+				
+				var defaultTick:int = 
+					Math.round((defaultval-min)*numberOfTicks/(max - min));
+				
+                ticksGroup.left = ticksGroup.right = Math.floor(thumbGroupWidth/2);
+                
+                ticksGroup.removeAllElements();
+                ticksGroup.width = 0;
+                
+                for (var i:int = 0; i <= numberOfTicks; i++){
+					if (i!=defaultTick)
+					{
+                    	var tick:Tick = new Tick();
+                   
+                  	  	tick.y = 0;
+                  	  	tick.x = Math.floor(i * tickSpacing);
+                    	ticksGroup.addElement(tick);
+					}
+					else
+					{
+						var bigtick:BigTick = new BigTick();
+						
+						bigtick.y = 0;
+						bigtick.x = Math.floor(i * tickSpacing);
+						ticksGroup.addElement(bigtick);
+						
+					}
+                }
+            }
+        ]]>
+    </fx:Script>
+    
+    <fx:Declarations>
+		<fx:Component className="BigTick">
+			<s:Group width="2" height="17">
+				<s:Rect left="0" right="0" top="4" bottom="0">
+					<s:fill>
+						<s:SolidColor color="0x000000" alpha="1.0" />
+					</s:fill>
+				</s:Rect>
+			</s:Group>
+		</fx:Component>
+        <fx:Component className="Tick">
+            <s:Group width="2" height="16">
+                <s:Rect left="0" right="0" top="4" bottom="0">
+                    <s:fill>
+                        <s:SolidColor color="0x000000" alpha="0.5" />
+                    </s:fill>
+                </s:Rect>
+            </s:Group>
+        </fx:Component>
+    </fx:Declarations>
+    
+    <s:states>
+        <s:State name="up" />
+        <s:State name="down" />
+        <s:State name="over" />
+        <s:State name="disabled" />
+    </s:states>
+	
+	
+	<!-- ticks -->
+	<s:Group id="ticksGroup" height="15" />
+	
+    <!-- border -->
+    <s:Rect left="0" right="0" top="3" bottom="3" radiusX="2" radiusY="2" height="5">
+        <s:fill>
+            <s:LinearGradient rotation="90" >
+                <s:GradientEntry color="0x000000" alpha="0.55" />
+                <s:GradientEntry color="0xFFFFFF" alpha="0.55" ratio="0.8" />
+            </s:LinearGradient>
+        </s:fill>
+    </s:Rect>
+
+    <!-- fill -->
+    <s:Rect left="1" right="1" top="4" bottom="4" radiusX="2" radiusY="2">
+        <s:fill>
+            <s:SolidColor color="0xCACACA" />
+        </s:fill>
+    </s:Rect>
+    
+    <!-- shadow -->
+    <s:Rect left="2" right="2" top="4" height="1">
+        <s:fill>
+            <s:SolidColor color="0x9E9E9E" />
+        </s:fill>
+    </s:Rect>
+    
+    <!-- hit area -->
+    <s:Rect left="0" right="0" top="0" bottom="0">
+        <s:fill>
+            <s:SolidColor alpha="0"/>
+        </s:fill>
+    </s:Rect>
+    
+    
+</s:SparkSkin>
