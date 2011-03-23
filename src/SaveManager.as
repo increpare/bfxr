@@ -281,7 +281,7 @@ package
 		{
 			if (_saveDat==null)
 			{
-				_saveDat = SharedObject.getLocal("com.increpare.bfxr");
+				_saveDat = SharedObject.getLocal("com.increpare.bfxr-r2");
 				//_saveDat.clear();
 				
 				if (_saveDat.data.version == undefined )

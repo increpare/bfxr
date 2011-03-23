@@ -11,6 +11,7 @@ package Mixer
 		public var OnMixerOnsetClick:Function;
 		public var OnMixerPlayClick:Function;
 		public var OnMixerClearClick:Function;
+		public var OnMixerReverseClick:Function;
 		public var OnMixerStartDrag:Function;//used to stop playback
 		
 		public var trackindex:int=-1;		//index, not ID
@@ -18,6 +19,7 @@ package Mixer
 		public var onset:int=0;				//in pixels
 		public var graphic:Bitmap;			//if null, hides
 		public var playbarposition:int=-1; 	//in pixels, -1 means not visible
+		public var reverse:Boolean = false;
 		
 		public function MixerTrackView()
 		{

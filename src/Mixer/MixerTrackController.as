@@ -1,6 +1,8 @@
 package Mixer
 {
 	import com.increpare.bfxr.synthesis.Mixer.MixerPlayer;
+	import com.increpare.bfxr.synthesis.Mixer.MixerSynth;
+	import com.increpare.bfxr.synthesis.Mixer.MixerTrackData;
 	import com.increpare.bfxr.synthesis.Mixer.MixerTrackPlayer;
 	import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
 	
@@ -39,6 +41,7 @@ package Mixer
 			mtv.OnMixerOnsetClick=		this.OnMixerMixerOnsetClick;
 			mtv.OnMixerPlayClick=		this.OnPlayClick;
 			mtv.OnMixerClearClick=		this.OnMixerClearClick;
+			mtv.OnMixerReverseClick=	this.OnMixerReverseClick;
 			mtv.OnMixerStartDrag=		this.OnMixerStartDrag;
 		}
 		
@@ -92,6 +95,11 @@ package Mixer
 			
 			var synth:SfxrSynth = mtp.synth;
 			var cachedWave:ByteArray = mtp.synth.cachedWave;
+			if (mtp.data.reverse)
+			{
+				cachedWave = MixerPlayer.Reverse(cachedWave);
+			}
+			
 			var dilation:Number=10;
 			var length:Number = Math.max(3,cachedWave.length*dilation/(4*44100.0));
 			
@@ -168,6 +176,13 @@ package Mixer
 		{ 			
 			_trackView.trackindex=-1;
 			OnMixerDropdownClick();
+		}
+		
+		private function OnMixerReverseClick():void 
+		{ 			
+			_trackPlayer.data.reverse = _trackView.reverse;		
+			DrawWave();			
+			_app.mixerInterface.OnParameterChanged(true,true);
 		}
 		
 		/* called when a person starts changing the onset or volume, stops play */

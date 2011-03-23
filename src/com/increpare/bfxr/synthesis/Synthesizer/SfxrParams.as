@@ -81,7 +81,7 @@ package com.increpare.bfxr.synthesis.Synthesizer
 			13,"overtoneFalloff",0,0,1], 
 		
 		["Pitch Jump Repeat Speed","Larger Values means more pitch jumps, which can be useful for arpeggiation.",
-			5,"changeRepeat",1,0,1], 		
+			5,"changeRepeat",0,0,1], 		
 		
 		["Pitch Jump Amount 1","Jump in pitch, either up or down.",
 			5,"changeAmount",0,-1,1], 		

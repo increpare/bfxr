@@ -15,21 +15,4 @@
 		<nature>com.adobe.flexbuilder.project.flexnature</nature>
 		<nature>com.adobe.flexbuilder.project.actionscriptnature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>bin-release1</name>
-			<type>2</type>
-			<location>/Users/icecube/Documents/Adobe Flash Builder 4/toupload/as3sfxr</location>
-		</link>
-		<link>
-			<name>bin-release2</name>
-			<type>2</type>
-			<location>/Users/icecube/Documents/Adobe Flash Builder 4/toupload/as3sfxr-b</location>
-		</link>
-		<link>
-			<name>bin-release3</name>
-			<type>2</type>
-			<location>/Users/icecube/Documents/Adobe Flash Builder 4/toupload/as3sfxr-b2</location>
-		</link>
-	</linkedResources>
 </projectDescription>

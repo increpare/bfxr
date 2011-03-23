@@ -37,6 +37,18 @@ package com.increpare.bfxr.synthesis.Mixer
 				}
 			}
 		}
+		
+		public static function Reverse(ba:ByteArray):ByteArray
+		{
+			var result:ByteArray = new ByteArray();
+			var l:uint=ba.length;
+			//subtract 8 because reading a float each time :P
+			for (ba.position=ba.length-4;ba.position<ba.length;ba.position-=8)
+			{
+				result.writeFloat(ba.readFloat());
+			}
+			return result;
+		}
 				
 		public function Serialize():String
 		{
@@ -109,7 +121,13 @@ package com.increpare.bfxr.synthesis.Mixer
 						silentbytes-=bytestocopy;
 					}
 					
-					b.writeBytes(tracks[i].synth.cachedWave);
+					var cached:ByteArray = tracks[i].synth.cachedWave;
+					if (tracks[i].data.reverse)
+					{
+						cached=Reverse(cached);
+					}
+					
+					b.writeBytes(cached);
 					
 					b.position=0;
 					_preparedsounds.push(b);

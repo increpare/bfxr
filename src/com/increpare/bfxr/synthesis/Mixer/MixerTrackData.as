@@ -8,6 +8,7 @@ package com.increpare.bfxr.synthesis.Mixer
 		public var onset:Number	=  0 ;
 		public var volume:Number	=  1 ;
 		public var synthdata:String	= "" ; // if this is "", then track not set
+		public var reverse:Boolean = false;
 		
 		public function MixerTrackData()
 		{
@@ -19,7 +20,8 @@ package com.increpare.bfxr.synthesis.Mixer
 			result += id.toString()+"|";
 			result += synthdata+"|";
 			result += onset+"|";
-			result += volume;
+			result += volume + "|";
+			result += reverse;
 			return result;
 		}
 		
@@ -30,6 +32,7 @@ package com.increpare.bfxr.synthesis.Mixer
 			synthdata = ar[1];
 			onset = Number(ar[2]);
 			volume = Number(ar[3]);
+			reverse = ar[4]=="false"?false:true;
 		}
 	}
 }
