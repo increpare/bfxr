@@ -1,6 +1,7 @@
 package
 {
 	import Mixer.MixerController;
+	import Mixer.MixerTrackController;
 	
 	import com.increpare.bfxr.synthesis.*;
 	import com.increpare.bfxr.synthesis.Mixer.*;
@@ -61,7 +62,8 @@ package
 				}
 			}
 			
-			_app.PlayButton.enabled=trackFound;			
+			_app.PlayButton.enabled=trackFound;	
+			_app.exportwav.enabled=trackFound;
 		}
 		
 		public function OnParameterChanged(audible:Boolean = true, underlyingModification:Boolean = true, forceplay:Boolean = false):void
@@ -69,7 +71,7 @@ package
 			//apply applications to selected item's data
 			if (underlyingModification)
 			{
-				var ld:LayerData = _app.layerItems.getItemAt(_app.layerList.selectedIndex) as LayerData;
+				var ld:LayerData = _app.layerItems.getItemAt(_app.mixesList.selectedIndex) as LayerData;
 				ld.data = mixerController.Serialize() ;				
 				_app.EnableApplyButton(true);				
 			}
@@ -89,17 +91,18 @@ package
 		public function RemoveOrphanSounds():void
 		{
 			var mtp:MixerTrackPlayer;
+			var mtc:MixerTrackController;
 			
 			for (var i:int=0;i<mixerController.mixerPlayer.tracks.length;i++)
 			{
+				mtc = mixerController.trackControllers[i];				
 				mtp = mixerController.mixerPlayer.tracks[i];
 				if (mtp.IsSet())
 				{
 					// check if synth still exists in list
 					if (_app.GetIndexOfSoundItemWithID(mtp.data.id)<0)
 					{
-						//if not, then clear
-						mtp.LoadSynth(null);					
+						mtc.ClearTrack(false);				
 					}		
 				}
 			}
@@ -158,14 +161,18 @@ package
 						//compare strings (should only really compare audible parts...not locking stuff...but that can wait
 						if (mtp.data.synthdata!=sd.data)
 						{
-							//they're not the same, need to update
+							//they're not the same, need to update							
 							mtp.LoadSynth(sd);
+							modified=true;
 						}						
 					}
 				}
 			}	
 			
-			RefreshUI();
+			if (modified)
+			{
+				RefreshUI();
+			}
 		}	
 		
 		public function ComponentChangeCallback(tag:String,e:Event):void
@@ -190,6 +197,11 @@ package
 		public function Deserialize(data:String):void
 		{
 			mixerController.Deserialize(data);
+		}
+		
+		public function Stop():void
+		{
+			mixerController.MixerStopAll();
 		}
 		
 		public function DeserializeFromClipboard(data:String,allowplay:Boolean=true):void

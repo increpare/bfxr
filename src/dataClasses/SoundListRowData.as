@@ -5,10 +5,12 @@ package dataClasses
 
 	[Bindable]
 	[Event(name=SLIDER_CHANGE, type="flash.events.Event")]
+	[Event(name=SLIDER_BEGIN_CHANGE, type="flash.events.Event")]
 	[Event(name=LOCKEDNESS_CHANGE, type="flash.events.Event")]
 	[Event(name=DEFAULT_CLICK, type="flash.events.Event")]
 	public class SoundListRowData extends EventDispatcher {
 		
+		public static const SLIDER_BEGIN_CHANGE:String="SliderBeginChange";
 		public static const SLIDER_CHANGE:String="SliderChange";
 		public static const LOCKEDNESS_CHANGE:String="LockednessChange";
 		public static const DEFAULT_CLICK:String="DefaultClick";

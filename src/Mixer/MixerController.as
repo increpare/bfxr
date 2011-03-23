@@ -70,6 +70,7 @@ package Mixer
 				var mtp:MixerTrackPlayer = mixerPlayer.tracks[i];
 				var mtv:MixerTrackView = trackViews.getItemAt(i) as MixerTrackView;
 				mtv.volume = mtp.data.volume;
+				mtv.reverse=mtp.data.reverse;
 								
 				// update dropdown id
 				mtv.trackindex = _app.GetIndexOfSoundItemWithID(mtp.data.id);				
@@ -114,14 +115,13 @@ package Mixer
 			return trackLength;
 		}
 		
-		public function RecalcTrackLength():void
+		public function RecalcTrackLength(allowredraw:Boolean=true):void
 		{
 			//calc the length (in seconds)
 			var trackLength:Number = TrackLength();
 			
 			//clamp the onsets as appropriate
-		
-			
+					
 			for (var i:int=0;i<mixerPlayer.tracks.length;i++)
 			{
 				var mtp:MixerTrackPlayer = mixerPlayer.tracks[i];
@@ -129,14 +129,17 @@ package Mixer
 				{
 					continue;
 				}
-				if (mtp.data.onset+mtp.synth.GetLength()>=trackLength)
+				if (mtp.data.onset+mtp.synth.GetLength()>trackLength)
 				{
 					mtp.data.onset=trackLength - mtp.synth.GetLength();
 				}
 			}
 			
 			//regenerate onsets + graphics in view
-			RefreshWaveView(trackLength);
+			if (allowredraw)
+			{
+				RefreshWaveView(trackLength);
+			}
 		}
 		
 		private function RefreshWaveView(trackLength:Number):void
@@ -167,11 +170,8 @@ package Mixer
 		
 		private function PrepareForPlay():void
 		{
-			MixerStopAll();
-			for (var i:int=0;i<this.trackViews.length;i++)
-			{
-				
-			}
+			//indirectly calls mixerstopall
+			_app.StopAll();
 		}
 		
 		public function MixerStopAll(event:Event = null):void

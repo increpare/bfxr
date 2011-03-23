@@ -21,13 +21,18 @@
 				(slider.skin as TickedHSliderSkin).track.skin.invalidateDisplayList();	
 				slider.value=data.value;
 			}			
-						
+			
 			private function SliderValueChange(event:Event):void
 			{
 				data.value=this.slider.value;
 				(data as SoundListRowData).dispatchEvent(new Event(SoundListRowData.SLIDER_CHANGE));
-			}			
+			}						
 			
+			private function SliderValueBeginChange(event:Event):void
+			{
+				(data as SoundListRowData).dispatchEvent(new Event(SoundListRowData.SLIDER_BEGIN_CHANGE));				
+			}
+						
 			private function OnLockButtonChanged(event:Event):void
 			{
 				data.locked = locked.selected;
@@ -60,7 +65,7 @@
 	</s:Line>
 	<s:HGroup 
 		verticalCenter="0" 
-		left="2" 
+		left="5" 
 		right="5" 
 		top="1" 
 		bottom="2" 
@@ -79,7 +84,7 @@
 			id = "fieldlabel"
 			toolTip = "{data.tooltip}"
 			text="{data.label}" 
-			width="170" 
+			width="167" 
 			height="17"  
 			verticalAlign="middle" 
 			enabled="{data.enabled}" 
@@ -98,6 +103,7 @@
 			valid="true" 
 			top="0" 
 			bottom="5"
+			changeStart="SliderValueBeginChange(event)"
 		 	changeEnd="SliderValueChange(event)"
 			/>
 	</s:HGroup>

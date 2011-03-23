@@ -60,17 +60,19 @@ package
 				slrd.max = 			SfxrParams.ParamData[i][6];
 				slrd.square = 		SfxrParams.SquareParams.indexOf(slrd.tag)>=0;
 				
-				if (lastgroup!=slrd.bggroup)
+				//if (lastgroup!=slrd.bggroup)
 					odd=!odd;
 				
 				slrd.odd = 		odd;
 				slrd.enabled =	true;
 				slrd.value = _synth.params.getParam(slrd.tag);
 				
-				lastgroup =		slrd.bggroup;
 				slrd.addEventListener(SoundListRowData.DEFAULT_CLICK,function(e:Event):void{ComponentChangeCallback("reset",e);});
 				slrd.addEventListener(SoundListRowData.LOCKEDNESS_CHANGE,function(e:Event):void{ComponentChangeCallback("locked",e);});
 				slrd.addEventListener(SoundListRowData.SLIDER_CHANGE,function(e:Event):void{ComponentChangeCallback("slider",e);});
+				//slrd.addEventListener(SoundListRowData.SLIDER_BEGIN_CHANGE,function(e:Event):void{ComponentBeginChangeCallback("slider",e);});				
+				
+				lastgroup =		slrd.bggroup;
 				
 				//ChangeWatcher.watch(slrd,"locked",LockStatusChanged);
 				//ChangeWatcher.watch(slrd,"value",SliderValueChanged);
@@ -124,8 +126,27 @@ package
 			{
 				RefreshUI();
 			}			
-		}				
+		}	
+		
+		/** Called right now only when a person begins to drag a volume slider */
+		public function ComponentBeginChangeCallback(tag:String,e:Event):void
+		{
+			
+			switch(tag)
+			{
+				case "slider":
+					_app.StopAll();
+					break;				
+				default:
+					throw new Error("tag not identified");
+			}	
+		}
 
+		public function Stop():void
+		{
+			_synth.stop();
+		}
+		
         // called when synth and visuals have been synced
         // audible if we want to retrigger a play 
         //(e.g. changing lock status of a field shouldn't trigger a replay)
@@ -199,6 +220,7 @@ package
 			for (i=0;i<_app.SoundParameterList.length;i++)
 			{
 				var slrd:SoundListRowData = _app.SoundParameterList.getItemAt(i) as SoundListRowData;
+				
 				slrd.locked = _synth.params.lockedParam(slrd.tag);
 			}
 			_app.lockwave.selected = _synth.params.lockedParam("waveType");
@@ -207,6 +229,7 @@ package
 			for (i=0;i<_app.SoundParameterList.length;i++)
 			{
 				slrd = _app.SoundParameterList.getItemAt(i) as SoundListRowData;
+
 				slrd.value = _synth.params.getParam(slrd.tag);
 			}
 			
@@ -222,6 +245,7 @@ package
 			_app.createNew.enabled=true;
 			_app.volumeslider.value = _synth.params.getParam("masterVolume");
 			_app.PlayButton.enabled=true;
+			_app.exportwav.enabled=true;
 		}
 		
 		public function GeneratePreset(tag:String):void
@@ -236,6 +260,8 @@ package
 			for (var i:int=0;i<_app.SoundParameterList.length;i++)
 			{
 				var slrd:SoundListRowData = _app.SoundParameterList.getItemAt(i) as SoundListRowData;
+
+				
 				if (slrd.square)
 				{
 					slrd.enabled=int(_synth.params.getParam("waveType")) == 0;

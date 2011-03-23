@@ -41,6 +41,7 @@
 		//
 		//--------------------------------------------------------------------------
 		
+		public static const MIN_LENGTH:Number = 0.18;
 		public static const version:int = 104;
 		public static const CACHED:String = "cached";		// triggered when the synth stored in this is fully cached (either via a cache command, or play()).
 		public static const PLAY_COMPLETE:String = "playcomplete";		// triggered when the synth stored in this is fully cached (either via a cache command, or play()).		
@@ -212,7 +213,7 @@
 		 */
 		public function play(updateCallback:Function = null,volume:Number=1):void
 		{
-			trace("playing : " + this.params.Serialize());
+			//trace("playing : " + this.params.Serialize());
 			
 			if (_cachingAsync) return;
 			
@@ -680,6 +681,8 @@
 		/* Length in quarter-seconds */
 		public function GetLength():Number
 		{			
+			clampTotalLength();
+			
 			var p:SfxrParams = _params;
 			var envelopeLength0:Number = p.getParam("attackTime") * p.getParam("attackTime") * 100000.0;
 			var envelopeLength1:Number = p.getParam("sustainTime") * p.getParam("sustainTime") * 100000.0;
@@ -688,6 +691,18 @@
 
 		}
 		
+		private function clampTotalLength():void
+		{
+			var p:SfxrParams = _params;
+			var totalTime:Number = p.getParam("attackTime") + p.getParam("sustainTime") + p.getParam("decayTime");
+			if (totalTime < MIN_LENGTH ) 
+			{
+				var multiplier:Number = MIN_LENGTH / totalTime;
+				p.setParam("attackTime",p.getParam("attackTime") * multiplier);
+				p.setParam("sustainTime",p.getParam("sustainTime") * multiplier);
+				p.setParam("decayTime",p.getParam("decayTime") * multiplier);
+			}
+		}
 		
 		/**
 		 * Resets the runing variables from the params
@@ -748,14 +763,7 @@
 				
 				if (p.getParam("sustainTime") < 0.01) p.setParam("sustainTime", 0.01);
 				
-				var totalTime:Number = p.getParam("attackTime") + p.getParam("sustainTime") + p.getParam("decayTime");
-				if (totalTime < 0.18) 
-				{
-					var multiplier:Number = 0.18 / totalTime;
-					p.setParam("attackTime",p.getParam("attackTime") * multiplier);
-					p.setParam("sustainTime",p.getParam("sustainTime") * multiplier);
-					p.setParam("decayTime",p.getParam("decayTime") * multiplier);
-				}
+				clampTotalLength();
 				
 				_sustainPunch = p.getParam("sustainPunch");
 				

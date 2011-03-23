@@ -18,6 +18,11 @@ package com.increpare.bfxr.synthesis.Mixer
 			//synth.Load(data.synthdata);
 		}
 		
+		public function UnSet():void
+		{
+			LoadSynth(null);
+		}
+		
 		public function IsSet():Boolean
 		{
 			return data.synthdata!="";

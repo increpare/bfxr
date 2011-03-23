@@ -11,7 +11,7 @@
 		override protected function RenameData():void
 		{
 			//OVERRIDE THIS
-			var app:sfxr_interface = this.parentApplication as sfxr_interface;
+			var app:sfxr_interface = sfxr_interface(this.parentApplication);
 			app.RenameSoundData(data as SoundData);
 		}
 		

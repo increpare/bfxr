@@ -46,7 +46,7 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		["Wave Type","Shape of the wave.",
 			0,"waveType",2,0,WAVETYPECOUNT-0.0001], // the 6.999 thing is because this is really an int parameter...		
 		
-		["Master Volume","Overall volume of the sound",
+		["Master Volume","Overall volume of the sound.",
 			1,"masterVolume",0.5,0,1], 	
 		["Attack Time","Length of the volume envelope attack.",
 			1,"attackTime",0,0,1],		
@@ -65,17 +65,17 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		["Frequency Cutoff","If sliding, the sound will stop at this frequency, to prevent really low notes.  If unlocked, this is set to zero during randomization.",
 			2,"minFrequency",0.0,0,1], 		
 		
-		["Frequency Slide","Slides the frequency up or down",
+		["Frequency Slide","Slides the frequency up or down.",
 			3,"slide",0.0,-1,1], 	
-		["Delta Slide","Accelerates the frequency slide",
+		["Delta Slide","Accelerates the frequency slide.  Can be used to get the frequency to change direction.",
 			3,"deltaSlide",0.0,-1,1], 		
 		
-		["Vibrato Depth","Strength of the vibrato effect",
+		["Vibrato Depth","Strength of the vibrato effect.",
 			4,"vibratoDepth",0,0,1], 		
-		["Vibrato Speed","Speed of the vibrato effect (i.e. frequency)",
+		["Vibrato Speed","Speed of the vibrato effect (i.e. frequency).",
 			4,"vibratoSpeed",0,0,1], 		
 		
-		["Harmonics","Overlays copies of the waveform with copies and multiples of its frequency (warning: can be slow).",
+		["Harmonics","Overlays copies of the waveform with copies and multiples of its frequency.  Good for bulking out or otherwise enriching the texture of the sounds (warning: this is the number 1 cause of bfxr slowdown!).",
 			13,"overtones",0,0,1], 		
 		["Harmonics Falloff","The rate at which higher overtones should decay.",
 			13,"overtoneFalloff",0,0,1], 
@@ -85,42 +85,42 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		
 		["Pitch Jump Amount 1","Jump in pitch, either up or down.",
 			5,"changeAmount",0,-1,1], 		
-		["Pitch Jump Onset 1","When the note shift happens.",
+		["Pitch Jump Onset 1","How quickly the note shift happens.",
 			5,"changeSpeed",0,0,1], 		
 		
 		["Pitch Jump Amount 2","Jump in pitch, either up or down.",
 			5,"changeAmount2",0,-1,1], 	
-		["Pitch Jump Onset 2","When the note shift happens.",
+		["Pitch Jump Onset 2","How quickly the note shift happens.",
 			5,"changeSpeed2",0,0,1], 		
 		
-		["Square Duty","Square waveform only : Controls the ratio between the up and down states of the square wave, changing the tibre .",
+		["Square Duty","Square waveform only : Controls the ratio between the up and down states of the square wave, changing the tibre.",
 			8,"squareDuty",0,0,1], 		
-		["Duty Sweep","Square waveform only : Sweeps the duty up or down",
+		["Duty Sweep","Square waveform only : Sweeps the duty up or down.",
 			8,"dutySweep",0,-1,1], 		
 		
-		["Repeat Speed","Speed of the note repeating - certain variables are reset each time",
+		["Repeat Speed","Speed of the note repeating - certain variables are reset each time.",
 			9,"repeatSpeed",0,0,1], 	
 		
-		["Flanger Offset","Offsets a second copy of the wave by a small phase, changing the tibre",
+		["Flanger Offset","Offsets a second copy of the wave by a small phase, changing the tibre.",
 			10,"flangerOffset",0,-1,1], 		
-		["Flanger Sweep","Sweeps the phase up or down",
+		["Flanger Sweep","Sweeps the phase up or down.",
 			10,"flangerSweep",0,-1,1], 
 		
-		["Low-pass Filter Cutoff","Frequency at which the low-pass filter starts attenuating higher frequencies ",
+		["Low-pass Filter Cutoff","Frequency at which the low-pass filter starts attenuating higher frequencies.  Named most likely to result in 'Huh why can't I hear anything?' at her high-school grad. ",
 			11,"lpFilterCutoff",1,0,1], 		
-		["Low-pass Filter Cutoff Sweep","Sweeps the low-pass cutoff up or down",
+		["Low-pass Filter Cutoff Sweep","Sweeps the low-pass cutoff up or down.",
 			11,"lpFilterCutoffSweep",0,-1,1], 	
-		["Low-pass Filter Resonance","Changes the attenuation rate for the low-pass filter, changing the timbre ",
+		["Low-pass Filter Resonance","Changes the attenuation rate for the low-pass filter, changing the timbre.",
 			11,"lpFilterResonance",0,0,1], 		
 		
-		["High-pass Filter Cutoff","Frequency at which the high-pass filter starts attenuating lower frequencies",
+		["High-pass Filter Cutoff","Frequency at which the high-pass filter starts attenuating lower frequencies.",
 			12,"hpFilterCutoff",0,0,1], 	
-		["High-pass Filter Cutoff Sweep","Sweeps the high-pass cutoff up or down",
+		["High-pass Filter Cutoff Sweep","Sweeps the high-pass cutoff up or down.",
 			12,"hpFilterCutoffSweep",0,-1,1], 	
 						
 		["Bit Crush","Resamples the audio at a lower frequency.",
 			14,"bitCrush",0,0,1] ,
-		["Bit Crush Sweep","Sweeps the Bit Crush filter up or down",
+		["Bit Crush Sweep","Sweeps the Bit Crush filter up or down.",
 			14,"bitCrushSweep",0,-1,1]  
 		
 		];

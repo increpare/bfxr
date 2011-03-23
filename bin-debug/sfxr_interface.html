@@ -3,15 +3,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">	
     <!-- 
     Smart developers always View Source. 
-    
-    This application was built using Adobe Flex, an open source framework
-    for building rich Internet applications that get delivered via the
-    Flash Player or to desktops via Adobe AIR. 
-    
-    Learn more about Flex at http://flex.org 
     // -->
     <head>
-        <title>as3sfxr-b</title>
+        <title>Bfxr.  Make sound effects for your games. </title>
         <meta name="google" value="notranslate">         
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 		<!-- Include CSS to eliminate any default margins/padding and set the height of the html element and 
@@ -24,13 +18,14 @@
 			html, body	
 			{ 
 				height:100%; 
-				width:662px;
+				width:630px;
 				margin-top:10px;
 				margin-left: auto;
   				margin-right: auto; 
 			}
-			body { margin:0; padding:0; overflow:auto; 
-			       background-color: #ccbda1; }   
+			body { margin:10px; padding:0; overflow:auto; 
+			       background-color: #ccbda1;
+			      }
 			object:focus { outline:none; }
 			#flashContent { display:none; }
         </style>
@@ -92,11 +87,6 @@ var tabberOptions = {
 <script type="text/javascript" src="tabber.js"></script>
         
 		
-		<!-- Enable Browser History by replacing useBrowserHistory tokens with two hyphens -->
-        <!-- BEGIN Browser History required section -->
-        <link rel="stylesheet" type="text/css" href="history/history.css" />
-        <script type="text/javascript" src="history/history.js"></script>
-        <!-- END Browser History required section -->  
 		    
         <script type="text/javascript" src="swfobject.js"></script>
         <script type="text/javascript">
@@ -143,7 +133,7 @@ var tabberOptions = {
             attributes.align = "middle";
             swfobject.embedSWF(
                 "sfxr_interface.swf", "flashContent", 
-                "662", "584", 
+                "630", "584", 
                 swfVersionStr, xiSwfUrlStr, 
                 flashvars, params, attributes);
 			<!-- JavaScript enabled so display the flashContent div in case it is not replaced with a swf object. -->
@@ -168,14 +158,14 @@ var tabberOptions = {
         </div>
 	   	
        	<noscript>
-            <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="662" height="584" id="sfxr_interface">
+            <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="630" height="584" id="sfxr_interface">
                 <param name="movie" value="sfxr_interface.swf" />
                 <param name="quality" value="high" />
                 <param name="bgcolor" value="#ccbda1" />
                 <param name="allowScriptAccess" value="sameDomain" />
                 <param name="allowFullScreen" value="true" />
                 <!--[if !IE]>-->
-                <object type="application/x-shockwave-flash" data="sfxr_interface.swf" width="662" height="584">
+                <object type="application/x-shockwave-flash" data="sfxr_interface.swf" width="630" height="584">
                     <param name="quality" value="high" />
                     <param name="bgcolor" value="#ccbda1" />
                     <param name="allowScriptAccess" value="sameDomain" />
@@ -196,56 +186,134 @@ var tabberOptions = {
             </object>
 	    </noscript>	
 	    
-	    <p/>
-	    <center><a href="">the original Sfxr</a> - <a href="">as3sfxr</a></center>
-	    <p/>
+	    <p>
+	    <center><a href="">Standalone version</a> (Requires Adobe AIR).</center>
+	    </p>
+	    
 <div class="tabber" id="tab1">
 
   <div class="tabbertab">
-  <h2>What is this</h2>
+  <h2>What is this?</h2>
+  <h1>PLEASE DON'T DISRTIBUTE THIS LINK YET, STILL IN PRIVATE TESTING</h1>
+  
+  <center><iframe title="YouTube video player" width="480" height="390" src="http://www.youtube.com/embed/r0hNfW-a2U8" frameborder="0" allowfullscreen></iframe></center>
+     <p/>  
+     Bfxr is an elaboration of the glorious <a href="http://drpetter.se/project_sfxr.html">Sfxr</a>, the go-to program of choice for many people looking to make sound effects for computer games.
+     <p/>
+     Bfxr has moved in the direction of increased complexity and range of expression.  All the buttons that you know and love are there, but there are some new things as well:
      
-	    <p/>
-	    <h1>PRIVATE TEST VERSION ONLY, please don't distribute link</h1>
+     <ul>
+     <li>5 new waveforms : triangle, breaker, tan, whistle, and pink noise.</li>
+     <li>3 new filters : compression, harmonics, and bitcrusher.</li>
+     <li>Ability to lock parameters during mutation/randomization.</li>
+     <li>Expanded pitch-jumping abilities - good for arpeggiation effects.</li>
+     <li>Visualisation</li>
+     <li>Mixer</li>
+     <li>Keeps your sounds and mixes in persistant lists.</li>
+     <li>Can reverse synths</li>
+     <li>Ability to link directly to sounds</li>
+     </ul>
 	    
-	    	    <p/>
-	    <s><a href="http://ded.increpare.com/~locus/as3sfxr-b.air">DOWNLOAD AIR VERSION</a></s>
-	    <p/>
-	    <a href="https://github.com/increpare/as3sfxr-b">Source code is here on github</a>.  As with as3sfxr, this is released under <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache Licence 2.0</a>.As with Tom's version, this includes a standalone as3 synthesizer that's easy enough to integrate into other projects.
-	    <p/>
-	    If you experience any stuttering while a sound is synthesizing, if you hit play again it should play through uninterrupted... .
-	    <p/>
-	    
+     If you use this for anything cool, or have any suggestions for improvements, or bugs to report, please <a href="mailto:analytic@gmail.com">drop me a mail</a> or leave a comment on the comments page.
+     <p/>	    
+     For what it's worth, most of the work on this version was done by me, <a href="http://www.increpare.com">increpare</a>.  If you appreciate the work I've done, consider <a href="http://www.increpare.com/2010/08/donating/">donating some money</a>.  'twill help with things like hosting costs, and food.
   </div>
   <div class="tabbertab">  
-<h2>Keyboard Shortcuts</h2>
-<p>ctrl+C / ctrl+V to copy/paste<br/> Enter/Return to play</p> 
-<h3>What is this?</h3>
-<p>Bfxr is a thing that makes sounds, based on Sfxr, a beautiful program by DrPetter.  It's particularly useful for making the sorts of sounds that you'd hear in old computer games, though its capabilities are somewhat broader.</p>
-<h3>How do I use this?</h3>
-adasd
+<h2>Shortcuts + Tips</h2>
+<h4>Shortcuts</h4>
+<ul>
+<li>Ctrl+C / Ctrl+V to copy/paste (or Cmd + C/Cmd + V if you're on a Mac).</li> 
+<li>Enter/Return to play.</li>
+</ul> 
+<h4>Tips</h4>
+<p>
+<ul>
+<li>If you click on the text beside one of the sliders, it moves the slider back to its default position.</li>
+<li>There's some handy info in the tooltips.</li>
+<li>If you don't want to download adobe air for the privilege of a standalone version, you can safely just download this webpage to your hard disk and run it locally.</li>
+<li>You may find it gets slow or stutters sometimes.  If you hit play a second time it should play just fine.  A chief cause of slowness is use of the 'harmonics' parameter in the synth screen.  It's tres beautiful, but be careful with it.  </li>
+<li>Running multiple copies at once is DANGEROUS, only the data from one of them will remain.  So be careful about opening lots of links to sounds that people have made all at once.  However, and this is the tip part: you can paste the URL in with the paste faculty as well (via the button, or ctrl+v).  </li>
+<li>The presets only traverse a small portion of the sonic range of this program.  Try playing around with parmeters, layering them in the mixer, see what happens :)</li>
+<li>If you like the sounds you've made with this, consider putting them into a game, eh? 'tis not hard nowadays to toss a game together.</li>
+</ul>
+</p>
+
   </div>
 
   <div class="tabbertab">
 
-<h2>It's too complicated</h2>
-Nah, it's not that bad.  You can restrict yourself to using the preset buttons.
-
-If you find it totally overwhelming, then try out <a href="http://www.superflashbros.net/as3sfxr/">the original</a> flash port here - it's a lot more straight-forward :)
-<h3>I want to download this</h3>
-<p>There's a stand-alone executable available, which requires <a href="http://get.adobe.com/air/">adobe air</a> to already be installed.  You can download it <a>here</a>.</p>
-<h3>Where's the code</h3>
-<p><a href="https://github.com/increpare/as3sfxr-b">Source code is here on github</a>.  As with as3sfxr, this is released under <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache Licence 2.0</a>.As with Tom's version, this includes a standalone as3 synthesizer that's easy enough to integrate into other projects.</p>
-
+<h2>It's too complicated!</h2>
+Nah, it's not that bad.  Go watch the video on the first tab.  You can restrict yourself to using the preset buttons, or working entirely from the mixer tab.  Paying attention to the tooltips might help.  
+<p/>
+But, you know, if you want something more easy going, try out this program's direct predecessor, <a href="http://www.superflashbros.net/as3sfxr/">as3Sfxr</a>.  It's a direct port of the original sfxr for flash, and it's totally great.
 
   </div>
+
+  <div class="tabbertab">
+
+<h2>Code</h2>
+
+<a href="https://github.com/increpare/as3sfxr-b">Source code is here on github</a>. 
+<p/>
+This is released under the <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache Licence 2.0</a>.  As with <a href="http://www.superflashbros.net/as3sfxr/">Tom's version</a>, this includes a standalone as3 synthesizer that's easy enough to integrate into other projects.	    
+</div>
+
 
   <div class="tabbertab">
 <h2>Credits</h2>
-<p><h4>1: archaeology</h4><br />	I don't know if it's related, but I believe that _why made a program called sound foley (which I haven't been able to get to work) which looks quite similar to sfxr in design based on what I've seen of his _why's presentation of it.<br />	The darling DrPetter made the program this is based on, sfxr<br />		http://drpetter.se/	<br />		http://drpetter.se/article_sound.html<br />		http://drpetter.se/project_sfxr.html<br />	he's worked on lots of other cool projects as well.  <br />	The fabulous Tom Vian did a flash port of this, called as3sfxr<br />		http://www.tomvian.com/<br />		http://www.superflashbros.net/as3sfxr/<br />	There's also a port of sfxr to osx that's quite loved by people called cfxr<br />		http://thirdcog.eu/apps/cfxr<br />	I did a mod of this that introduced some new features, callused as3sfxr-b<br />		http://ded.increpare.com/~locus/as3sfxr-b/<br />	I added some more features, and called it bfxr.</p>
-<p><h4>2: code from</h4><br/>	Code snippits taken from <br/>		http://blog.flexexamples.com/2010/04/14/setting-a-custom-skin-class-on-a-spark-checkbox-control-in-flex-4/<br/>		http://www.firstpr.com.au/dsp/pink-noise/#Filtering </p>
-<p><h4>3: thanks</h4><br />	DrPetter, for sfxr<br />	Tom Vian, for his elegantly constructed as3sfxr port<br />	@docky, @Draknek, @KommanderKlobb, @eigenbo, @GrimFang4, @nyarla, @bfod, @jasperbyrne, @draknek, mcc, and agj for feedback + suggestions<br />, the people from the #flex irc room on freenode for technical help, especially J_A_X.</p>
-<p><h4>4: other software that can be software for making sounds</h4><br />	Audacity - http://audacity.sourceforge.net/<br />	HighC - http://highc.org/	<br />	PXTone - http://buzinkai.net/PXTone/tutorial/<br />	Sound Effects Generator - http://www.windowsgames.co.uk/effects.html (windows only.  I nicked a couple of things from this.  )</p>
-  </div>
+<p><h4>Archaeology</h4>	
+I don't know if it's related, but I believe that _why made a program called sound foley (which I haven't been able to get to work) which looks quite similar to sfxr in design based on what I've seen of his _why's presentation of it.<p/>	The darling DrPetter made the program this is based on, sfxr
+<ul>
+	<li>	<a href="http://drpetter.se/">http://drpetter.se/</a></li>		
+	<li>	<a href="http://drpetter.se/article_sound.html">http://drpetter.se/article_sound.html</a></li>		
+	<li>	<a href="http://drpetter.se/project_sfxr.html">http://drpetter.se/project_sfxr.html</a></li>	
+</ul>		
+		he's worked on lots of other cool projects as well.  <br />	
+		
+		The fabulous Tom Vian did a flash port of this, called as3sfxr<br />		
+<ul>		
+	<li>	<a href="http://www.tomvian.com/">http://www.tomvian.com/</a></li>		
+	<li>	<a href="http://www.superflashbros.net/as3sfxr/">http://www.superflashbros.net/as3sfxr/</a></li>	
+</ul>		
+		
+There's also a port of sfxr to osx that's quite loved by people called cfxr
+<ul>
+	<li>	<a href="http://thirdcog.eu/apps/cfxr">http://thirdcog.eu/apps/cfxr</a></li>
+</ul>		
+			I did a mod of this that introduced some new features, call as3sfxr-b
+<ul>		
+	<li>	<a href="http://ded.increpare.com/~locus/as3sfxr-b/">http://ded.increpare.com/~locus/as3sfxr-b/</a></li>
+</ul>
+After asking for feedback, I spent some time adding and changing more things, making something new.  Which is Bfxr.  Which is what you see on this page.</p>
+
+<h4>Code from</h4>	
+Bulk of coding of this version done by <a href="http://www.increpare.com">poor little me</a>.  
+<p/> 
+In addition to code from Tom/DrPetter, code snippits taken from 
+<ul>		
+	<li>	<a href="http://blog.flexexamples.com">http://blog.flexexamples.com</a> for a bunch of custom ui stuff</li>		
+	<li>	<a href="http://www.firstpr.com.au/dsp/pink-noise/#Filtering">http://www.firstpr.com.au/dsp/pink-noise/#Filtering</a> </li> for pink-noise related synthesis
+</ul>  
+
+<h4>Thanks + Acknolwedgements</h4>	
+<ul>
+<li>DrPetter, for sfxr.</li>
+<li>Tom Vian, for his elegantly constructed as3sfxr port.</li>
+<li><a href="http://www.twitter.com/docky">@docky</a>, <a href="http://www.twitter.com/Draknek">@Draknek</a>, <a href="http://www.twitter.com/KommanderKlobb">@KommanderKlobb</a>, <a href="http://www.twitter.com/eigenbo">@eigenbo</a>, <a href="http://www.twitter.com/GrimFang4">@GrimFang4</a>, <a href="http://www.twitter.com/nyarla">@nyarla</a>, <a href="http://www.twitter.com/bfod">@bfod</a>, <a href="http://www.twitter.com/jasperbyrne">@jasperbyrne</a>, <a href="http://www.twitter.com/draknek">@draknek</a>, <a href="http://www.twitter.com/hybridmind">@hybridmind</a>, mcc, and agj for feedback + suggestions.</li>
+<li>The people from the #flex irc room on freenode for technical help in my hour of need, especially J_A_X.</li>
+</ul>
+
+<h4>Other software that can be software for making sounds</h4>
+<ul>	
+<li>Audacity - <a href="http://audacity.sourceforge.net/">http://audacity.sourceforge.net/</a></li>	
+<li>HighC - <a href="http://highc.org/">http://highc.org/</a>	</li>	
+<li>PXTone - <a href="http://buzinkai.net/PXTone/tutorial/">http://buzinkai.net/PXTone/tutorial/</a></li>	
+<li>Sound Effects Generator - <a href="http://www.windowsgames.co.uk/effects.html">http://www.windowsgames.co.uk/effects.html</a> (windows only.  I nicked a couple of things from this.  )</li>
+<li>Freesound - <a href="http://www.freesound.org">http://www.freesound.org</a> - Okay, not sound software, but a really amazing resource.
+</ul>
+</div>
+  
+  
   <div class="tabbertab">
   <h2>Comments</h2>
 
@@ -276,5 +344,6 @@ tabberAutomatic(tabberOptions);
 <center>
 	    <a href="mailto:analytic@gmail.com">analytic@gmail.com</a> | <a href="http://www.increpare.com">increpare.com</a>
 	</center>    	
+	<p/>
    </body>
 </html>

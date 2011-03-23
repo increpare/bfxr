@@ -40,7 +40,6 @@ package Mixer
 			mtv.OnMixerVolumeClick=		this.OnMixerVolumeClick;
 			mtv.OnMixerOnsetClick=		this.OnMixerMixerOnsetClick;
 			mtv.OnMixerPlayClick=		this.OnPlayClick;
-			mtv.OnMixerClearClick=		this.OnMixerClearClick;
 			mtv.OnMixerReverseClick=	this.OnMixerReverseClick;
 			mtv.OnMixerStartDrag=		this.OnMixerStartDrag;
 		}
@@ -51,7 +50,14 @@ package Mixer
 		
 		private function OnMixerDropdownClick():void 
 		{ 
-			var id:int;
+			//reset params before putting something in if it wasn't set already.
+			if (_trackPlayer.IsSet()==false)
+			{
+				var targetindex:int=_trackView.trackindex;
+				ClearTrack(false,false);
+				_trackView.trackindex=targetindex;
+			}
+			
 			if (_trackView.trackindex>=0)
 			{
 				var sd:SoundData = SoundData(_app.soundItems.getItemAt(_trackView.trackindex));
@@ -60,17 +66,39 @@ package Mixer
 			}
 			else
 			{
-				//won't be hidden unless made null.
-				_trackPlayer.data.onset=0;
-				_trackView.onset=0;
-				_trackPlayer.data.volume=1;
-				_trackView.volume=1;
-				
-				_trackPlayer.LoadSynth(null);
-				_parent.RecalcTrackLength();
+				ClearTrack(false);
 			}
+			
 			_app.mixerInterface.OnParameterChanged(true,true);
 		}		
+		
+		public function ClearTrack(doOnParameterChanged:Boolean=true,allowredraw:Boolean=true):void
+		{	
+			_trackPlayer.UnSet();			
+			_trackView.trackindex=-1;
+			_trackPlayer.data.onset=0;
+			_trackView.onset=0;
+			_trackPlayer.data.volume=1;
+			_trackView.volume=1
+			_trackPlayer.data.reverse=false;
+			_trackView.reverse=false;
+			
+			_trackPlayer.LoadSynth(null);
+			_parent.RecalcTrackLength(allowredraw);
+			
+			if (doOnParameterChanged)
+			{
+				_app.mixerInterface.OnParameterChanged(true,true);		
+			}
+		}
+		
+		private var lastDescr:String = "";
+		
+		//used for checking if graphic has been modified
+		private function MiniTrackSerialize(trackLength:Number):String
+		{
+			return _trackPlayer.data.synthdata+"£"+_trackPlayer.data.reverse+"£"+_trackPlayer.data.volume+"£"+trackLength;
+		}
 		
 		public function DrawWave():void
 		{
@@ -78,18 +106,31 @@ package Mixer
 			var mtp:MixerTrackPlayer = _trackPlayer;
 			var mtv:MixerTrackView = _trackView;
 			
+			
 			if (mtp.IsSet()==false)
 			{
+				lastDescr="";
 				mtv.graphic=null;
 				return;
 			}
-			
+						
 			var trackLength:Number = _parent.TrackLength();
+			mtv.onset = mtp.data.onset*(MixerRowRenderer.GraphWidth+1)/trackLength;	
 			
-			mtv.onset = mtp.data.onset*MixerRowRenderer.GraphWidth/trackLength;			
+			var newDescr:String = MiniTrackSerialize(trackLength);									
+			if (newDescr==lastDescr)
+			{
+				//don't draw if unnecessary;
+				return;
+			}
+			else
+			{
+				lastDescr=newDescr;
+			}		
 			
-			var sliderimage:Bitmap = new Bitmap();				
-			sliderimage.bitmapData = new BitmapData(Math.max(1,mtp.synth.GetLength()*MixerRowRenderer.GraphWidth/trackLength),MixerRowRenderer.GraphHeight,false,0xe7d1a7);
+			var sliderimage:Bitmap = new Bitmap();	
+			var len:Number = mtp.synth.GetLength();
+			sliderimage.bitmapData = new BitmapData(Math.max(1,len*MixerRowRenderer.GraphWidth/trackLength),MixerRowRenderer.GraphHeight,false,0xe7d1a7);
 			sliderimage.width = sliderimage.bitmapData.width;
 			sliderimage.height = sliderimage.bitmapData.height;
 			
@@ -170,12 +211,6 @@ package Mixer
 		private function PlayCallback_OnFinished(e:Event=null):void
 		{
 			_trackView.playbarposition=-1;
-		}
-		
-		private function OnMixerClearClick():void 
-		{ 			
-			_trackView.trackindex=-1;
-			OnMixerDropdownClick();
 		}
 		
 		private function OnMixerReverseClick():void 

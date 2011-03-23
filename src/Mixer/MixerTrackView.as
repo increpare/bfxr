@@ -10,7 +10,6 @@ package Mixer
 		public var OnMixerVolumeClick:Function;
 		public var OnMixerOnsetClick:Function;
 		public var OnMixerPlayClick:Function;
-		public var OnMixerClearClick:Function;
 		public var OnMixerReverseClick:Function;
 		public var OnMixerStartDrag:Function;//used to stop playback
 		
