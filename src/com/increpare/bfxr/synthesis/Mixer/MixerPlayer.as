@@ -43,9 +43,12 @@ package com.increpare.bfxr.synthesis.Mixer
 			var result:ByteArray = new ByteArray();
 			var l:uint=ba.length;
 			//subtract 8 because reading a float each time :P
-			for (ba.position=ba.length-4;ba.position<ba.length;ba.position-=8)
+			ba.position=ba.length-4;
+			
+			for (var pos:int=ba.length-4;pos>=0;pos-=4)
 			{
-				result.writeFloat(ba.readFloat());
+				ba.position=pos;				
+				result.writeFloat(ba.readFloat());				
 			}
 			return result;
 		}

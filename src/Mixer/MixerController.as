@@ -183,6 +183,7 @@ package Mixer
 				var mtp:MixerTrackPlayer = this.mixerPlayer.tracks[i];
 
 				mtp.synth.stop();
+				mtp.waveplayer.stop();
 				mtv.playbarposition=-1;				
 			}
 		}

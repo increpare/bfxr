@@ -34,7 +34,8 @@ package Mixer
 			_trackView = mtv;
 			_trackPlayer = parent.mixerPlayer.tracks[_index];	
 			
-			_trackPlayer.synth.addEventListener(SfxrSynth.PLAY_COMPLETE,PlayCallback_OnFinished);				
+			_trackPlayer.synth.addEventListener(SfxrSynth.PLAY_COMPLETE,PlayCallback_OnFinished);
+			_trackPlayer.waveplayer.addEventListener(SfxrSynth.PLAY_COMPLETE,PlayCallback_OnFinished);				
 			
 			mtv.OnMixerDropdownClick=	this.OnMixerDropdownClick;
 			mtv.OnMixerVolumeClick=		this.OnMixerVolumeClick;
@@ -193,7 +194,19 @@ package Mixer
 		private function OnPlayClick():void 
 		{ 			
 			_trackView.playbarposition=0;
-			_trackPlayer.synth.play(PlayCallback_Track);
+			if (_trackPlayer.data.reverse)
+			{
+				_trackPlayer.synth.stop();
+				//have to pre-cache, reverse, then play
+				var data:ByteArray = _trackPlayer.synth.cachedWave;
+				data = MixerPlayer.Reverse(data);
+				_trackPlayer.waveplayer.play(data,PlayCallback_Track,this._trackPlayer.data.volume);
+			}
+			else
+			{
+				_trackPlayer.waveplayer.stop();
+				_trackPlayer.synth.play(PlayCallback_Track,this._trackPlayer.data.volume);
+			}
 		}
 		
 		private function PlayCallback_Track(playingtime:Number):void
