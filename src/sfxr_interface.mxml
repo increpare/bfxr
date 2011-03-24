@@ -265,6 +265,7 @@
 				
 				return false;
 			}
+			
             private function onApplicationComplete():void
             {					
 				ExternalInterface.addCallback("hasModifiedData",hasModifiedData);
@@ -301,9 +302,9 @@
                     {
 						synthInterface.randomize();
 						soundList.selectedIndex=0;
-                        AddToSoundList("Randomize", true);
-						synthInterface.randomize();
-						synthInterface.OnParameterChanged(true, true);
+                        AddToSoundList("Jump", true,false);
+						synthInterface.GeneratePreset("generateJump");
+						synthInterface.OnParameterChanged(false, true);
 						UIUpdateTrigger();
                     }
 
@@ -712,7 +713,7 @@
 						
 					}
 					
-                    AddToSoundList(newsoundname,true, globalState.playOnChange);
+                    AddToSoundList(newsoundname,true, false);
                 }
 				
 				synthInterface.GeneratePreset(b.id);
@@ -720,7 +721,7 @@
                 lastmanipulation = b.label;
 
                 synthInterface.RefreshUI();
-                synthInterface.OnParameterChanged(true,true);
+                synthInterface.OnParameterChanged(globalState.playOnChange,true);
 				
 				if (tabs.selectedIndex == 1 || globalState.createNew==true)
 				{
@@ -1411,14 +1412,14 @@
 		
 		<fx:XML format="e4x" id="loadoptions"> 
 			<root>
-				<editItem label="Load" toolTip="Load a single sound from a data-file"/> 
-				<editItem label="Load All" toolTip="Load a data-file containing a full mix list, sound list, you name it.  Replaces everything currently here."/> 
+				<editItem label="Load"/> 
+				<editItem label="Load All"/> 
 			</root>
 		</fx:XML>
 		<fx:XML format="e4x" id="saveoptions"> 
 			<root>				
-				<editItem label="Save" toolTip="Save the currently active sound to file."/> 
-				<editItem label="Save All" toolTip="Saves the entire state of everything to disk - mix list, sound list : everything." /> 
+				<editItem label="Save"/> 
+				<editItem label="Save All"/> 
 			</root>
 		</fx:XML>
 	</fx:Declarations>
@@ -1536,15 +1537,16 @@
                         gap="0"/>
                 </s:layout>
 
-                <s:List id="soundList"
-					focusEnabled="false"
+                <s:List id="soundList"					
                     width="170" height="100%"
                     itemRenderer="components.SoundListItemRenderer"
 					valueCommit="soundListValueCommit(event)"
 					change="soundListSelectionChanged(event)"
                     contentBackgroundColor="#CCBDA1"
                     requireSelection="true"
-					toolTip="Synth List - all of your lovely synths.">
+					toolTip="Synth List - all of your lovely synths."					
+					useVirtualLayout="false"
+					>
                     <s:layout>
                         <s:VerticalLayout horizontalAlign="justify" gap="0" paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0"/>
                     </s:layout>
@@ -1738,7 +1740,8 @@
 										contentBackgroundColor="#CCBDA1"	
 										toolTip="A list of all of your mixes.  If you like 'em, go use em!"
 										valueCommit="{this.globalState.OnLayerListSelectionChanged(event); saveManager.commitGlobal(globalState);}"
-										 borderVisible="true" right="-1" left="-1" top="-1" bottom="-1">
+										 borderVisible="true" right="-1" left="-1" top="-1" bottom="-1"				
+										 useVirtualLayout="false">
 									<s:layout>
 										<s:VerticalLayout horizontalAlign="justify" gap="0" paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0"/>
 									</s:layout>
