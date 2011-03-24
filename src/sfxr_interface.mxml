@@ -1146,7 +1146,7 @@
 				}
 				
 				var file:String = lib.Save();				
-				
+								
 				try
 				{
 					new FileReference().save(file, "sfx.bfxr_library");
