@@ -698,6 +698,15 @@
 				}
 				return result;
 			}
+			
+			/* assomes never more than one slash right now */
+			private static function stripSlashes(s:String):String
+			{
+				var result:String=s;
+				result = s.replace("/","_");
+				return result;
+			}
+			
             protected function clickPreset(event:MouseEvent):void
             {
                 var b:Button = event.target as Button;
@@ -712,6 +721,8 @@
 						newsoundname = stripTrailingNumbers(sd.label);
 						
 					}
+					
+					newsoundname = stripSlashes(newsoundname);
 					
                     AddToSoundList(newsoundname,true, false);
                 }
@@ -1450,11 +1461,11 @@
                         gap="5"/>
                 </s:layout>
                 <s:Button id="generatePickupCoin"
-                    label="Pickup/coin"
+                    label="Pickup/Coin"
 					toolTip="Blips and baleeps.  Try messing with the wave-forms to get your own sound."
                     click="clickPreset(event)"/>
                 <s:Button id="generateLaserShoot"
-                    label="Laser/shoot"
+                    label="Laser/Shoot"
 					toolTip="Pew pew.  Try playing about with the Frequency properties (slide + delta slide especially).  If you want to add some texture, try adding some light, high-frequency vibrato."
                     click="clickPreset(event)"/>
                 <s:Button id="generateExplosion"
@@ -1466,7 +1477,7 @@
 					toolTip="Whoo.  Try messing with the slide + delta slide parameters to make these less unreservedly exhuberant.  Or how about increasing the decay and playing with the Pitch Jump/Onset parameters?"
                     click="clickPreset(event)"/>
                 <s:Button id="generateHitHurt"
-                    label="Hit/hurt"
+                    label="Hit/Hurt"
 					toolTip="If you want something more crackly, try out a tan wave here."
                     click="clickPreset(event)"/>
                 <s:Button id="generateJump"

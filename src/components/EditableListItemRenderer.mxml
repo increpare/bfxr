@@ -157,7 +157,7 @@
 				 alpha="{data.modified?0.5:1.0}"
 				 focusOut="onChange(event)"	
 				 top="1"  bottom="1" left="1" right="33" minWidth="25"
-				 restrict="A-Za-z 0-9/_\-"
+				 restrict="A-Za-z 0-9_\-"
 				 keyDown="onEditKeyDown(event)"
 				 />
 	
