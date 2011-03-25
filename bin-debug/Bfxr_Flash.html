@@ -109,7 +109,7 @@ var tabberOptions = {
 	        
         
         function beforeunloadcallback(e) {
-        	if (thisMovie("${application}").hasModifiedData()) {
+        	if (thisMovie("Bfxr_Flash").hasModifiedData()) {
 			if(!e) e = window.event;
 			//e.cancelBubble is supported by IE - this will kill the bubbling process.
 			e.cancelBubble = true;
@@ -127,22 +127,22 @@ var tabberOptions = {
         </script>
         <script type="text/javascript">
             <!-- For version detection, set to min. required Flash Player version, or 0 (or 0.0.0), for no version detection. --> 
-            var swfVersionStr = "${version_major}.${version_minor}.${version_revision}";
+            var swfVersionStr = "10.0.0";
             <!-- To use express install, set to playerProductInstall.swf, otherwise the empty string. -->
-            var xiSwfUrlStr = "${expressInstallSwf}";
+            var xiSwfUrlStr = "playerProductInstall.swf";
             var flashvars = {};
             var params = {};
             params.quality = "high";
-            params.bgcolor = "${bgcolor}";
+            params.bgcolor = "#ccbda1";
             params.allowscriptaccess = "sameDomain";
             params.allowfullscreen = "true";
             var attributes = {};
-            attributes.id = "${application}";
-            attributes.name = "${application}";
+            attributes.id = "Bfxr_Flash";
+            attributes.name = "Bfxr_Flash";
             attributes.align = "middle";
             swfobject.embedSWF(
-                "${swf}.swf", "flashContent", 
-                "${width}", "${height}", 
+                "Bfxr_Flash.swf", "flashContent", 
+                "630", "584", 
                 swfVersionStr, xiSwfUrlStr, 
                 flashvars, params, attributes);
 			<!-- JavaScript enabled so display the flashContent div in case it is not replaced with a swf object. -->
@@ -157,7 +157,7 @@ var tabberOptions = {
         <div id="flashContent">
         	<p>
 	        	To view this page ensure that Adobe Flash Player version 
-				${version_major}.${version_minor}.${version_revision} or greater is installed. 
+				10.0.0 or greater is installed. 
 			</p>
 			<script type="text/javascript"> 
 				var pageHost = ((document.location.protocol == "https:") ? "https://" :	"http://"); 
@@ -167,23 +167,23 @@ var tabberOptions = {
         </div>
 	   	
        	<noscript>
-            <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="${width}" height="${height}" id="${application}">
-                <param name="movie" value="${swf}.swf" />
+            <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="630" height="584" id="Bfxr_Flash">
+                <param name="movie" value="Bfxr_Flash.swf" />
                 <param name="quality" value="high" />
-                <param name="bgcolor" value="${bgcolor}" />
+                <param name="bgcolor" value="#ccbda1" />
                 <param name="allowScriptAccess" value="sameDomain" />
                 <param name="allowFullScreen" value="true" />
                 <!--[if !IE]>-->
-                <object type="application/x-shockwave-flash" data="${swf}.swf" width="${width}" height="${height}">
+                <object type="application/x-shockwave-flash" data="Bfxr_Flash.swf" width="630" height="584">
                     <param name="quality" value="high" />
-                    <param name="bgcolor" value="${bgcolor}" />
+                    <param name="bgcolor" value="#ccbda1" />
                     <param name="allowScriptAccess" value="sameDomain" />
                     <param name="allowFullScreen" value="true" />
                 <!--<![endif]-->
                 <!--[if gte IE 6]>-->
                 	<p> 
                 		Either scripts and active content are not permitted to run or Adobe Flash Player version
-                		${version_major}.${version_minor}.${version_revision} or greater is not installed.
+                		10.0.0 or greater is not installed.
                 	</p>
                 <!--<![endif]-->
                     <a href="http://www.adobe.com/go/getflashplayer">

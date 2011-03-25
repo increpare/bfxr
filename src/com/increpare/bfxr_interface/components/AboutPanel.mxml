@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" 
+		  width="240"
+		  height="312"
+		 
+		   title="About" backgroundColor="#CCBDA1" enabled="true" contentBackgroundColor="#CCBDA1" skinClass="com.increpare.bfxr_interface.skins.AboutPanelSkin">
+
+	<fx:Script>
+		<![CDATA[
+			import flash.net.navigateToURL;
+			protected function linkClick(event:MouseEvent):void
+			{
+				var b:LinkButton = LinkButton(event.target);
+				navigateToURL(new URLRequest(b.label));
+			}
+			
+			protected function closeClick(event:MouseEvent):void
+			{
+				parent.removeChild(this);
+			}
+
+			protected function clickMail(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				navigateToURL(new URLRequest("mailto:analytic@gmail.com"));
+			}
+
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Label x="10" y="10" text="Bfxr" width="76" height="31" fontSize="36"/>
+	<mx:LinkButton x="10" y="69" label="http://www.bfxr.net" color="#0000FF" paddingLeft="0" paddingRight="0" click="linkClick(event)"/>
+	<mx:LinkButton x="10" y="114" label="http://www.increpare.com" color="#0000FF" paddingLeft="0" paddingRight="0" click="linkClick(event)"/>
+	<mx:LinkButton x="10" y="140" label="analytic@gmail.com" color="#0000FF" paddingLeft="0" paddingRight="0" click="clickMail(event)"/>
+	<mx:LinkButton x="11" y="194" label="http://www.superflashbros.net/as3sfxr/" color="#0000FF" paddingLeft="0" paddingRight="0" click="linkClick(event)"/>
+	<mx:LinkButton x="11" y="243" label="http://www.drpetter.se/project_sfxr.html" color="#0000FF" paddingLeft="0" paddingRight="0" click="linkClick(event)"/>
+	<s:Label x="10" y="49" text="Version 1.0"/>
+	<s:Label x="10" y="98" text="By increpare:"/>
+	<s:Label x="11" y="174" text="Based on as3sfxr:"/>
+	<s:Label x="11" y="223" text="Which is based on Sfxr:"/>
+	<s:Button x="84" label="Ok" click="closeClick(event);" bottom="12"/>
+</s:Panel>

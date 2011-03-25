@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   
+			   width="630" height="584"
+			   minHeight="584"
+			   minWidth="630"
+			   maxWidth="630"
+			   maxHeight="584"
+			   
+			   backgroundColor="#CCBDA1"
+			   backgroundAlpha="0"
+			   preloaderChromeColor="#CCBDA1" xmlns:local="*" xmlns:ns="com.increpare.bfxr_interface.components.*"
+			   applicationComplete="onApplicationComplete(event)"			   
+			   >
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		
+		/*
+			What follows is all flash-specific code.
+		*/
+		
+		private function onApplicationComplete(event:Event):void
+		{
+			ExternalInterface.addCallback("hasModifiedData",main.hasModifiedData);
+		}
+
+		//returns url of swf...should change to http://www.bfxr.net/ for release builds
+		public function GetApplicationURL():String
+		{
+			return ExternalInterface.call('window.location.href.toString');
+		}
+		
+		public function GetPastedString():String
+		{
+			var pasted:String = ExternalInterface.call('function(){return prompt("Enter sound text below:");}');
+			return pasted;
+		}
+		
+		public function LookForSoundInURL():String
+		{
+			var base:String = ExternalInterface.call('window.location.href.toString');
+			var ar:Array = base.split("?");
+			if (ar.length != 2)
+			{
+				return "";
+			}
+			
+			var tail:String = ar[1] as String;
+			var sounddescr:String = unescape(tail.substr(2));
+			return sounddescr;
+		}
+		
+		
+		/*
+				FILE RELATED ACTIVITIES
+		*/
+		
+		private var _fileRef:FileReference; // File reference for loading in sfs file
+		
+		/**
+		 * Opens a browse window to load a sound setting file
+		 */
+		public function clickLoadSound():void
+		{
+			_fileRef = new FileReference();
+			_fileRef.addEventListener(Event.SELECT, onSelectSettings);
+			try
+			{				
+				_fileRef.browse([ new FileFilter("SFX Sample Files (*.bfxrsound)", "*.bfxrsound")]);
+			}
+			catch (e:Error)
+			{
+				trace(e.message);
+			}
+		}
+		
+		/**
+		 * When the user selects a file, begins loading it
+		 * @param	e	Select event
+		 */
+		public function onSelectSettings(e:Event):void
+		{
+			_fileRef.cancel();
+			
+			_fileRef.removeEventListener(Event.SELECT, onSelectSettings);
+			_fileRef.addEventListener(Event.COMPLETE, onLoadSettings);
+			_fileRef.load();
+		}
+		
+		public function DoSave(dat:*,filter:String):void
+		{			
+			new FileReference().save(dat, filter);
+		}
+		
+		public function DoLoadAll():void
+		{
+			_fileRef = new FileReference();
+			_fileRef.addEventListener(Event.SELECT, onSelectLoadAllSettings);
+			try
+			{				
+				_fileRef.browse([ new FileFilter("BFXR Sample and Mixer Library (*.bfxrlibrary)", "*.bfxrlibrary")]);
+			}
+			catch (e:Error)
+			{
+				trace(e.message);
+			}
+		}
+		
+		public function onSelectLoadAllSettings(e:Event):void
+		{
+			_fileRef.cancel();
+			
+			_fileRef.removeEventListener(Event.SELECT, onSelectLoadAllSettings);
+			_fileRef.addEventListener(Event.COMPLETE, onLoadAllSettings);
+			_fileRef.load();
+		}
+		
+		
+		/**
+		 * Once loaded, passes the file to the synthesizer to parse
+		 * @param	e	Complete event
+		 */
+		public function onLoadAllSettings(e:Event):void
+		{
+			var i:int;
+			
+			_fileRef.removeEventListener(Event.COMPLETE, onLoadAllSettings);
+			var dat:String = _fileRef.data.toString();									
+			main.onLoadAllSettings(dat);
+			_fileRef = null;
+		}
+		
+		/**
+		 * Once loaded, passes the file to the synthesizer to parse
+		 * @param	e	Complete event
+		 */
+		public function onLoadSettings(e:Event):void
+		{
+			_fileRef.removeEventListener(Event.COMPLETE, onLoadSettings);
+			var dat:String = _fileRef.data.toString();
+			main.onLoadSettings(dat);
+			_fileRef = null;
+		}
+	</fx:Script>
+	<ns:Bfxr_interface  id="main"/>
+</s:Application>

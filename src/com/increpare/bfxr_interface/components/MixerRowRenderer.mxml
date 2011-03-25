@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				
+				 contentBackgroundColor="#CCBDA1" height="74" width="340"
+				  creationComplete="CreationComplete(event)"
+				  symbolColor="#CCBDA1" focusColor="#CCBDA1" rollOverColor="#CCBDA1">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.increpare.bfxr.dataClasses.SoundData;
+			import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
+			import com.increpare.bfxr_interface.mixerinterface.MixerTrackView;
+			import com.increpare.bfxr_interface.skins.ReverseCheckBoxSkin;
+			
+			import mx.binding.utils.BindingUtils;
+			import mx.binding.utils.ChangeWatcher;
+			import mx.events.FlexEvent;
+			import mx.events.PropertyChangeEvent;
+			import mx.events.PropertyChangeEventKind;
+			import mx.events.SandboxMouseEvent;
+			
+			import spark.components.List;
+			import spark.components.supportClasses.ListBase;
+			import spark.skins.spark.CheckBoxSkin;
+			
+			public static const GraphWidth:int=191; 
+			public static const GraphHeight:int=73; 
+			
+			private function PlayClick():void
+			{
+				var d:MixerTrackView=MixerTrackView(data);
+				d.OnMixerPlayClick();
+			}				
+			
+			private function CreationComplete(event:Event):void
+			{				
+				var app:Bfxr_interface = Bfxr_interface(this.parentApplication.main);		
+				dropdown.dataProvider=app.soundItems;
+				dropdown.selectedIndex=-1;
+			}	
+			
+			private function DropdownChange(event:Event = null):void
+			{				
+				var d:MixerTrackView=MixerTrackView(data);
+				d.trackindex = dropdown.selectedIndex;				
+				d.OnMixerDropdownClick();			
+			}
+			
+			private function DeselectClick():void
+			{
+				var d:MixerTrackView=MixerTrackView(data);
+				dropdown.selectedIndex=-1;
+				d.trackindex = -1;				
+				d.OnMixerDropdownClick();		
+			}						
+			
+			private function ReverseClick():void
+			{
+				var d:MixerTrackView=MixerTrackView(data);
+				d.reverse = reverse.selected;				
+				d.OnMixerReverseClick();		
+			}	
+			
+			private function volumechangedStart(event:Event):void
+			{				
+				var mtv:MixerTrackView = data as MixerTrackView;
+				mtv.OnMixerStartDrag();
+			}						
+			
+			
+			private function volumechanged(event:Event):void
+			{
+				var d:MixerTrackView=MixerTrackView(data);
+				d.volume = volumeslider.value;
+				d.OnMixerVolumeClick();
+			}						
+			
+			private var sliderClickPosition:Point;
+			
+			private function sliderImageClick(event:MouseEvent):void
+			{
+				var mtv:MixerTrackView = data as MixerTrackView;
+				mtv.OnMixerStartDrag();
+				sliderClickPosition = sliderimage.globalToLocal(new Point(event.stageX,event.stageY));
+				
+				
+				systemManager.getSandboxRoot().addEventListener(MouseEvent.MOUSE_MOVE, 
+					system_SliderMouseMoveHandler, true);
+				systemManager.getSandboxRoot().addEventListener(MouseEvent.MOUSE_UP, 
+					system_SliderMouseUpHandler, true);
+				systemManager.getSandboxRoot().addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, 
+					system_SliderMouseUpHandler);	
+				
+				event.stopImmediatePropagation();
+			}
+			
+			private function sliderImageContainerClick(event:MouseEvent):void
+			{
+				var mtv:MixerTrackView = data as MixerTrackView;
+				mtv.OnMixerStartDrag();
+				
+				sliderClickPosition = new Point(sliderimage.width/2);
+				
+				systemManager.getSandboxRoot().addEventListener(MouseEvent.MOUSE_MOVE, 
+					system_SliderMouseMoveHandler, true);
+				systemManager.getSandboxRoot().addEventListener(MouseEvent.MOUSE_UP, 
+					system_SliderMouseUpHandler, true);
+				systemManager.getSandboxRoot().addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, 
+					system_SliderMouseUpHandler);
+				
+				system_SliderMouseMoveHandler(event);
+			}
+			
+			private function system_SliderMouseMoveHandler(event:MouseEvent):void
+			{
+				var pos:Point = new Point(event.stageX,event.stageY);
+				
+				var targetPoint:Point = new Point(pos.x-sliderClickPosition.x,pos.y-sliderClickPosition.y);
+				
+				var containerPosGlobal:Point = sliderimagecontainer.parent.localToGlobal(new Point(sliderimagecontainer.x,sliderimagecontainer.y));
+				
+				//clamp targetPoint
+				if (targetPoint.x < containerPosGlobal.x)
+				{
+					targetPoint.x = containerPosGlobal.x;
+				}
+				if (targetPoint.x+sliderimage.width > containerPosGlobal.x+sliderimagecontainer.width)
+				{
+					targetPoint.x = containerPosGlobal.x+sliderimagecontainer.width-sliderimage.width;
+				}
+			
+				targetPoint = sliderimagecontainer.globalToLocal(targetPoint);
+			
+				sliderimage.x=int(targetPoint.x);
+			}
+			
+			private function system_SliderMouseUpHandler(event:MouseEvent):void
+			{
+				systemManager.getSandboxRoot().removeEventListener(MouseEvent.MOUSE_MOVE, 
+					system_SliderMouseMoveHandler, true);
+				systemManager.getSandboxRoot().removeEventListener(MouseEvent.MOUSE_UP, 
+					system_SliderMouseUpHandler, true);
+				systemManager.getSandboxRoot().removeEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, 
+					system_SliderMouseUpHandler);
+				
+				SliderImageChangeEnd();		
+			}
+			
+			private function PlayCallback(playingtime:Number):void
+			{
+				playline.x=Math.min(sliderimage.x+playingtime,sliderimagecontainer.width-3);
+			}
+			
+			public function PlayCallbackAbsolute(playingtime:Number):void
+			{
+				playline.x=Math.min(playingtime,sliderimagecontainer.width-3);
+			}
+			
+			public function PlayStart():void
+			{
+				playline.visible=true;
+			}
+			
+			public function PlayStop(event:Event = null):void
+			{
+				playline.x=0;
+				playline.visible=false;
+			}
+			
+			private function SliderImageChangeEnd():void
+			{				
+				var app:Bfxr_interface = Bfxr_interface(this.parentApplication.main);	
+				
+				var d:MixerTrackView=MixerTrackView(data);
+				d.onset = sliderimage.x;
+				d.OnMixerOnsetClick();	
+			}					
+
+		]]>
+	</fx:Script>
+	
+	<s:BorderContainer borderVisible="false" width="191" backgroundColor="0xccbda1" backgroundAlpha="1.0" right="0" mouseDown="sliderImageContainerClick(event)"  id="sliderimagecontainer" visible="{data.graphic!=null}" top="0" height="73">		
+		<s:layout>
+			<s:BasicLayout/>
+		</s:layout>
+		<mx:Image x="{data.onset}" y="0" useHandCursor="true"  buttonMode="true" mouseDown="sliderImageClick(event)" source="{data.graphic}" visible="{data.graphic!=null}" scaleContent="false" height="100%" id="sliderimage"/>
+			
+		<s:Line top="0" bottom="1" xFrom="0" xTo="0" x="-1">
+			<s:stroke>
+				<mx:SolidColorStroke color="#696969"/>
+			</s:stroke>		
+		</s:Line>	
+		
+		<s:Line id="playline" top="0" xFrom="0" yFrom="0" xTo="0"  yTo="71"  x="{Math.min(data.playbarposition,sliderimagecontainer.width-2)}" visible="{data.playbarposition>=0}">
+			<s:stroke>
+				<mx:SolidColorStroke color="0" alpha="1.0"/>			
+			</s:stroke>
+		</s:Line>
+		
+		<mx:Image x="{sliderimage.x-10}" alpha="{sliderimage.x>20?1:Math.max(0,sliderimage.x-10)/10}"  y="0" source="@Embed(source='../resources/leftarrow.png')" width="15" autoLoad="true"/>
+		<mx:Image x="{sliderimage.x+sliderimage.width}" 
+				  alpha="{sliderimage.x+sliderimage.width+20>sliderimagecontainer.width?Math.max(0,10-(sliderimage.x+sliderimage.width+20-sliderimagecontainer.width))/10:1}" y="0" source="@Embed(source='../resources/rightarrow.png')" width="15" autoLoad="true"/>
+
+	</s:BorderContainer>
+			
+	<s:Line  top="-1" left="-1" right="0" >		
+		<s:stroke>
+			<s:SolidColorStroke weight="1" color="#696969"/>
+		</s:stroke>				
+	</s:Line>
+	
+	<s:Line  bottom="0" left="-1" right="0" >		
+		<s:stroke>
+			<s:SolidColorStroke weight="1" color="#696969"/>
+		</s:stroke>				
+	</s:Line>
+	
+	<s:VSlider x="130" y="12" height="51" id="volumeslider" value="{data.volume}" minimum="0" maximum="2" changeStart="volumechangedStart(event)" toolTip="Change the volume for this sound in the mixer.  Unrelated to the Master Volume parameter of the source synth." changeEnd="volumechanged(event)" stepSize=".01" enabled="{data.trackindex>=0}"/>
+	<s:DropDownList id="dropdown" x="10"  y="10" selectedIndex="{data.trackindex}" change="DropdownChange(event)" requireSelection="false" toolTip="Choose a synth to put in your mix." borderVisible="true" enabled="true" contentBackgroundAlpha="1.0" symbolColor="#212121" width="116"></s:DropDownList>
+	<s:Button x="10" y="43" enabled="{data.trackindex>=0}" id="PlayButton" label="Play" toolTip="Play this sound by itself" click="PlayClick()"  width="50"/>
+	<s:Button x="97" y="43" enabled="{data.trackindex>=0}" id="Deselect" label="X" toolTip="Clears the channel." click="DeselectClick()" width="29" />
+	<s:CheckBox x="67" y="43" enabled="{data.trackindex>=0}" selected="{data.reverse &amp;&amp; data.trackindex>=0}" id="reverse" scaleX="1.5" scaleY="1.5" skinClass="com.increpare.bfxr_interface.skins.ReverseCheckBoxSkin" change="ReverseClick()" height="15" width="15" toolTip="Reverse the synth."/>
+
+</s:ItemRenderer>

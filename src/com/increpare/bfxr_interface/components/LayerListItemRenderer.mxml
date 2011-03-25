@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ns:EditableListItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				xmlns:ns="com.increpare.bfxr_interface.components.*"
+				>
+	
+	<fx:Script>
+		import com.increpare.bfxr.dataClasses.LayerData;
+		
+		override protected function RenameData():void
+		{
+			//OVERRIDE THIS
+			var app:Bfxr_interface = Bfxr_interface(this.parentApplication.main);
+			app.RenameLayerData(data as LayerData);
+		}
+		
+		override protected function RemoveData():void
+		{
+			//OVERRIDE THIS
+			var app:Bfxr_interface = Bfxr_interface(parentApplication.main);
+			app.RemoveFromLayerList(data);
+		}
+		
+	</fx:Script>
+	
+	
+</ns:EditableListItemRenderer>
