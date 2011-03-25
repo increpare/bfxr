@@ -1546,7 +1546,7 @@
                                         <s:ToggleButton id="W7"
                                             width="65"
                                             label="Whistle"
-											toolTip="A sin wave with an extra wav overlayed at a lower amplitude and 20x the frequency.  It can end up sounding buzzy, hollow, resonant, or breathy."											
+											toolTip="A sin wave with an additional sine wave overlayed at a lower amplitude and 20x the frequency.  It can end up sounding buzzy, hollow, resonant, or breathy."											
                                             change="synthInterface.WaveformSelect(event)"/>
                                         <s:ToggleButton id="W3"
                                             x="32.35" y="61.6" width="65"
