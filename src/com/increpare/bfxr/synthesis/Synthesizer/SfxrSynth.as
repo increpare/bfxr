@@ -441,7 +441,7 @@
 				this.cacheSound();
 			_cachedWave.position=0;
 			return _cachedWave;
-		}		
+		}				
 		
 		/** PlayerInterface implementation: */
 		public function Load(data:String):void
@@ -461,14 +461,14 @@
 			}
 		}
 		
-		public function Cache(callback:Function = null, maxTimePerFrame:uint = 5):void
+		public function Cache():void
 		{
-			cacheSound(callback,maxTimePerFrame);
+			cacheSound();
 		}
 		
-		public function CacheMutations(amount:Number = 0.05,count:int = 16,callback:Function = null, maxTimePerFrame:uint = 5):void
+		public function CacheMutations(amount:Number = 0.05,count:int = 16):void
 		{
-			cacheMutations(count,amount,callback,maxTimePerFrame);
+			cacheMutations(count,amount);
 		}
 		
 		public function getCachedWave():ByteArray

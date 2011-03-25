@@ -13,7 +13,6 @@
     <sourceAttachmentPath/>
   </compiler>
   <applications>
-    <application path="com/increpare/bfxr_interface/components/Bfxr_interface.mxml"/>
     <application path="Bfxr_Flash.mxml"/>
   </applications>
   <modules/>

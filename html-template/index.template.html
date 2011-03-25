@@ -259,9 +259,26 @@ But, you know, if you want something more easy going, try out this program's ins
 
 <h2>Code</h2>
 
-<a href="https://github.com/increpare/as3sfxr-b">Source code is here on github</a>. 
+I've put the code up on github
+<ul>
+<li><a href="https://github.com/increpare/bfxr">https://github.com/increpare/bfxr</a> release branch</li>
+<li><a href="https://github.com/increpare/bfxr/tree/dev">https://github.com/increpare/bfxr/tree/dev</a> development branch (very unstable)</li>
+</ul>
+
 <p/>
-This is released under the <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache Licence 2.0</a>.  As with <a href="http://www.superflashbros.net/as3sfxr/">Tom's version</a>, this includes a standalone as3 synthesizer that's easy enough to integrate into other projects.	    
+This is released under the <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache Licence 2.0</a>.  
+<p/>
+As with <a href="http://www.superflashbros.net/as3sfxr/">Tom's version</a>, the code is quite modular and can be easily incorporated into any as3 project.  
+<p/>
+The idea is that you can take the strings that you get by clicking 'copy' in the editor, and pass 
+them as strings to the Bfxr object.  The best usage is to pre-cache them using a cache function (with 
+an optional callback, if you want it to spread the calculation over several frames).
+<p/>
+It also has the ability to cache several mutations of a single object.
+<p/>
+I've put a skeletal example of its use here:
+<p/>
+
 </div>
 
 

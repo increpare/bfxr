@@ -10,14 +10,69 @@ package com.increpare.bfxr.synthesis.Mixer
 	import flash.events.SampleDataEvent;
 	import flash.media.Sound;
 	import flash.media.SoundChannel;
+	import flash.media.SoundTransform;
 	import flash.utils.ByteArray;
 	import flash.utils.Endian;
 
-	public class MixerPlayer extends EventDispatcher implements ISerializable
+	public class MixerPlayer extends EventDispatcher implements ISerializable, IPlayerInterface
 	{
 		public var id:int = -1;
 		public var volume:Number = 1;
 		public var tracks:Vector.<MixerTrackPlayer>;
+		
+		
+		/*
+			IPlayerInterface implementation
+		*/
+		
+		
+		public function Load(data:String):void
+		{
+			this.Deserialize(data);
+		}
+		
+		public function Play(volume:Number=1):void
+		{
+			if (this._mutations.length==0)
+			{
+				this.play(null,volume);
+			}
+			else
+			{
+				this.playRandomMutation(volume);
+			}
+		}
+		
+		public function Cache():void
+		{
+			PrepareMixForPlay();
+		}
+		
+		private var _mutations:Vector.<ByteArray> = new Vector.<ByteArray>();		
+		public function CacheMutations(amount:Number = 0.05,count:int=16):void
+		{
+			_mutations = new Vector.<ByteArray>();
+			
+			var original:String = this.Serialize();
+			
+			for (var i:int=0;i<count;i++)
+			{
+				//mutate each track
+				for (var j:int=0;j<tracks.length;j++)
+				{
+					tracks[j].synth.cacheMutations(count,amount);
+				}
+				
+				PrepareMixForPlay(true)
+				_mutations.push(_waveData);
+			}
+			
+			_lastplayeddata="";
+		}
+		
+		/*
+			Other methods
+		*/
 		
 		public function MixerPlayer() 
 		{
@@ -93,10 +148,10 @@ package com.increpare.bfxr.synthesis.Mixer
 		private var _preparedvolumes:Vector.<Number>; //stores corresponding volumes
 		private static var _zeros:ByteArray;
 		
-		private function PrepareMixForPlay():void
+		private function PrepareMixForPlay(mutation:Boolean=false):void
 		{
 			var description:String = this.Serialize();
-			if (_lastplayeddata!=description)
+			if (_lastplayeddata!=description || mutation)
 			{
 				_lastplayeddata = description;
 				
@@ -124,7 +179,9 @@ package com.increpare.bfxr.synthesis.Mixer
 						silentbytes-=bytestocopy;
 					}
 					
-					var cached:ByteArray = tracks[i].synth.cachedWave;
+					var cached:ByteArray = mutation==false 
+												? tracks[i].synth.cachedWave 
+												: tracks[i].synth.getCachedMutationWave(0);
 					if (tracks[i].data.reverse)
 					{
 						cached=Reverse(cached);
@@ -141,7 +198,31 @@ package com.increpare.bfxr.synthesis.Mixer
 			}		
 		}
 		
-		public function play(updateCallback:Function=null):void
+		public function playRandomMutation(vol:Number=1):void
+		{
+			_waveData = _mutations[int(Math.random()*_mutations.length)];
+			
+			if (_preparedsounds.length==0)
+			{
+				return;
+			}
+			
+			if (_channel)
+			{
+				_channel.stop();
+			}
+			
+			_waveData.position = 0;
+			_waveDataLength = _waveData.length;
+			_waveDataBytes = 24576;
+			_waveDataPos = 0; 	
+			_caching=true;
+			if (!_sound) (_sound = new Sound()).addEventListener(SampleDataEvent.SAMPLE_DATA, onSoundData);
+			
+			_channel = _sound.play(0,0,new SoundTransform(vol,0));
+		}
+		
+		public function play(updateCallback:Function=null, vol:Number=1):void
 		{
 			_updateCallback=updateCallback;
 			
@@ -164,7 +245,7 @@ package com.increpare.bfxr.synthesis.Mixer
 			_caching=true;
 			if (!_sound) (_sound = new Sound()).addEventListener(SampleDataEvent.SAMPLE_DATA, onSoundData);
 			
-			_channel = _sound.play();
+			_channel = _sound.play(0,0,new SoundTransform(vol,0));
 		}
 		
 		public function stop():void

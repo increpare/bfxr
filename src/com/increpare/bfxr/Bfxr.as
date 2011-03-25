@@ -1,10 +1,10 @@
 package com.increpare.bfxr
 {
-	import com.increpare.bfxr.synthesis.Mixer;
 	import com.increpare.bfxr.synthesis.IPlayerInterface;
+	import com.increpare.bfxr.synthesis.Mixer.MixerPlayer;
 	import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
 
-	public class Bfxr
+	public class Bfxr 
 	{
 		public function Load(data:String):void
 		{		
@@ -24,29 +24,24 @@ package com.increpare.bfxr
 			_active.Play(volume);
 		}		
 		
-		public function Cache(callback:Function = null, maxTimePerFrame:uint = 5):void
+		public function Cache():void
 		{
-			_active.Cache(callback,maxTimePerFrame);
+			_active.Cache();
 		}
 		
-		public function CacheMutations(mutationAmount:Number = 0.05, count:int=15,callback:Function = null, maxTimePerFrame:uint = 5):void
+		public function CacheMutations(mutationAmount:Number = 0.05, count:int=15):void
 		{
-			_active.CacheMutations(mutationAmount,count,callback,maxTimePerFrame);
+			_active.CacheMutations(mutationAmount,count);
 		}
 		
 		private var _synth:SfxrSynth;		
-		private var _mixer:Mixer;
+		private var _mixer:MixerPlayer;
 		private var _active:IPlayerInterface;
 		
-		public function Bfxr(data:String="")
+		public function Bfxr()
 		{			
 			_synth = new SfxrSynth();
-			_mixer = new Mixer();
-			
-			if(data!="")
-			{
-				Load(data);
-			}
+			_mixer = new MixerPlayer();			
 		}
 	}
 }
