@@ -14,6 +14,7 @@
 			   preloaderChromeColor="#CCBDA1" xmlns:local="*" xmlns:ns="com.increpare.bfxr_interface.components.*"
 			   applicationComplete="onApplicationComplete(event)"			   
 			   >
+	
 	<fx:Declarations>
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
 	</fx:Declarations>
