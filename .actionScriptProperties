@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<actionScriptProperties analytics="false" mainApplicationPath="sfxr_interface.mxml" projectUUID="5867244b-4b51-481e-a944-dde58af01f1f" version="6">
+<actionScriptProperties analytics="false" mainApplicationPath="Bfxr_Flash.mxml" projectUUID="5867244b-4b51-481e-a944-dde58af01f1f" version="6">
   <compiler additionalCompilerArguments="-locale en_US -static-link-runtime-shared-libraries=true" autoRSLOrdering="true" copyDependentFiles="true" fteInMXComponents="false" generateAccessible="true" htmlExpressInstall="true" htmlGenerate="true" htmlHistoryManagement="true" htmlPlayerVersionCheck="true" includeNetmonSwc="false" outputFolderPath="bin-debug" sourceFolderPath="src" strict="true" targetPlayerVersion="0.0.0" useApolloConfig="false" useDebugRSLSwfs="true" verifyDigests="true" warn="true">
     <compilerSourcePath/>
     <libraryPath defaultLinkType="1">
@@ -13,10 +13,9 @@
     <sourceAttachmentPath/>
   </compiler>
   <applications>
-    <application path="sfxr_interface.mxml"/>
+    <application path="com/increpare/bfxr_interface/components/Bfxr_interface.mxml"/>
+    <application path="Bfxr_Flash.mxml"/>
   </applications>
-  <modules>
-    <module application="src/sfxr_interface.mxml" destPath="components/SoundParameterRowRenderer.swf" optimize="true" sourcePath="src/components/SoundParameterRowRenderer.mxml"/>
-  </modules>
+  <modules/>
   <buildCSSFiles/>
 </actionScriptProperties>

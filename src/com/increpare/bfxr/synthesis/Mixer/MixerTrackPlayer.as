@@ -4,7 +4,7 @@ package com.increpare.bfxr.synthesis.Mixer
 	import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
 	import com.increpare.bfxr.synthesis.WavePlayer;
 	
-	import dataClasses.SoundData;
+	import com.increpare.bfxr.dataClasses.SoundData;
 
 	public class MixerTrackPlayer implements ISerializable
 	{
