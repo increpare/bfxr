@@ -1,3 +1,4 @@
+echo on
 ./commit
 git checkout master
 git pull
@@ -9,3 +10,4 @@ git push -u origin dev
 git checkout master
 git push -u origin master
 git checkout dev
+echo off
