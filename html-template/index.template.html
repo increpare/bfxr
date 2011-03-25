@@ -207,7 +207,7 @@ var tabberOptions = {
        <p/>  
      Bfxr is an elaboration of the glorious <a href="http://drpetter.se/project_sfxr.html">Sfxr</a>, the program of choice for many people looking to make sound effects for computer games.
      <p/>
-     Bfxr has moved in the direction of increased complexity and range of expression.  All the buttons that you know and love are there, but there are some new things as well:     
+     Bfxr has moved in the direction of increased complexity and range of expression.  All the buttons that you know and love are here, but there are some new things as well:     
      <ul>
      <li>5 new waveforms : triangle, breaker, tan, whistle, and pink noise.</li>
      <li>3 new filters : compression, harmonics, and bitcrusher.</li>
@@ -221,7 +221,7 @@ var tabberOptions = {
      </ul>	    
      If you use this for anything cool, or have any suggestions for improvements, or bugs to report, please <a href="mailto:analytic@gmail.com">drop me a mail</a> or leave a comment.
      <p/>	    
-     For what it's worth, most of the work on this version was done by me, <a href="http://www.increpare.com">increpare</a>.  If you appreciate the work I've done, consider <a href="http://www.increpare.com/2010/08/donating/">donating some money</a>.  'twill help with things like hosting costs, and food.
+     For what it's worth, most of the work on this version was done by me, <a href="http://www.increpare.com">increpare</a>.  If you appreciate the work I've done, consider <a href="http://www.increpare.com/2010/08/donating/">donating</a>.
   </div>
   <div class="tabbertab">  
 <h2>Secrets!</h2>
@@ -252,17 +252,18 @@ Nah, it's not that bad.  You can restrict yourself to using the preset buttons, 
 <p/>  
 But mostly, my advise it to listen to the sounds, and to try get an understanding, not just of what they sound like (though that's important), but how they might function as sound effects, and how various parameter tweaks might affect how they come across.
 <p/>
-But, you know, if you want something more easy going, try out this program's inspiration: <a href="http://www.superflashbros.net/as3sfxr/">as3Sfxr</a>.  It's a direct port of the original Sfxr for flash, and it's totally great and has a whole lot less buttons and sliders than .
+But, you know, if you want something more easy going, try out this program's inspiration: <a href="http://www.superflashbros.net/as3sfxr/">as3Sfxr</a>.  It's a direct port of the original Sfxr for flash, and it's totally great and has a whole lot less buttons and sliders than Bfxr.
 </div>
 
 <div class="tabbertab">
 
-<h2>Code</h2>
+<h2>Code + API</h2>
 
 I've put the code up on github
 <ul>
-<li><a href="https://github.com/increpare/bfxr">https://github.com/increpare/bfxr</a> release branch</li>
+<li><a href="https://github.com/increpare/bfxr">https://github.com/increpare/bfxr</a>release branch</li>
 <li><a href="https://github.com/increpare/bfxr/tree/dev">https://github.com/increpare/bfxr/tree/dev</a> development branch (very unstable)</li>
+<li><a href="https://github.com/increpare/bfxr">https://github.com/increpare/bfxr-air</a>AIR-specific code/li>
 </ul>
 
 <p/>
@@ -270,15 +271,17 @@ This is released under the <a href="http://www.apache.org/licenses/LICENSE-2.0.h
 <p/>
 As with <a href="http://www.superflashbros.net/as3sfxr/">Tom's version</a>, the code is quite modular and can be easily incorporated into any as3 project.  
 <p/>
+<ul>
+<li><a href="https://github.com/increpare/bfxr-api-example">https://github.com/increpare/bfxr-api-example</a>Bfxr API example</li>
+</ul>
 The idea is that you can take the strings that you get by clicking 'copy' in the editor, and pass 
 them as strings to the Bfxr object.  The best usage is to pre-cache them using a cache function (with 
 an optional callback, if you want it to spread the calculation over several frames).
 <p/>
-It also has the ability to cache several mutations of a single object.
+It also has the ability to cache several mutations of a single object at run-time.  This can be good for getting a reach-feeling environment, and cuts down on the usual repeitition of sound-effects.
 <p/>
-I've put a skeletal example of its use here:
+Let me know if you do anything cool with it!
 <p/>
-
 </div>
 
 
