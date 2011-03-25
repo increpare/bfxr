@@ -1,0 +1,8 @@
+./commit
+git checkout master
+git pull
+git push
+git checkout dev
+git merge master
+git checkout dev
+git push -u origin dev
