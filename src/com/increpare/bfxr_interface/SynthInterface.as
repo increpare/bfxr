@@ -181,7 +181,7 @@ package com.increpare.bfxr_interface
 		
 		public function DeserializeFromClipboard(str:String,allowplay:Boolean=true):void
 		{			
-			_app.AddToSoundList("Paste", true);
+			_app.AddToSoundList("Paste", true,false);
 			Deserialize(str);
 			RefreshUI();
 			OnParameterChanged(allowplay, true);

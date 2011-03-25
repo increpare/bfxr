@@ -349,6 +349,7 @@
             private function TryLoadFromURL():Boolean
             {
                 var sounddescr:String = parentApplication.LookForSoundInURL();
+
 				if (sounddescr=="")
 					return false;
 				
