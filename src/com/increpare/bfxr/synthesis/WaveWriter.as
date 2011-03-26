@@ -142,6 +142,8 @@ package com.increpare.bfxr.synthesis
 		}
 		
 		public function addSamples(sb:ByteArray):void {
+			sb.position=0;
+			
 			outBuffer.position=writePointer;
 			outBuffer.endian=Endian.LITTLE_ENDIAN;
 			

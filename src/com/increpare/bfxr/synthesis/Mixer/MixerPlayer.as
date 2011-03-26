@@ -195,7 +195,7 @@ package com.increpare.bfxr.synthesis.Mixer
 				}
 				
 				Mix();
-			}		
+			}	
 		}
 		
 		public function playRandomMutation(vol:Number=1):void
