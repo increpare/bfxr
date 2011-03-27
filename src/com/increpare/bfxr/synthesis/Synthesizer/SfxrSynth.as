@@ -1114,6 +1114,10 @@
 					_superSample += _sample;
 				}
 				
+				// Clipping if too loud
+				if(_superSample > 8.0) 	_superSample = 8.0;
+				else if(_superSample < -8.0) 	_superSample = -8.0;					 				 				
+				
 				// Averages out the super samples and applies volumes
 				_superSample = _masterVolume * _envelopeVolume * _superSample * 0.125;				
 				
@@ -1129,10 +1133,6 @@
 				
 				_superSample=_bitcrush_last; 				
 			
-				// Clipping if too loud
-					 if(_superSample > 1.0) 	_superSample = 1.0;
-				else if(_superSample < -1.0) 	_superSample = -1.0;					 				 
-				 
 					 
 					 
 				 //compressor
