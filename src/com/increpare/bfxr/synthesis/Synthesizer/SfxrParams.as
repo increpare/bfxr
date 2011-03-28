@@ -485,7 +485,7 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		
 		//some constants used for weighting random values 
 		
-		private var RandomizationPower:Object = 
+		private const RandomizationPower:Object = 
 			{
 				attackTime:4,
 				sustainTime:2,
@@ -503,6 +503,19 @@ package com.increpare.bfxr.synthesis.Synthesizer
 				bitCrush:4,			
 				bitCrushSweep:5
 			}
+			
+		private const WaveTypeWeights:Array = 
+			[
+				1,//0:square
+				1,//1:saw
+				1,//2:sin
+				1,//3:noise
+				1,//4:triangle
+				1,//5:pink
+				1,//6:tan
+				1,//7:whistle
+				1//8:breaker
+			];
 			
 		/**
 		 * Sets all parameters to random values
@@ -525,6 +538,26 @@ package com.increpare.bfxr.synthesis.Synthesizer
 			}
 			
 			paramsDirty = true;
+			
+			if (!lockedParam("waveType"))
+			{
+				var count:int=0;
+				for (var i:int=0;i<WaveTypeWeights.length;i++)
+				{
+					count+=WaveTypeWeights[i];
+				}
+				r = Math.random()*count;
+				for (i=0;i<WaveTypeWeights.length;i++)
+				{
+					r-=WaveTypeWeights[i];
+					if (r<=0)
+					{
+						setParam("waveType",i);
+						break;
+					}
+				}
+				
+			}
 			
 			if (!lockedParam("repeatSpeed"))
 			{

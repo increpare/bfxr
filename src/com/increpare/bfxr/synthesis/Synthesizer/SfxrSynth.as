@@ -1042,7 +1042,7 @@
 								_sample += overtonestrength*(_pinkNoiseBuffer[uint(tempphase * 32 / int(_periodTemp))%32]);
 								break;
 							}
-							case 6: // bipolar
+							case 6: // tan
 							{
 								//detuned
 								_sample += Math.tan(Math.PI*tempphase/_periodTemp)*overtonestrength;
@@ -1066,7 +1066,7 @@
 								
 								break;
 							}
-							case 8: // Up 
+							case 8: // Breaker
 							{	
 								var amp:Number = tempphase/_periodTemp;								
 								_sample += overtonestrength*(Math.abs(1-amp*amp*2)-1);
