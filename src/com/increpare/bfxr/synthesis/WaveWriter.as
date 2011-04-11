@@ -20,13 +20,13 @@ package com.increpare.bfxr.synthesis
 		private var writePointer:uint;
 		
 		private var riffSizePointer:uint, dataSizePointer:uint, factSamplesPointer:uint;
-		
-		public function WaveWriter(stereo:Boolean,bits:uint=32,b:ByteArray=null) {
+				
+		public function WaveWriter(stereo:Boolean,bits:uint=32,b:ByteArray=null) {			
 			
 			this.stereo=stereo;
 			bitsPerSample=bits;
 			useFloat=bits>=32;
-			
+						
 			if(b) {
 				outBuffer=b;
 			} else {
@@ -141,9 +141,10 @@ package com.increpare.bfxr.synthesis
 			
 		}
 		
-		public function addSamples(sb:ByteArray):void {
-			sb.position=0;
+		public function addSamples(sb:ByteArray):void {	
 			
+			sb.position=0;
+						
 			outBuffer.position=writePointer;
 			outBuffer.endian=Endian.LITTLE_ENDIAN;
 			
