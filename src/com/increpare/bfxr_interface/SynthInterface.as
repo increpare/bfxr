@@ -1,12 +1,11 @@
 package com.increpare.bfxr_interface
 {
-    import com.increpare.bfxr.synthesis.Synthesizer.SfxrParams;
-    import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
-    
-    import com.increpare.bfxr_interface.components.SoundParameterRowRenderer;
-    
     import com.increpare.bfxr.dataClasses.SoundData;
     import com.increpare.bfxr.dataClasses.SoundListRowData;
+    import com.increpare.bfxr.synthesis.Synthesizer.SfxrParams;
+    import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
+    import com.increpare.bfxr_interface.components.Bfxr_interface;
+    import com.increpare.bfxr_interface.components.SoundParameterRowRenderer;
     
     import flash.events.Event;
     import flash.utils.ByteArray;
@@ -14,13 +13,13 @@ package com.increpare.bfxr_interface
     
     import mx.binding.utils.*;
     import mx.collections.ArrayList;
+    import mx.controls.Alert;
     import mx.core.UIComponent;
     
     import spark.components.CheckBox;
     import spark.components.HSlider;
     import spark.components.Label;
     import spark.components.ToggleButton;
-    import com.increpare.bfxr_interface.components.Bfxr_interface;
 
     public class SynthInterface implements ITabManager
     {
@@ -173,6 +172,63 @@ package com.increpare.bfxr_interface
 		{
 			return _synth.params.Serialize();
 		}
+		
+		
+		public function DeserializeSFS(file:ByteArray,allowplay:Boolean=true):void
+		{						
+			_app.AddToSoundList("Sfxr Synth", true,false);
+			
+			
+			_synth.params.resetParams();
+			_synth.params.setParam("compressionAmount",0);
+			
+			file.position = 0;
+			file.endian = Endian.LITTLE_ENDIAN;		
+			
+			var version:int = file.readInt();
+			
+			if(version != 100 && version != 101 && version != 102) return;			
+			
+			_synth.params.setParam("waveType", file.readInt());
+			_synth.params.setParam("masterVolume",(version == 102) ? file.readFloat() : 0.5);
+			
+			_synth.params.setParam("startFrequency",file.readFloat());
+			_synth.params.setParam("minFrequency",file.readFloat());
+			_synth.params.setParam("slide",file.readFloat());
+			_synth.params.setParam("deltaSlide",(version >= 101) ? file.readFloat() : 0.0);
+			
+			_synth.params.setParam("squareDuty",file.readFloat());
+			_synth.params.setParam("dutySweep",file.readFloat());
+			
+			_synth.params.setParam("vibratoDepth",file.readFloat());
+			_synth.params.setParam("vibratoSpeed",file.readFloat());
+			var unusedVibratoDelay:Number = file.readFloat();
+			
+			_synth.params.setParam("attackTime",file.readFloat());
+			_synth.params.setParam("sustainTime",file.readFloat());
+			_synth.params.setParam("decayTime",file.readFloat());
+			_synth.params.setParam("sustainPunch",file.readFloat());
+			
+			var unusedFilterOn:Boolean = file.readBoolean();
+			_synth.params.setParam("lpFilterResonance",file.readFloat());
+			_synth.params.setParam("lpFilterCutoff",file.readFloat());
+			_synth.params.setParam("lpFilterCutoffSweep",file.readFloat());
+			_synth.params.setParam("hpFilterCutoff",file.readFloat());
+			_synth.params.setParam("hpFilterCutoffSweep",file.readFloat());
+			
+			_synth.params.setParam("flangerOffset",file.readFloat());
+			_synth.params.setParam("flangerSweep",file.readFloat());
+			
+			_synth.params.setParam("repeatSpeed",file.readFloat());
+						
+			_synth.params.setParam("changeSpeed",(version >= 101) ? file.readFloat() : 0.0);
+			_synth.params.setParam("changeAmount",(version >= 101) ? file.readFloat() : 0.0);
+			
+			RefreshUI();
+			OnParameterChanged(allowplay, true);
+			_app.clickApplySound();
+		}
+		
 		
 		public function Deserialize(str:String):void
 		{

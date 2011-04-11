@@ -3,9 +3,9 @@
 	
 	width="630" height="584"
 	minHeight="584"
+	maxHeight="720"
 	minWidth="630"
 	maxWidth="630"
-	maxHeight="584"
 	
     xmlns:fx="http://ns.adobe.com/mxml/2009"
     xmlns:s="library://ns.adobe.com/flex/spark"
@@ -19,7 +19,6 @@
     <s:layout>
         <s:BasicLayout/>
     </s:layout>
-    <fx:Style source="Bfxr_interface.css"/>
     <fx:Script>
         <![CDATA[
 			import com.increpare.bfxr.dataClasses.LayerData;
@@ -953,25 +952,35 @@
 			
 			private function clickLoadAll(event:MenuEvent):void
 			{
-				if (event.index==0)
+				switch (event.index)
 				{
-					parentApplication.clickLoadSound();
-					return;
-				}
-				var myClickHandler:Function = function (evt_obj:Object):void {
-					if (evt_obj.detail == Alert.OK) {
-						parentApplication.DoLoadAll();
+					case 0:
+					{
+						parentApplication.clickLoadSound();
+						break;
 					}
-				};
-
-				Alert.show(
-					"Are you sure you want to Load All?  This will clear your current playlists and repopulate them with new data.", 
-					"Alert", 
-					Alert.OK | Alert.CANCEL, 
-					null, 
-					myClickHandler, 
-					null, 
-					Alert.OK);
+					case 1:
+					{
+						var myClickHandler:Function = function (evt_obj:Object):void {
+							if (evt_obj.detail == Alert.OK) {
+								parentApplication.DoLoadAll();
+							}
+						}
+												
+						Alert.show(
+							"Are you sure you want to Load All?  This will clear your current playlists and repopulate them with new data.", 
+							"Alert", 
+							Alert.OK | Alert.CANCEL, 
+							null, 
+							myClickHandler, 
+							null, 
+							Alert.OK);					
+						break;
+					}
+					case 2:
+						parentApplication.clickLoadSFS();
+						break;
+				}
 
 			}
 			
@@ -1022,6 +1031,21 @@
 				mixerInterface.RefreshUI();
 				
 				this.DisableApplyButton(false);
+			}
+			
+			
+			/**
+			 * Once loaded, passes the file to the synthesizer to parse
+			 * @param	e	Complete event
+			 */
+			public function onLoadSFSSettings(dat:ByteArray):void
+			{
+				
+				if (dat==null)
+					return;
+								
+				synthInterface.DeserializeSFS(dat);
+				tabs.selectedIndex = 0;				
 			}
 			
 			//doesn't change list selections
@@ -1326,6 +1350,7 @@
 			<root>
 				<editItem label="Load"/> 
 				<editItem label="Load All"/> 
+				<editItem label="Import .sfs"/> 
 			</root>
 		</fx:XML>
 		<fx:XML format="e4x" id="saveoptions"> 
@@ -1350,7 +1375,7 @@
             paddingRight="-2"
             paddingTop="0" gap="1">
             <s:BorderContainer 
-                width="200" height="584"
+                width="200" height="100%"
                 backgroundColor="#CCBDA1">
                 <s:layout>
                     <s:VerticalLayout 
@@ -1594,14 +1619,14 @@
                                                 paddingRight="-1"
                                                 paddingTop="0"/>
                                         </s:layout>
-										<s:Scroller height="100%" width="100%">											
+										<s:Scroller height="100%" width="100%" verticalScrollPolicy="on" horizontalScrollPolicy="off">											
 	                                        <s:DataGroup id="SoundParameterGroup"
 	                                            width="100%" height="100%"
 	                                            itemRenderer="com.increpare.bfxr_interface.components.SoundParameterRowRenderer"
 												dataProvider="{SoundParameterList}"
 												>
 	                                            <s:layout>
-	                                                <s:VerticalLayout 
+	                                                <s:VerticalLayout														
 	                                                    paddingBottom="0"
 	                                                    paddingLeft="0"
 	                                                    paddingRight="0"
@@ -1727,7 +1752,7 @@
                 	id="loadmenu"
                 	creationComplete="{Menu(loadmenu.popUp).selectedIndex=0;}"
                 	label="Load from Disk"
-                toolTip="Loads a particular synthesized sound or mix from your hard disk in the bfxr file format."
+                	toolTip="Loads a particular synthesized sound or mix from your hard disk in the bfxr file format."
                 	itemClick="clickLoadAll(event)"
                 	/>
                 <mx:PopUpMenuButton 

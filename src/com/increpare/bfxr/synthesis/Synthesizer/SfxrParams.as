@@ -246,7 +246,10 @@ package com.increpare.bfxr.synthesis.Synthesizer
 			if(Math.random() < 0.5) 
 			{
 				setParam("changeSpeed", 0.5 + Math.random() * 0.2);
-				setParam("changeAmount", 0.2 + Math.random() * 0.4);
+				var cnum:int = int(Math.random()*7)+1;
+				var cden:int = cnum+int(Math.random()*7)+2;
+				
+				setParam("changeAmount", Number(cnum)/Number(cden));
 			}
 			
 		}
