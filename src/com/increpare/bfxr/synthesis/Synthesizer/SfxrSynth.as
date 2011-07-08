@@ -1194,7 +1194,7 @@
 		public function getWavFile():ByteArray
 		{
 			stop();								
-			var ww:WaveWriter = new WaveWriter(true,32);			
+			var ww:WaveWriter = new WaveWriter(true,16);			
 			var cw:ByteArray = cachedWave;			
 			ww.addSamples(cw);			
 			ww.finalize();			
