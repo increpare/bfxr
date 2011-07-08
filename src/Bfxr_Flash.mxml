@@ -146,29 +146,6 @@
 			var dat:String = _fileRef.data.toString();
 			main.onLoadSettings(dat);
 			_fileRef = null;
-		}
-		
-		public function clickLoadSFS():void
-		{
-			_fileRef = new FileReference();
-			_fileRef.addEventListener(Event.SELECT, onSelectSFSSettings);
-			_fileRef.browse([new FileFilter("Sfxr SFX Sample Files (*.sfs)", "*.sfs")]);
-		}
-		
-		private function onSelectSFSSettings(e:Event):void
-		{
-			_fileRef.cancel();
-			
-			_fileRef.removeEventListener(Event.SELECT, onSelectSFSSettings);
-			_fileRef.addEventListener(Event.COMPLETE, onLoadSFSSettings);
-			_fileRef.load();
-		}
-		
-		private function onLoadSFSSettings(e:Event):void
-		{
-			_fileRef.removeEventListener(Event.COMPLETE, onLoadSFSSettings);
-			main.onLoadSFSSettings(_fileRef.data);
-			_fileRef = null;
 		}				
 		
 	</fx:Script>
