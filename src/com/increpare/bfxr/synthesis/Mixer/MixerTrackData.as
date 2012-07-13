@@ -32,7 +32,7 @@ package com.increpare.bfxr.synthesis.Mixer
 			synthdata = ar[1];
 			onset = Number(ar[2]);
 			volume = Number(ar[3]);
-			reverse = ar[4]=="false"?false:true;
+			reverse = ar[4] != "false";
 		}
 	}
 }

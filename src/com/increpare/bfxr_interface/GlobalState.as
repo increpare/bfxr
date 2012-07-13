@@ -72,8 +72,8 @@ package com.increpare.bfxr_interface
 		public function Deserialize(dat:String):void
 		{
 			var ar:Array = dat.split(",");
-			playOnChange=ar[0]=="false"?false:true;
-			createNew=ar[1]=="false"?false:true;
+			playOnChange=ar[0] != "false";
+			createNew=ar[1] != "false";
 			selectedSoundItemID=int(ar[2]);
 			selectedLayerItemID=int(ar[3]);
 		}
