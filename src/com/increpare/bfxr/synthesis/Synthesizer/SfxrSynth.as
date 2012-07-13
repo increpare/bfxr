@@ -69,7 +69,7 @@
 		private var _cachedCallback:Function;				// Function to call when finished caching asynchronously
 		private var _cacheTicker:Shape;						// Shape used for enterFrame event
 		
-		private var _waveData:ByteArray;					// Full wave, read out in chuncks by the onSampleData method
+		private var _waveData:ByteArray;					// Full wave, read out in chunks by the onSampleData method
 		private var _waveDataPos:uint;						// Current position in the waveData
 		private var _waveDataLength:uint;					// Number of bytes in the waveData
 		private var _waveDataBytes:uint;					// Number of bytes to write to the soundcard
@@ -90,7 +90,7 @@
 		
 		private var _envelopeVolume:Number;					// Current volume of the envelope
 		private var _envelopeStage:int;						// Current stage of the envelope (attack, sustain, decay, end)
-		private var _envelopeTime:Number;					// Current time through current enelope stage
+		private var _envelopeTime:Number;					// Current time through current envelope stage
 		private var _envelopeLength:Number;					// Length of the current envelope stage
 		private var _envelopeLength0:Number;				// Length of the attack stage
 		private var _envelopeLength1:Number;				// Length of the sustain stage
@@ -100,17 +100,17 @@
 		private var _envelopeOverLength2:Number;			// 1 / _envelopeLength2 (for quick calculations)
 		private var _envelopeFullLength:Number;				// Full length of the volume envelop (and therefore sound)
 		
-		private var _sustainPunch:Number;					// The punch factor (louder at begining of sustain)
+		private var _sustainPunch:Number;					// The punch factor (louder at beginning of sustain)
 		
 		private var _phase:int;								// Phase through the wave
-		private var _pos:Number;							// Phase expresed as a Number from 0-1, used for fast sin approx
+		private var _pos:Number;							// Phase expressed as a Number from 0-1, used for fast sin approx
 		private var _period:Number;							// Period of the wave
 		private var _periodTemp:Number;						// Period modified by vibrato
 		private var _maxPeriod:Number;						// Maximum period before sound stops (from minFrequency)
 		
 		private var _slide:Number;							// Note slide
 		private var _deltaSlide:Number;						// Change in slide
-		private var _minFreqency:Number;					// Minimum frequency before stopping
+		private var _minFrequency:Number;					// Minimum frequency before stopping
 		private var _muted:Boolean;							// Whether or not min frequency has been attained
 		
 		
@@ -154,7 +154,7 @@
 		private var _lpFilterDeltaPos:Number;				// Change in low-pass wave position, as allowed by the cutoff and damping
 		private var _lpFilterCutoff:Number;					// Cutoff multiplier which adjusts the amount the wave position can move
 		private var _lpFilterDeltaCutoff:Number;			// Speed of the low-pass cutoff multiplier
-		private var _lpFilterDamping:Number;				// Damping muliplier which restricts how fast the wave position can move
+		private var _lpFilterDamping:Number;				// Damping multiplier which restricts how fast the wave position can move
 		private var _lpFilterOn:Boolean;					// If the low pass filter is active
 		
 		private var _hpFilterPos:Number;					// Adjusted wave position after high-pass filter
@@ -167,7 +167,7 @@
 		
 		private var _pinkNumber:PinkNumber;
 		
-		private var _superSample:Number;					// Actual sample writen to the wave
+		private var _superSample:Number;					// Actual sample written to the wave
 		private var _sample:Number;							// Sub-sample calculated 8 times per actual sample, averaged out to get the super sample
 		private var _sampleCount:uint;						// Number of samples added to the buffer sample
 		private var _bufferSample:Number;					// Another supersample used to create a 22050Hz wave
@@ -317,7 +317,7 @@
 		
 		/**
 		 * If there is a cached sound to play, reads out of the data. 
-		 * If there isn't, synthesises new chunch of data, caching it as it goes. 
+		 * If there isn't, synthesises new chunk of data, caching it as it goes.
 		 * @param	e	SampleDataEvent to write data to
 		 */
 		private function onSampleData(e:SampleDataEvent):void
@@ -495,7 +495,7 @@
 		 * Cache the sound for speedy playback. 
 		 * If a callback is passed in, the caching will be done asynchronously, taking maxTimePerFrame milliseconds 
 		 * per frame to cache, them calling the callback when it's done. 
-		 * If not, the whole sound is cached imidiately - can freeze the player for a few seconds, especially in debug mode. 
+		 * If not, the whole sound is cached immediately - can freeze the player for a few seconds, especially in debug mode.
 		 * @param	callback			Function to call when the caching is complete
 		 * @param	maxTimePerFrame		Maximum time in milliseconds the caching will use per frame
 		 */
@@ -550,7 +550,7 @@
 		 * Caches a series of mutations on the source sound. 
 		 * If a callback is passed in, the caching will be done asynchronously, taking maxTimePerFrame milliseconds 
 		 * per frame to cache, them calling the callback when it's done. 
-		 * If not, the whole sound is cached imidiately - can freeze the player for a few seconds, especially in debug mode. 
+		 * If not, the whole sound is cached immediately - can freeze the player for a few seconds, especially in debug mode.
 		 * @param	mutationsNum		Number of mutations to cache
 		 * @param	mutationAmount		Amount of mutation
 		 * @param	callback			Function to call when the caching is complete
@@ -705,7 +705,7 @@
 		}
 		
 		/**
-		 * Resets the runing variables from the params
+		 * Resets the running variables from the params
 		 * Used once at the start (total reset) and for the repeat effect (partial reset)
 		 * @param	totalReset	If the reset is total
 		 */
@@ -769,7 +769,7 @@
 				
 				_phase = 0;
 				
-				_minFreqency = p.getParam("minFrequency");
+				_minFrequency = p.getParam("minFrequency");
 				_muted=false;
 				_overtones = p.getParam("overtones")*10;
 				_overtoneFalloff = p.getParam("overtoneFalloff");
@@ -906,7 +906,7 @@
 					}
 				}
 				
-				// Acccelerate and apply slide
+				// Accelerate and apply slide
 				_slide += _deltaSlide;
 				_period *= _slide;
 				
@@ -914,7 +914,7 @@
 				if(_period > _maxPeriod)
 				{
 					_period = _maxPeriod;
-					if(_minFreqency > 0.0) {
+					if(_minFrequency > 0.0) {
 							_muted = true;
 					}										
 				}

@@ -113,7 +113,7 @@ package com.increpare.bfxr.synthesis
 			updateSizeFields();
 		}
 		
-		/** position difference from begining of data tag to end of data,
+		/** position difference from beginning of data tag to end of data,
 		 not counting the size field itself
 		 */
 		private function get dataLength():uint {
@@ -149,7 +149,7 @@ package com.increpare.bfxr.synthesis
 			outBuffer.endian=Endian.LITTLE_ENDIAN;
 			
 			if(stereo && useFloat && bitsPerSample==32 && sb.endian==Endian.LITTLE_ENDIAN) {
-				//endianness missmatch prevents a fast copy
+				//endianness mismatch prevents a fast copy
 				outBuffer.writeBytes(sb);
 			} else if(stereo) {   
 				while(sb.position<sb.length) {

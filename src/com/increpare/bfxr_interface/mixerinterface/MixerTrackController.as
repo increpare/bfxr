@@ -151,7 +151,7 @@ package com.increpare.bfxr_interface.mixerinterface
 			var amplitudemodifier:Number =  mtp.data.volume;
 			for (var j:int=0;j<sliderimage.width-1;j++)
 			{
-				//sample fivepoints in this range, and take the max
+				//sample five points in this range, and take the max
 				
 				cachedWave.position = int(cachedWave.length/(sliderimage.width*4))*j*4; 
 				

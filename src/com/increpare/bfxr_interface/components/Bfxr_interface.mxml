@@ -651,7 +651,7 @@
 				return result;
 			}
 			
-			/* assomes never more than one slash right now */
+			/* assumes never more than one slash right now */
 			private static function stripSlashes(s:String):String
 			{
 				var result:String=s;
@@ -1383,7 +1383,7 @@
                     click="clickPreset(event)"/>
                 <s:Button id="generatePowerup"
                     label="Powerup"
-					toolTip="Whoo.  Try messing with the slide + delta slide parameters to make these less unreservedly exhuberant.  Or how about increasing the decay and playing with the Pitch Jump/Onset parameters?"
+					toolTip="Whoo.  Try messing with the slide + delta slide parameters to make these less unreservedly exuberant.  Or how about increasing the decay and playing with the Pitch Jump/Onset parameters?"
                     click="clickPreset(event)"/>
                 <s:Button id="generateHitHurt"
                     label="Hit/Hurt"
@@ -1529,7 +1529,7 @@
                                             x="37.9" y="40.9" width="65"
                                             label="Sin"
                                             change="synthInterface.WaveformSelect(event)"
-											toolTip="Sin waves are the most elementary of all wave-types.  However, they can be sensitive to context (background noise or accoustics can drown them out sometimes), so be careful."
+											toolTip="Sin waves are the most elementary of all wave-types.  However, they can be sensitive to context (background noise or acoustics can drown them out sometimes), so be careful."
 											/>
                                         <s:ToggleButton id="W0"
                                             width="65"
@@ -1554,7 +1554,7 @@
                                         <s:ToggleButton id="W7"
                                             width="65"
                                             label="Whistle"
-											toolTip="A sin wave with an additional sine wave overlayed at a lower amplitude and 20x the frequency.  It can end up sounding buzzy, hollow, resonant, or breathy."											
+											toolTip="A sin wave with an additional sine wave overlaid at a lower amplitude and 20x the frequency.  It can end up sounding buzzy, hollow, resonant, or breathy."
                                             change="synthInterface.WaveformSelect(event)"/>
                                         <s:ToggleButton id="W3"
                                             x="32.35" y="61.6" width="65"

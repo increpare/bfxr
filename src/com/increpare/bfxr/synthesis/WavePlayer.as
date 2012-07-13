@@ -20,7 +20,7 @@ package com.increpare.bfxr.synthesis
 		private var _channel:SoundChannel;
 		private var _updateCallback:Function;
 		
-		private var _waveData:ByteArray;					// Full wave, read out in chuncks by the onSampleData method
+		private var _waveData:ByteArray;					// Full wave, read out in chunks by the onSampleData method
 		private var _waveDataPos:uint;						// Current position in the waveData
 		private var _waveDataLength:uint;					// Number of bytes in the waveData
 		private var _waveDataBytes:uint;					// Number of bytes to write to the soundcard

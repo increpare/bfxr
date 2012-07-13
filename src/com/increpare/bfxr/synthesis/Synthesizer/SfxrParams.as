@@ -41,7 +41,7 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		public static const ExcludeParams:Array = ["waveType","masterVolume"];
 		
 		public static const ParamData:Array = [
-		// real name, decription
+		// real name, description
 		//   grouping,name, default, min, max, 
 		["Wave Type","Shape of the wave.",
 			0,"waveType",2,0,WAVETYPECOUNT-0.0001], // the 6.999 thing is because this is really an int parameter...		
@@ -93,7 +93,7 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		["Pitch Jump Onset 2","How quickly the note shift happens.",
 			5,"changeSpeed2",0,0,1], 		
 		
-		["Square Duty","Square waveform only : Controls the ratio between the up and down states of the square wave, changing the tibre.",
+		["Square Duty","Square waveform only : Controls the ratio between the up and down states of the square wave, changing the timbre.",
 			8,"squareDuty",0,0,1], 		
 		["Duty Sweep","Square waveform only : Sweeps the duty up or down.",
 			8,"dutySweep",0,-1,1], 		
@@ -101,7 +101,7 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		["Repeat Speed","Speed of the note repeating - certain variables are reset each time.",
 			9,"repeatSpeed",0,0,1], 	
 		
-		["Flanger Offset","Offsets a second copy of the wave by a small phase, changing the tibre.",
+		["Flanger Offset","Offsets a second copy of the wave by a small phase, changing the timbre.",
 			10,"flangerOffset",0,-1,1], 		
 		["Flanger Sweep","Sweeps the phase up or down.",
 			10,"flangerSweep",0,-1,1], 
@@ -714,21 +714,21 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		//--------------------------------------------------------------------------
 		
 		/**
-		 * Clams a value to betwen 0 and 1
+		 * Clamps a value to between 0 and 1
 		 * @param	value	Input value
 		 * @return			The value clamped between 0 and 1
 		 */
 		private function clamp1(value:Number):Number { return (value > 1.0) ? 1.0 : ((value < 0.0) ? 0.0 : value); }
 		
 		/**
-		 * Clams a value to betwen -1 and 1
+		 * Clamps a value to between -1 and 1
 		 * @param	value	Input value
 		 * @return			The value clamped between -1 and 1
 		 */
 		private function clamp2(value:Number):Number { return (value > 1.0) ? 1.0 : ((value < -1.0) ? -1.0 : value); }
 		
 		/**
-		 * Clams a value to betwen a and b
+		 * Clamps a value to between a and b
 		 * @param	value	Input value
 		 * @param	min		min value
 		 * @param	max		max value
