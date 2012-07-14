@@ -128,8 +128,6 @@
 		 */
 		public function onLoadAllSettings(e:Event):void
 		{
-			var i:int;
-			
 			_fileRef.removeEventListener(Event.COMPLETE, onLoadAllSettings);
 			var dat:String = _fileRef.data.toString();									
 			main.onLoadAllSettings(dat);

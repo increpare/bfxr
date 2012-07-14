@@ -162,8 +162,6 @@
 			
 			private function SliderImageChangeEnd():void
 			{				
-				var app:Bfxr_interface = Bfxr_interface(this.parentApplication.main);	
-				
 				var d:MixerTrackView=MixerTrackView(data);
 				d.onset = sliderimage.x;
 				d.OnMixerOnsetClick();	

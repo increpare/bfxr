@@ -133,12 +133,11 @@ package com.increpare.bfxr_interface.mixerinterface
 			//regenerate onsets + graphics in view
 			if (allowredraw)
 			{
-				RefreshWaveView(trackLength);
+				RefreshWaveView();
 			}
 		}
-		
-		private function RefreshWaveView(trackLength:Number):void
-		{
+
+		private function RefreshWaveView():void {
 			var i:int;
 			for (i=0;i<mixerPlayer.tracks.length;i++)
 			{				

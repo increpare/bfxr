@@ -24,7 +24,6 @@ package com.increpare.bfxr.dataClasses
 			// VERSION\n\nGLOBAL1,Global2,\n\nSOUNDNAME1=SOUNDDAT1\nSOUNDNAME2=SOUNDDAT2\n\nCOMPOUNDNAME1=COMPOUNDDAT1\n&c.
 			// 
 			var lines:Array = data.split("\n");		
-			var version:int=int(lines[i]);
 			if (lines[1]!="")
 				throw new Error("file not of correct format");
 			

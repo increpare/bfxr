@@ -346,8 +346,7 @@
 			else
 			{	
 				var length:uint;
-				var i:uint, l:uint;
-				
+
 				if (_mutation)
 				{
 					if (_original)

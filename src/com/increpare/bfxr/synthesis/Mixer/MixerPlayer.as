@@ -52,8 +52,6 @@ package com.increpare.bfxr.synthesis.Mixer
 		{
 			_mutations = new Vector.<ByteArray>();
 			
-			var original:String = this.Serialize();
-			
 			for (var i:int=0;i<count;i++)
 			{
 				//mutate each track
@@ -95,7 +93,6 @@ package com.increpare.bfxr.synthesis.Mixer
 		public static function Reverse(ba:ByteArray):ByteArray
 		{
 			var result:ByteArray = new ByteArray();
-			var l:uint=ba.length;
 			//subtract 8 because reading a float each time :P
 			ba.position=ba.length-4;
 			

@@ -132,15 +132,11 @@ package com.increpare.bfxr_interface.mixerinterface
 			sliderimage.width = sliderimage.bitmapData.width;
 			sliderimage.height = sliderimage.bitmapData.height;
 			
-			var synth:SfxrSynth = mtp.synth;
 			var cachedWave:ByteArray = mtp.synth.cachedWave;
 			if (mtp.data.reverse)
 			{
 				cachedWave = MixerPlayer.Reverse(cachedWave);
 			}
-			
-			var dilation:Number=10;
-			var length:Number = Math.max(3,cachedWave.length*dilation/(4*44100.0));
 			
 			var d:int = int(cachedWave.length/(4*sliderimage.width))*4;
 			var points : Vector.<Number> = new Vector.<Number>();
