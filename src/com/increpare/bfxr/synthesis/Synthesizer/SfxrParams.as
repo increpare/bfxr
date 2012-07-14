@@ -134,7 +134,7 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		//
 		//--------------------------------------------------------------------------
 		
-		public static const WAVETYPECOUNT:int = 9;
+		public static const WAVETYPECOUNT:int = 11;
 		
 		public function SfxrParams()
 		{
@@ -517,7 +517,9 @@ package com.increpare.bfxr.synthesis.Synthesizer
 				1,//5:pink
 				1,//6:tan
 				1,//7:whistle
-				1//8:breaker
+				1,//8:breaker
+				1,//9:1b noise
+				1,//10:buzz
 			];
 			
 		/**
