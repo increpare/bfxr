@@ -24,31 +24,19 @@
 			import com.increpare.bfxr.dataClasses.LayerData;
 			import com.increpare.bfxr.dataClasses.SfxLibrary;
 			import com.increpare.bfxr.dataClasses.SoundData;
-			import com.increpare.bfxr.synthesis.*;
 			import com.increpare.bfxr_interface.GlobalState;
 			import com.increpare.bfxr_interface.MixerInterface;
 			import com.increpare.bfxr_interface.SaveManager;
 			import com.increpare.bfxr_interface.SynthInterface;
 			
-			import flashx.textLayout.operations.ModifyInlineGraphicOperation;
-			
 			import mx.collections.ArrayList;
 			import mx.controls.Alert;
 			import mx.controls.Menu;
-			import mx.controls.sliderClasses.Slider;
-			import mx.core.UIComponent;
-			import mx.events.CollectionEvent;
-			import mx.events.CollectionEventKind;
 			import mx.events.FlexEvent;
 			import mx.events.MenuEvent;
-			import mx.events.PropertyChangeEvent;
-			import mx.logging.Log;
-			import mx.logging.LogEventLevel;
-			import mx.logging.targets.TraceTarget;
 			import mx.managers.PopUpManager;
 			import mx.utils.StringUtil;
-			import mx.utils.URLUtil;
-			
+
 			import spark.components.VScrollBar;
 			import spark.events.IndexChangeEvent;
 

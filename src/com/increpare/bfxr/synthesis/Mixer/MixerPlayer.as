@@ -12,7 +12,6 @@ package com.increpare.bfxr.synthesis.Mixer
 	import flash.media.SoundChannel;
 	import flash.media.SoundTransform;
 	import flash.utils.ByteArray;
-	import flash.utils.Endian;
 
 	public class MixerPlayer extends EventDispatcher implements ISerializable, IPlayerInterface
 	{

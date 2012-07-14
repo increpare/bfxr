@@ -1,7 +1,5 @@
 package com.increpare.bfxr.synthesis
 {
-	import flash.utils.ByteArray;
-
 	public interface IPlayerInterface
 	{
 		function Load(data:String):void;

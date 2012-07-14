@@ -8,14 +8,10 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import com.increpare.bfxr.dataClasses.SoundData;
-			
 			import mx.events.FlexEvent;
 			
-			import spark.components.List;
 			import spark.components.supportClasses.ListBase;
-			import spark.events.IndexChangeEvent;
-			
+
 			
 			private function onDataChange():void
 			{					

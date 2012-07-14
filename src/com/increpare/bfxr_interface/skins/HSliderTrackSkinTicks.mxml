@@ -10,8 +10,7 @@
     <fx:Script>
         <![CDATA[
 			import com.increpare.bfxr.dataClasses.SoundListRowData;
-			
-			import spark.components.Group;
+
 			import spark.components.supportClasses.ItemRenderer;
 
             /**
@@ -54,7 +53,7 @@
 					if (i!=defaultTick)
 					{
                     	var tick:Tick = new Tick();
-                   
+
                   	  	tick.y = 0;
                   	  	tick.x = Math.floor(i * tickSpacing);
                     	ticksGroup.addElement(tick);

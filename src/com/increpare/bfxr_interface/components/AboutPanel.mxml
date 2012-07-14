@@ -9,7 +9,6 @@
 
 	<fx:Script>
 		<![CDATA[
-			import flash.net.navigateToURL;
 			protected function linkClick(event:MouseEvent):void
 			{
 				var b:LinkButton = LinkButton(event.target);

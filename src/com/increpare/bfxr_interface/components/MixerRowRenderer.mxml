@@ -12,23 +12,11 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import com.increpare.bfxr.dataClasses.SoundData;
-			import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
 			import com.increpare.bfxr_interface.mixerinterface.MixerTrackView;
-			import com.increpare.bfxr_interface.skins.ReverseCheckBoxSkin;
-			
-			import mx.binding.utils.BindingUtils;
-			import mx.binding.utils.ChangeWatcher;
-			import mx.events.FlexEvent;
-			import mx.events.PropertyChangeEvent;
-			import mx.events.PropertyChangeEventKind;
+
 			import mx.events.SandboxMouseEvent;
-			
-			import spark.components.List;
-			import spark.components.supportClasses.ListBase;
-			import spark.skins.spark.CheckBoxSkin;
-			
-			public static const GraphWidth:int=191; 
+
+			public static const GraphWidth:int=191;
 			public static const GraphHeight:int=73; 
 			
 			private function PlayClick():void

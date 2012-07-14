@@ -5,20 +5,13 @@ package com.increpare.bfxr_interface
     import com.increpare.bfxr.synthesis.Synthesizer.SfxrParams;
     import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
     import com.increpare.bfxr_interface.components.Bfxr_interface;
-    import com.increpare.bfxr_interface.components.SoundParameterRowRenderer;
-    
+
     import flash.events.Event;
     import flash.utils.ByteArray;
     import flash.utils.Endian;
     
-    import mx.binding.utils.*;
     import mx.collections.ArrayList;
-    import mx.controls.Alert;
-    import mx.core.UIComponent;
-    
-    import spark.components.CheckBox;
-    import spark.components.HSlider;
-    import spark.components.Label;
+
     import spark.components.ToggleButton;
 
     public class SynthInterface implements ITabManager

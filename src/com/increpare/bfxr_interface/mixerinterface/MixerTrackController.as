@@ -1,8 +1,6 @@
 package com.increpare.bfxr_interface.mixerinterface
 {
 	import com.increpare.bfxr.synthesis.Mixer.MixerPlayer;
-	import com.increpare.bfxr.synthesis.Mixer.MixerSynth;
-	import com.increpare.bfxr.synthesis.Mixer.MixerTrackData;
 	import com.increpare.bfxr.synthesis.Mixer.MixerTrackPlayer;
 	import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
 	
@@ -12,12 +10,10 @@ package com.increpare.bfxr_interface.mixerinterface
 	
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
-	import flash.display.Graphics;
 	import flash.events.Event;
 	import flash.geom.Rectangle;
 	import flash.utils.ByteArray;
 	
-	import spark.primitives.Graphic;
 	import com.increpare.bfxr_interface.components.Bfxr_interface;
 
 	public class MixerTrackController

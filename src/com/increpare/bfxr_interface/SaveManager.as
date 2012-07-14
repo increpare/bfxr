@@ -7,8 +7,6 @@ package com.increpare.bfxr_interface
 	
 	import flash.net.SharedObject;
 	
-	import flashx.textLayout.elements.GlobalSettings;
-	
 	import mx.collections.ArrayList;
 	import com.increpare.bfxr_interface.components.Bfxr_interface;
 	

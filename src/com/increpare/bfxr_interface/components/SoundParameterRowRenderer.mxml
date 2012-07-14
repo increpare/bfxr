@@ -12,9 +12,7 @@
 		<![CDATA[
 			import com.increpare.bfxr_interface.skins.TickedHSliderSkin;
 			import com.increpare.bfxr.dataClasses.SoundListRowData;
-			
-			import spark.skins.spark.CheckBoxSkin;
-			
+
 			private function CreationComplete(event:Event):void
 			{					
 				//sliders pips wrongly positioned

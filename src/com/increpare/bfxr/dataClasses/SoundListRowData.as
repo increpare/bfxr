@@ -1,6 +1,5 @@
 package com.increpare.bfxr.dataClasses
 {
-	import flash.events.Event;
 	import flash.events.EventDispatcher;
 
 	[Bindable]

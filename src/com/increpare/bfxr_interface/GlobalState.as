@@ -6,7 +6,6 @@ package com.increpare.bfxr_interface
 	import flash.events.Event;
 	
 	import spark.components.CheckBox;
-	import spark.components.DropDownList;
 	import spark.components.List;
 
 	public class GlobalState

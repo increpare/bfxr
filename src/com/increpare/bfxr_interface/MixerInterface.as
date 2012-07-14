@@ -3,20 +3,16 @@ package com.increpare.bfxr_interface
 	import com.increpare.bfxr_interface.mixerinterface.MixerController;
 	import com.increpare.bfxr_interface.mixerinterface.MixerTrackController;
 	
-	import com.increpare.bfxr.synthesis.*;
 	import com.increpare.bfxr.synthesis.Mixer.*;
 	
 	import com.increpare.bfxr.dataClasses.LayerData;
 	import com.increpare.bfxr.dataClasses.SoundData;
 	
 	import flash.events.Event;
-	import flash.events.MouseEvent;
 	import flash.utils.ByteArray;
 	
-	import mx.collections.ArrayList;
 	import mx.events.FlexEvent;
 	
-	import spark.components.HSlider;
 	import com.increpare.bfxr_interface.components.Bfxr_interface;
 	
 	public class MixerInterface implements ITabManager
