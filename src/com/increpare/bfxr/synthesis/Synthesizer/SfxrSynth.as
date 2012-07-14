@@ -163,8 +163,7 @@
 		
 		private var _noiseBuffer:Vector.<Number>;			// Buffer of random values used to generate noise
 		private var _pinkNoiseBuffer:Vector.<Number>;			// Buffer of random values used to generate noise
-		private var _loResNoiseBuffer:Vector.<Number>;			// Buffer of random values used to generate noise
-		
+
 		private var _pinkNumber:PinkNumber;
 		
 		private var _superSample:Number;					// Actual sample written to the wave
@@ -822,14 +821,12 @@
 				if(!_flangerBuffer) _flangerBuffer = new Vector.<Number>(1024, true);
 				if(!_noiseBuffer) _noiseBuffer = new Vector.<Number>(32, true);
 				if(!_pinkNoiseBuffer) _pinkNoiseBuffer = new Vector.<Number>(32, true);
-				if(!_loResNoiseBuffer) _loResNoiseBuffer = new Vector.<Number>(32, true);
 				if (!_pinkNumber) _pinkNumber = new PinkNumber();
 				
 				for(var i:uint = 0; i < 1024; i++) _flangerBuffer[i] = 0.0;
 				for(i = 0; i < 32; i++) _noiseBuffer[i] = Math.random() * 2.0 - 1.0;
 				for(i = 0; i < 32; i++) _pinkNoiseBuffer[i] = _pinkNumber.GetNextValue();
-				for(i = 0; i < 32; i++) _loResNoiseBuffer[i] = ((i%LoResNoisePeriod)==0) ? Math.random()*2.0-1.0 : _loResNoiseBuffer[i-1];							
-			
+
 				_repeatTime = 0;
 				
 				if (p.getParam("repeatSpeed") == 0.0) 	_repeatLimit = 0;
@@ -993,10 +990,6 @@
 						else if (_waveType == 5)
 						{
 							for(n = 0; n < 32; n++) _pinkNoiseBuffer[n] = _pinkNumber.GetNextValue();							
-						}
-						else if (_waveType == 6)
-						{
-							for(n = 0; n < 32; n++) _loResNoiseBuffer[n] = ((n%LoResNoisePeriod)==0) ? Math.random()*2.0-1.0 : _loResNoiseBuffer[n-1];							
 						}
 					}
 					
