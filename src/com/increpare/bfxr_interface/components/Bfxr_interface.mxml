@@ -13,7 +13,7 @@
 	keyDown="keyDown(event)"
 	initialize="onInitialize()"
     creationComplete="onApplicationComplete();"
-	xmlns:local="*" xmlns:ns="com.increpare.bfxr_interface.components.*">
+	xmlns:ns="com.increpare.bfxr_interface.components.*">
 	
     <s:layout>
         <s:BasicLayout/>
