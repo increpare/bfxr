@@ -269,9 +269,9 @@ package com.increpare.bfxr.synthesis.Mixer
 			
 			PrepareMixForPlay();			
 			
-			var ww:WaveWriter = new WaveWriter(true,16);
+			var ww:WaveWriter = new WaveWriter(false,16);
 			
-			ww.addSamples(_waveData);
+			ww.addSamples(_waveData,true);
 			ww.finalize();
 			
 			return ww.outBuffer;
