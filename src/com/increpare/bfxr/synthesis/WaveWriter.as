@@ -141,7 +141,7 @@ package com.increpare.bfxr.synthesis
 			
 		}
 		
-		public function addSamples(sb:ByteArray):void {	
+		public function addSamples(sb:ByteArray,monoify:Boolean=false):void {	
 			
 			sb.position=0;
 						
@@ -179,6 +179,12 @@ package com.increpare.bfxr.synthesis
 			} else {// mono
 				while(sb.position<sb.length) {
 					left=sb.readFloat();
+					if (monoify)
+					{
+						if (sb.position>=sb.length)
+							break;
+						right=sb.readFloat();
+					}
 					
 					if(useFloat) {
 						if(bitsPerSample==32) {

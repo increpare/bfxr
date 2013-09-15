@@ -202,6 +202,20 @@ package com.increpare.bfxr.synthesis.Synthesizer
 			return _lockedParams.indexOf(param)>=0;
 		}
 		
+		public function setAllLocked(locked:Boolean):void
+		{
+			_lockedParams = new Vector.<String>();
+			
+			if (locked)
+			{
+				for (var i:int=0;i<ParamData.length;i++)
+				{
+					_lockedParams.push(ParamData[i][3]);
+				}
+			}
+			paramsDirty=true;
+		}
+		
 		public function setParamLocked(param:String, locked:Boolean):void
 		{
 			var index:int = _lockedParams.indexOf(param);

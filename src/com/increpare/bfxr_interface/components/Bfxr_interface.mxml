@@ -13,6 +13,7 @@
     pageTitle="as3sfxr-b"
 	keyDown="keyDown(event)"
 	initialize="onInitialize()"
+	
     creationComplete="onApplicationComplete();"
 	xmlns:local="*" xmlns:ns="com.increpare.bfxr_interface.components.*">
 	
@@ -21,10 +22,14 @@
     </s:layout>
     <fx:Script>
         <![CDATA[
+			import com.increpare.bfxr.Bfxr;
 			import com.increpare.bfxr.dataClasses.LayerData;
 			import com.increpare.bfxr.dataClasses.SfxLibrary;
 			import com.increpare.bfxr.dataClasses.SoundData;
 			import com.increpare.bfxr.synthesis.*;
+			import com.increpare.bfxr.synthesis.Mixer.MixerPlayer;
+			import com.increpare.bfxr.synthesis.Mixer.MixerSynth;
+			import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
 			import com.increpare.bfxr_interface.GlobalState;
 			import com.increpare.bfxr_interface.MixerInterface;
 			import com.increpare.bfxr_interface.SaveManager;
@@ -33,8 +38,14 @@
 			import flashx.textLayout.operations.ModifyInlineGraphicOperation;
 			
 			import mx.collections.ArrayList;
+			import mx.containers.ControlBar;
+			import mx.containers.HBox;
+			import mx.containers.Panel;
+			import mx.containers.VBox;
 			import mx.controls.Alert;
 			import mx.controls.Menu;
+			import mx.controls.ProgressBar;
+			import mx.controls.ProgressBarMode;
 			import mx.controls.sliderClasses.Slider;
 			import mx.core.UIComponent;
 			import mx.events.CollectionEvent;
@@ -49,6 +60,7 @@
 			import mx.utils.StringUtil;
 			import mx.utils.URLUtil;
 			
+			import spark.components.TextInput;
 			import spark.components.VScrollBar;
 			import spark.events.IndexChangeEvent;
 
@@ -107,6 +119,10 @@
 						
 			public function DoPlay():void
             {
+				if (tabs==null)
+				{
+					return;
+				}
                 switch (tabs.selectedIndex)
                 {
                     case 0:
@@ -189,8 +205,98 @@
                 }
             }
 			
+			public var panel:Panel;
+			public var panelTI:TextInput;
+			private function createNumberPrompt():void {
+				
+				var vb:VBox = new VBox();
+				var hb:HBox = new HBox();
+				var label:Label = new Label();
+				panelTI = new TextInput();
+				
+				var b1:Button = new Button();
+				var b2:Button = new Button();
+								
+				b1.label = "OK";
+				b1.addEventListener(MouseEvent.CLICK, closePopUp);
+				b2.label = "Cancel";
+				b2.addEventListener(MouseEvent.CLICK, closePopUp2);
+				
+//				cb.addChild(s);
+//				cb.addChild(b1);
+//				cb.addChild(b2);
+				
+				label.text = "Enter sound text below :";
+				
+				vb.setStyle("paddingBottom", 5);
+				vb.setStyle("paddingLeft", 5);
+				vb.setStyle("paddingRight", 5);
+				vb.setStyle("paddingTop", 5);
+				vb.addChild(label);
+				vb.addChild(panelTI);
+				vb.addChild(hb);
+				var s:Spacer = new Spacer();
+				s.width=100;				
+				hb.addChild(s);
+				hb.addChild(b1);
+				hb.addChild(b2);
+				panel = new Panel();
+				//panel.title = "My Title";
+				panel.width = 300;
+				panel.height = 120;
+				panel.addChild(vb);
+				vb.percentWidth=100;
+				vb.percentHeight=100;
+				panelTI.percentWidth=100;
+				panelTI.addEventListener(FlexEvent.ENTER,closePopUp2);
+			}
+			
+			private var panelOpened:Boolean=false;
+			
+			private function closePopUp2(evt:MouseEvent):void {			
+				if (panelOpened==false)
+					return;
+				
+				PopUpManager.removePopUp(panel);
+				panelOpened=false;
+			}
+			private function closePopUp(evt:MouseEvent):void {
+				PopUpManager.removePopUp(panel);
+				panelOpened=false;
+				
+				if (panelTI.text=="")
+				{
+					return;
+				}
+				
+				var pasted:String = panelTI.text;
+				pasted = mx.utils.StringUtil.trim(pasted);
+				
+				//criteria for being a url.
+				if (pasted.indexOf("?")>=0)
+				{
+					var ar:Array = pasted.split("?");
+					var tail:String = ar[1] as String;
+					pasted = unescape(tail.substr(2));					
+				}
+				
+				FromClipboard(pasted);
+			}
+			
+			private function createPopUp(evt:MouseEvent):void {
+				if (panelOpened)
+					return;
+				panelOpened=true;
+				panelTI.text="";
+				PopUpManager.addPopUp(panel, this, true);
+				PopUpManager.centerPopUp(panel);
+				focusManager.setFocus(panelTI);
+			}
+			
 			private function onInitialize():void
-			{					
+			{		
+				createNumberPrompt();
+				
 				saveManager = new SaveManager(this);				
 				saveManager.LoadData();
 				globalState = saveManager.loadGlobal();
@@ -200,8 +306,7 @@
 				
 				_time.addEventListener(TimerEvent.TIMER, timerHandler);
 				_time.start();												
-
-
+				OnGlobalParameterChanged();
 			}
 			
 			public function hasModifiedData():Boolean
@@ -811,7 +916,17 @@
                     }
                     case 1:
                     {
-						var ld:LayerData = LayerData(mixesList.selectedItem);
+						var ld:LayerData;
+						if (mixesList.selectedItem<=0) 
+						{
+							var mp:MixerPlayer = new MixerPlayer();
+							
+							ld = new LayerData("Default",mp.Serialize(),saveManager.GetID());
+						}
+						else
+						{
+						 ld= LayerData(mixesList.selectedItem);
+						}
 						
 						name = stripTrailingNumbers(ld.label);
 						
@@ -974,14 +1089,58 @@
 							null, 
 							myClickHandler, 
 							null, 
-							Alert.OK);					
+							Alert.OK);	
+						
+						
+						Menu(loadmenu.popUp).selectedIndex=0;
+						Menu(loadmenu.popUp).selectedIndex=0;
 						break;
 					}
+					case 2:
+					{
+						
+						var myRemoveAllClickHandler:Function = function (evt_obj:Object):void {
+							if (evt_obj.detail == Alert.OK) {
+								ClearAllSoundLists();
+							}
+						}
+						Alert.show(
+							"Are you sure you want to Clear All?  This will remove all your sound effects from both tabs.", 
+							"Alert", 
+							Alert.OK | Alert.CANCEL, 
+							null, 
+							myRemoveAllClickHandler, 
+							null, 
+							Alert.OK);		
+						Menu(loadmenu.popUp).selectedIndex=0;
+						Menu(loadmenu.popUp).selectedIndex=0;
+						break;
+					}
+					break;
 				}
 
 			}
 			
-			
+						
+			public function ClearAllSoundLists():void
+			{
+				var i:int;
+				
+				var layers:Vector.<LayerData> = saveManager.GetLayers();
+				var sounds:Vector.<SoundData> = saveManager.GetSounds();
+				
+				for (i=1;i<layers.length;i++)
+				{
+					saveManager.RemoveLayerItemWithID(layers[i].id);
+					layerItems.removeItemAt(1);
+				}
+				for (i=1;i<sounds.length;i++)
+				{
+					saveManager.RemoveSoundItemWithID(sounds[i].id);
+					soundItems.removeItemAt(1);
+				}
+				UIUpdateTrigger();
+			}
 			
 			/**
 			 * Once loaded, passes the file to the synthesizer to parse
@@ -1046,6 +1205,10 @@
 					clickSaveSound();
 					return;
 				}
+				
+				Menu(savemenu.popUp).selectedIndex=0;
+				Menu(savemenu.popUp).selectedIndex=0;
+				
 				//first compile strings - 
 				// they'll be of form
 				// VERSION\n\nSOUNDNAME1=SOUNDDAT1\nSOUNDNAME2=SOUNDDAT2\n\nCOMPOUNDNAME1=COMPOUNDDAT1\n&c.
@@ -1119,6 +1282,8 @@
 					{
 						name = (mixesList.selectedItem as LayerData).label;
 						dat = mixerInterface.Serialize();
+						Menu(exportwav.popUp).selectedIndex=0;
+						Menu(exportwav.popUp).selectedIndex=0;
 						break;
 					}
 				}
@@ -1133,23 +1298,147 @@
 				}
             }
 
-            private function SaveWave():void
+            private function SaveWave(event:MenuEvent):void
             {
-                switch (tabs.selectedIndex)
-                {
-                    case 0:
-                    {
-                        SaveSoundWave();
-                        break;
-                    }
-                    case 1:
-                    {
-                        SaveMixerWave();
-                        break;
-                    }
-                }
+				switch(event.index)
+				{
+					case 0:
+					{
+		                switch (tabs.selectedIndex)
+		                {
+		                    case 0:
+		                    {
+		                        SaveSoundWave();
+		                        break;
+		                    }
+		                    case 1:
+		                    {
+		                        SaveMixerWave();
+		                        break;
+		                    }
+		                }
+					}
+					break;
+					case 1:
+					{
+						SaveAllWaves();
+						Menu(exportwav.popUp).selectedIndex=0;
+						Menu(exportwav.popUp).selectedIndex=0;
+					}
+					break;
+				}
+				
             }
 
+			protected function SaveAllWaves():void
+			{
+				if (parentApplication.CanSaveAllWaves()==false)
+				{					
+					Alert.show(
+						"You can only use this feature in the standalone mode, due to security reasons.  Sorry.", 
+						"Alert", 
+						Alert.OK, 
+						null,
+						null, 
+						null, 
+						Alert.OK);		
+					return;
+				}
+				
+				parentApplication.SaveAllWaves(SaveAllWavesCallback);
+			}
+			
+			
+			public var _progBar:ProgressBar;
+			
+			public function showLoading(e:Event = null):void
+			{
+				if(_progBar == null)
+				{
+					_progBar = new ProgressBar();
+					_progBar.width = 200;
+					_progBar.indeterminate = true;
+					_progBar.labelPlacement = 'center';
+//					_progBar.setStyle("removedEffect", fade);
+//					_progBar.setStyle("addedEffect", fade);
+					_progBar.setStyle("color", 0xFFFFFF);
+					_progBar.setStyle("borderColor", 0x000000);
+					_progBar.setStyle("barColor", 0xf4b60f);
+					_progBar.label = "";
+					_progBar.mode = ProgressBarMode.MANUAL;
+					
+				}
+				PopUpManager.addPopUp(_progBar,this,true);
+				PopUpManager.centerPopUp(_progBar);
+				_progBar.setProgress(0, 0);
+			}
+			
+			protected function SaveAllWavesCallback(directorypath:String):void
+			{
+				
+				showLoading();
+				var myDelay:Timer = new Timer(10);
+				
+				var dats:Array = [];
+				var names:Array=[];
+				
+				//var sounddats:Vector.<SoundData> = saveManager.GetSounds();
+				//var layerdats:Vector.<LayerData> = saveManager.GetLayers();
+				
+				var j:int=-1;
+				var tick:Function = function():void {
+					trace("tick2 " + j);
+					
+					_progBar.indeterminate=false;	
+					_progBar.setProgress(j,soundItems.length+layerItems.length);
+					
+					var s:SfxrSynth = new SfxrSynth();
+					if (j==-1)
+					{
+						
+					}
+					else if (j<soundItems.length)
+					{						
+						var sd:SoundData = soundItems.getItemAt(j) as SoundData;
+						var soundname:String=sd.label;
+						while (names.indexOf(soundname)>=0)
+						{
+							soundname=soundname+"_";
+						}
+						names.push(soundname);
+						_progBar.label=soundname+".wav (" +j+" of " + (soundItems.length+layerItems.length)+")";
+						s.Load(sd.data);					
+						dats.push([soundname,s.getWavFile()]);
+					}
+					else if (j-soundItems.length<layerItems.length)
+					{
+					
+						var mixersynth:MixerPlayer = new MixerPlayer();
+
+						var ld:LayerData = layerItems.getItemAt(j-soundItems.length) as LayerData;
+						soundname=ld.label;
+						while (names.indexOf(soundname)>=0)
+						{
+							soundname=soundname+"_";
+						}
+						_progBar.label=soundname+".wav (" +j+" of " + (soundItems.length+layerItems.length)+")";
+						names.push(soundname);
+						mixersynth.Load(ld.data);
+						dats.push([soundname,mixersynth.getWavFile()]);
+					}
+					else
+					{
+						parentApplication.DoSaveAllWaves(directorypath,dats);
+						PopUpManager.removePopUp(_progBar);
+						myDelay.stop();
+					}
+					j++;
+				}
+				
+				myDelay.addEventListener(TimerEvent.TIMER, tick);
+				myDelay.start();
+			}
+			
             protected function SaveSoundWave():void
             {
 				var file:ByteArray = synthInterface.getWavFile();					                
@@ -1202,7 +1491,17 @@
 
             protected function clickPasteButton():void
             {
-                var pasted:String = parentApplication.GetPastedString();
+				var pasted:String;
+				if (parentApplication.CanSaveAllWaves()==false)
+				{
+					createPopUp(null);
+					return;
+				}
+				else 
+				{
+                	pasted = parentApplication.GetPastedString();
+				}
+				
 				if (pasted==null)
 				{
 					return;
@@ -1330,10 +1629,18 @@
         <mx:ArrayList id="layerItems">
         </mx:ArrayList>		
 		
+		
+		<fx:XML format="e4x" id="exportwaveoptions"> 
+			<root>
+				<editItem label="Export Wave"/> 
+				<editItem label="Export All Waves"/> 
+			</root>
+		</fx:XML>
 		<fx:XML format="e4x" id="loadoptions"> 
 			<root>
 				<editItem label="Load"/> 
 				<editItem label="Load All"/> 
+				<editItem label="Clear All"/>
 			</root>
 		</fx:XML>
 		<fx:XML format="e4x" id="saveoptions"> 
@@ -1403,12 +1710,12 @@
                     click="clickPreset(event)"/>
                 <s:Button id="mutate"
                     label="Mutation"
-					toolTip="Modify each unlocked parameter by a small wee amount."
+					toolTip="Modify each unlocked parameter by a small wee amount. (Only mutates unlocked parameters)"
                     click="clickPreset(event)"/>
                 <s:CheckBox id="createNew"
                     label="Create New Sound"
-                    selected="false"
-					toolTip="Whether to create a new synth when a preset button is clicked, as opposed to modifying an existing one."
+                    selected="true"
+					toolTip="Whether to create a new synth when a preset button is clicked, as opposed to modifying the currently selected one."
 					valueCommit="{this.globalState.OnCreateNewChange(event); saveManager.commitGlobal(globalState);}"
                 change="CommitGlobal()"
                 />
@@ -1512,7 +1819,8 @@
                                     <s:CheckBox id="lockwave"
 										skinClass="com.increpare.bfxr_interface.skins.LockCheckBoxSkin"	
                                         toolTip="Lock field during randomization/mutation?"
-                                        change="synthInterface.ComponentChangeCallback('wavetype',event)" height="69" width="17"/>
+                                        change="synthInterface.ComponentChangeCallback('wavetype',event)"
+										rightClick="synthInterface.ComponentChangeCallback('alllockedwavetype',event)" height="69" width="17"/>
                                     <s:TileGroup 
                                         width="100%" height="100%"
                                         verticalGap="2"
@@ -1722,12 +2030,19 @@
 					/>
                 <s:Label text="Master Volume" 
 						 click="ResetMasterVolume(event)"
-						 toolTip="The overall volume of your currently-selected sound."
+						 toolTip="The overall volume of your currently-selected sound (this is stored in individual sounds, and not global to BFXR)."
 						 />
                 <mx:Spacer height="10"/>
-                <s:Button id="exportwav"
-                    label="Export Wav"
-                    click="SaveWave()"/>
+                <mx:PopUpMenuButton 
+						  dataProvider="{exportwaveoptions}"
+						  labelField="@label" 
+						  showRoot="false" 
+						  id="exportwav"
+						  creationComplete="{Menu(exportwav.popUp).selectedIndex=0;}"
+						  label="Export Wav"
+						  toolTip="Save Wav to disk."
+						  itemClick="SaveWave(event)"
+						  />
                 <mx:PopUpMenuButton 
                 	dataProvider="{loadoptions}"
                 	labelField="@label" 

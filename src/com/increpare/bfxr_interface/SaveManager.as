@@ -1,16 +1,15 @@
 package com.increpare.bfxr_interface
 {
-	import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
-	
 	import com.increpare.bfxr.dataClasses.LayerData;
 	import com.increpare.bfxr.dataClasses.SoundData;
+	import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
+	import com.increpare.bfxr_interface.components.Bfxr_interface;
 	
 	import flash.net.SharedObject;
 	
 	import flashx.textLayout.elements.GlobalSettings;
 	
 	import mx.collections.ArrayList;
-	import com.increpare.bfxr_interface.components.Bfxr_interface;
 	
 	public class SaveManager
 	{
@@ -243,6 +242,32 @@ package com.increpare.bfxr_interface
 			}
 			
 			return curmax+1;
+		}
+		
+		public function GetSounds():Vector.<SoundData>
+		{
+			var result:Vector.<SoundData> = new Vector.<SoundData>();
+			var soundarray:Array = _saveDat.data.soundList;
+			for(var s:String in soundarray)
+			{
+				var o:Object = soundarray[s];
+				var sd:SoundData = new SoundData(o.label,o.data,o.id);
+				result.push(sd);
+			}
+			return result;
+		}
+		
+		public function GetLayers():Vector.<LayerData>
+		{
+			var result:Vector.<LayerData> = new Vector.<LayerData>();
+			var layerarray:Array = _saveDat.data.layerList;
+			for(var s:String in layerarray)
+			{
+				var o:Object = layerarray[s];
+				var ld:LayerData = new LayerData(o.label,o.data,o.id);
+				result.push(ld);
+			}
+			return result;				
 		}
 		
 		public function GetSoundDataWithID(id:int):SoundData

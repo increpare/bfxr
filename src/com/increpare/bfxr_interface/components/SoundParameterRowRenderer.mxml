@@ -10,11 +10,11 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import com.increpare.bfxr_interface.skins.TickedHSliderSkin;
 			import com.increpare.bfxr.dataClasses.SoundListRowData;
+			import com.increpare.bfxr_interface.skins.TickedHSliderSkin;
 			
 			import spark.skins.spark.CheckBoxSkin;
-			
+					
 			private function CreationComplete(event:Event):void
 			{					
 				//sliders pips wrongly positioned
@@ -37,6 +37,13 @@
 			{
 				data.locked = locked.selected;
 				(data as SoundListRowData).dispatchEvent(new Event(SoundListRowData.LOCKEDNESS_CHANGE));
+			}
+			
+			private function OnLockButtonRightClicked(event:Event):void
+			{
+				locked.selected=!locked.selected;								
+				data.locked = locked.selected;
+				(data as SoundListRowData).dispatchEvent(new Event(SoundListRowData.LOCKEDNESS_ALLCHANGE));				
 			}
 			
 			private function LabelClick():void
@@ -79,6 +86,7 @@
 			skinClass="com.increpare.bfxr_interface.skins.LockCheckBoxSkin"		 
 		 	change="OnLockButtonChanged(event)"
 			selected="{data.locked}"
+			rightClick="OnLockButtonRightClicked(event)"
 			 height="17"
 			 />    
 		<s:Label 		

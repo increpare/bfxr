@@ -69,6 +69,7 @@ package com.increpare.bfxr_interface
 				
 				slrd.addEventListener(SoundListRowData.DEFAULT_CLICK,function(e:Event):void{ComponentChangeCallback("reset",e);});
 				slrd.addEventListener(SoundListRowData.LOCKEDNESS_CHANGE,function(e:Event):void{ComponentChangeCallback("locked",e);});
+				slrd.addEventListener(SoundListRowData.LOCKEDNESS_ALLCHANGE,function(e:Event):void{ComponentChangeCallback("alllocked",e);});
 				slrd.addEventListener(SoundListRowData.SLIDER_CHANGE,function(e:Event):void{ComponentChangeCallback("slider",e);});
 				//slrd.addEventListener(SoundListRowData.SLIDER_BEGIN_CHANGE,function(e:Event):void{ComponentBeginChangeCallback("slider",e);});				
 				
@@ -106,12 +107,22 @@ package com.increpare.bfxr_interface
 					_synth.params.setParamLocked(sprd.tag,sprd.locked);	
 					audible=false;
 					break;
+				case "alllocked":
+					_synth.params.setAllLocked(sprd.locked);
+					updateui=true;
+					audible=false;
+					break;
 				case "slider":
 					_synth.params.setParam(sprd.tag, sprd.value);
 					break;
 				case "wavetype":    
 					_synth.params.setParamLocked("waveType", _app.lockwave.selected);
 					audible=false;					
+					break;
+				case "alllockedwavetype":
+					_synth.params.setAllLocked(!_app.lockwave.selected);
+					audible=false;
+					updateui=true;
 					break;
 				case "volume":					
 					_synth.params.setParam("masterVolume", _app.volumeslider.value);
