@@ -1186,6 +1186,17 @@
 				}
             }
 
+			private function clickExportAll(event:MenuEvent):void
+			{
+				if (event.index==0) {
+					SaveWave();
+					return;
+				}
+				
+				//export all
+				parentApplication.exportAll();
+			}
+			
             private function SaveWave():void
             {
                 switch (tabs.selectedIndex)
@@ -1383,6 +1394,12 @@
         <mx:ArrayList id="layerItems">
         </mx:ArrayList>		
 		
+		<fx:XML format="e4x" id="exportoptions"> 
+			<root>
+				<editItem label="Export Wav"/>
+				<editItem label="Export All"/>				
+			</root>
+		</fx:XML>
 		<fx:XML format="e4x" id="loadoptions"> 
 			<root>
 				<editItem label="Clear All"/>
@@ -1779,9 +1796,19 @@
 						 toolTip="The overall volume of your currently-selected sound."
 						 />
                 <mx:Spacer height="10"/>
-                <s:Button id="exportwav"
+                <!--<s:Button id="exportwav"
                     label="Export Wav"
-                    click="SaveWave()"/>
+                    click="SaveWave()"/>-->
+				<mx:PopUpMenuButton 
+					dataProvider="{exportoptions}"
+					labelField="@label" 
+					showRoot="false" 
+					id="exportwav"
+					creationComplete="{Menu(loadmenu.popUp).selectedIndex=0;}"
+					label="Export Wav"
+					toolTip="Exports the current sound as a WAV file to disk."
+					itemClick="clickExportAll(event)"
+					/>
                 <mx:PopUpMenuButton 
                 	dataProvider="{loadoptions}"
                 	labelField="@label" 
