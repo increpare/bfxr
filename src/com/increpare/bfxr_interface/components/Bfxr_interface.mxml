@@ -27,6 +27,7 @@
 			import com.increpare.bfxr.dataClasses.SoundData;
 			import com.increpare.bfxr.synthesis.*;
 			import com.increpare.bfxr.synthesis.Mixer.MixerPlayer;
+			import com.increpare.bfxr.synthesis.Mixer.MixerSynth;
 			import com.increpare.bfxr.synthesis.Synthesizer.SfxrSynth;
 			import com.increpare.bfxr_interface.GlobalState;
 			import com.increpare.bfxr_interface.MixerInterface;
@@ -36,6 +37,10 @@
 			import flashx.textLayout.operations.ModifyInlineGraphicOperation;
 			
 			import mx.collections.ArrayList;
+			import mx.containers.ControlBar;
+			import mx.containers.HBox;
+			import mx.containers.Panel;
+			import mx.containers.VBox;
 			import mx.controls.Alert;
 			import mx.controls.Menu;
 			import mx.controls.ProgressBar;
@@ -54,6 +59,7 @@
 			import mx.utils.StringUtil;
 			import mx.utils.URLUtil;
 			
+			import spark.components.TextInput;
 			import spark.components.VScrollBar;
 			import spark.events.IndexChangeEvent;
 
@@ -194,8 +200,98 @@
                 }
             }
 			
+			public var panel:Panel;
+			public var panelTI:TextInput;
+			private function createNumberPrompt():void {
+				
+				var vb:VBox = new VBox();
+				var hb:HBox = new HBox();
+				var label:Label = new Label();
+				panelTI = new TextInput();
+				
+				var b1:Button = new Button();
+				var b2:Button = new Button();
+								
+				b1.label = "OK";
+				b1.addEventListener(MouseEvent.CLICK, closePopUp);
+				b2.label = "Cancel";
+				b2.addEventListener(MouseEvent.CLICK, closePopUp2);
+				
+//				cb.addChild(s);
+//				cb.addChild(b1);
+//				cb.addChild(b2);
+				
+				label.text = "Enter sound text below :";
+				
+				vb.setStyle("paddingBottom", 5);
+				vb.setStyle("paddingLeft", 5);
+				vb.setStyle("paddingRight", 5);
+				vb.setStyle("paddingTop", 5);
+				vb.addChild(label);
+				vb.addChild(panelTI);
+				vb.addChild(hb);
+				var s:Spacer = new Spacer();
+				s.width=100;				
+				hb.addChild(s);
+				hb.addChild(b1);
+				hb.addChild(b2);
+				panel = new Panel();
+				//panel.title = "My Title";
+				panel.width = 300;
+				panel.height = 120;
+				panel.addChild(vb);
+				vb.percentWidth=100;
+				vb.percentHeight=100;
+				panelTI.percentWidth=100;
+				panelTI.addEventListener(FlexEvent.ENTER,closePopUp2);
+			}
+			
+			private var panelOpened:Boolean=false;
+			
+			private function closePopUp2(evt:MouseEvent):void {			
+				if (panelOpened==false)
+					return;
+				
+				PopUpManager.removePopUp(panel);
+				panelOpened=false;
+			}
+			private function closePopUp(evt:MouseEvent):void {
+				PopUpManager.removePopUp(panel);
+				panelOpened=false;
+				
+				if (panelTI.text=="")
+				{
+					return;
+				}
+				
+				var pasted:String = panelTI.text;
+				pasted = mx.utils.StringUtil.trim(pasted);
+				
+				//criteria for being a url.
+				if (pasted.indexOf("?")>=0)
+				{
+					var ar:Array = pasted.split("?");
+					var tail:String = ar[1] as String;
+					pasted = unescape(tail.substr(2));					
+				}
+				
+				FromClipboard(pasted);
+			}
+			
+			private function createPopUp(evt:MouseEvent):void {
+				if (panelOpened)
+					return;
+				panelOpened=true;
+				panelTI.text="";
+				PopUpManager.addPopUp(panel, this, true);
+				PopUpManager.centerPopUp(panel);
+				focusManager.setFocus(panelTI);
+			}
+			
 			private function onInitialize():void
-			{					
+			{		
+				createNumberPrompt();
+				
 				saveManager = new SaveManager(this);				
 				saveManager.LoadData();
 				globalState = saveManager.loadGlobal();
@@ -205,8 +301,11 @@
 				
 				_time.addEventListener(TimerEvent.TIMER, timerHandler);
 				_time.start();												
-
-
+				OnGlobalParameterChanged();
+				if(globalState.playOnChange) 
+				{
+					DoPlay();
+				}
 			}
 			
 			public function hasModifiedData():Boolean
@@ -816,7 +915,17 @@
                     }
                     case 1:
                     {
-						var ld:LayerData = LayerData(mixesList.selectedItem);
+						var ld:LayerData;
+						if (mixesList.selectedItem<=0) 
+						{
+							var mp:MixerPlayer = new MixerPlayer();
+							
+							ld = new LayerData("Default",mp.Serialize(),saveManager.GetID());
+						}
+						else
+						{
+						 ld= LayerData(mixesList.selectedItem);
+						}
 						
 						name = stripTrailingNumbers(ld.label);
 						
@@ -979,7 +1088,11 @@
 							null, 
 							myClickHandler, 
 							null, 
-							Alert.OK);					
+							Alert.OK);	
+						
+						
+						Menu(loadmenu.popUp).selectedIndex=0;
+						Menu(loadmenu.popUp).selectedIndex=0;
 						break;
 					}
 					case 2:
@@ -998,6 +1111,9 @@
 							myRemoveAllClickHandler, 
 							null, 
 							Alert.OK);		
+						Menu(loadmenu.popUp).selectedIndex=0;
+						Menu(loadmenu.popUp).selectedIndex=0;
+						break;
 					}
 					break;
 				}
@@ -1088,6 +1204,10 @@
 					clickSaveSound();
 					return;
 				}
+				
+				Menu(savemenu.popUp).selectedIndex=0;
+				Menu(savemenu.popUp).selectedIndex=0;
+				
 				//first compile strings - 
 				// they'll be of form
 				// VERSION\n\nSOUNDNAME1=SOUNDDAT1\nSOUNDNAME2=SOUNDDAT2\n\nCOMPOUNDNAME1=COMPOUNDDAT1\n&c.
@@ -1161,6 +1281,8 @@
 					{
 						name = (mixesList.selectedItem as LayerData).label;
 						dat = mixerInterface.Serialize();
+						Menu(exportwav.popUp).selectedIndex=0;
+						Menu(exportwav.popUp).selectedIndex=0;
 						break;
 					}
 				}
@@ -1199,6 +1321,8 @@
 					case 1:
 					{
 						SaveAllWaves();
+						Menu(exportwav.popUp).selectedIndex=0;
+						Menu(exportwav.popUp).selectedIndex=0;
 					}
 					break;
 				}
@@ -1210,7 +1334,7 @@
 				if (parentApplication.CanSaveAllWaves()==false)
 				{					
 					Alert.show(
-						"You can only use this feature in the standalone mode.  Sorry.", 
+						"You can only use this feature in the standalone mode, due to security reasons.  Sorry.", 
 						"Alert", 
 						Alert.OK, 
 						null,
@@ -1365,7 +1489,17 @@
 
             protected function clickPasteButton():void
             {
-                var pasted:String = parentApplication.GetPastedString();
+				var pasted:String;
+				if (parentApplication.CanSaveAllWaves()==false)
+				{
+					createPopUp(null);
+					return;
+				}
+				else 
+				{
+                	pasted = parentApplication.GetPastedString();
+				}
+				
 				if (pasted==null)
 				{
 					return;
@@ -1578,7 +1712,7 @@
                     click="clickPreset(event)"/>
                 <s:CheckBox id="createNew"
                     label="Create New Sound"
-                    selected="false"
+                    selected="true"
 					toolTip="Whether to create a new synth when a preset button is clicked, as opposed to modifying the currently selected one."
 					valueCommit="{this.globalState.OnCreateNewChange(event); saveManager.commitGlobal(globalState);}"
                 change="CommitGlobal()"
@@ -1894,7 +2028,7 @@
 					/>
                 <s:Label text="Master Volume" 
 						 click="ResetMasterVolume(event)"
-						 toolTip="The overall volume of your currently-selected sound."
+						 toolTip="The overall volume of your currently-selected sound (this is stored in individual sounds, and not global to BFXR)."
 						 />
                 <mx:Spacer height="10"/>
                 <mx:PopUpMenuButton 
@@ -1904,7 +2038,7 @@
 						  id="exportwav"
 						  creationComplete="{Menu(exportwav.popUp).selectedIndex=0;}"
 						  label="Export Wav"
-						  toolTip="Save Wav to disk"
+						  toolTip="Save Wav to disk."
 						  itemClick="SaveWave(event)"
 						  />
                 <mx:PopUpMenuButton 

@@ -25,6 +25,11 @@
 			What follows is all flash-specific code.
 		*/
 		
+		public function CanSaveAllWaves():Boolean
+		{
+			return false;
+		}
+		
 		private function onApplicationComplete(event:Event):void
 		{
 			ExternalInterface.addCallback("hasModifiedData",main.hasModifiedData);

@@ -181,6 +181,8 @@ package com.increpare.bfxr.synthesis
 					left=sb.readFloat();
 					if (monoify)
 					{
+						if (sb.position>=sb.length)
+							break;
 						right=sb.readFloat();
 					}
 					

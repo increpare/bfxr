@@ -271,7 +271,14 @@ package com.increpare.bfxr.synthesis.Mixer
 			
 			var ww:WaveWriter = new WaveWriter(false,16);
 			
-			ww.addSamples(_waveData,true);
+			var padded:ByteArray = new ByteArray();
+			padded.writeBytes(_waveData);
+			for (var i:int=0;i<2000;i++)
+			{
+				padded.writeFloat(0);
+				padded.writeFloat(0);
+			}
+			ww.addSamples(padded,true);
 			ww.finalize();
 			
 			return ww.outBuffer;
