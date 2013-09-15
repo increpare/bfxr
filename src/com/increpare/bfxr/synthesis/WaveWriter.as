@@ -179,7 +179,6 @@ package com.increpare.bfxr.synthesis
 			} else {// mono
 				while(sb.position<sb.length) {
 					left=sb.readFloat();
-					right=sb.readFloat();
 					
 					if(useFloat) {
 						if(bitsPerSample==32) {

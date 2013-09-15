@@ -21,9 +21,6 @@
 	
 	<fx:Script>
 		
-		
-		import mx.controls.Alert;
-		
 		/*
 			What follows is all flash-specific code.
 		*/
@@ -99,19 +96,6 @@
 		public function DoSave(dat:*,filter:String):void
 		{			
 			new FileReference().save(dat, filter);
-		}
-		
-		public function exportAll():void 
-		{
-			Alert.show(
-				"Unfortunately, you cannot use \"Export All\" in the flash build due to security reasons.  It can only be used in the downloadable version.", 
-				"Alert", 
-				Alert.OK, 
-				null, 
-				null, 
-				null, 
-				Alert.OK
-			);
 		}
 		
 		public function DoLoadAll():void

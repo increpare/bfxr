@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>bfxr</name>
-	<comment/>
+	<name>Bfxr_Flash</name>
+	<comment></comment>
 	<projects>
 	</projects>
 	<buildSpec>
@@ -23,4 +23,3 @@
 		</link>
 	</linkedResources>
 </projectDescription>
-

@@ -39,7 +39,7 @@
 	<mx:LinkButton x="10" y="140" label="analytic@gmail.com" color="#0000FF" paddingLeft="0" paddingRight="0" click="clickMail(event)"/>
 	<mx:LinkButton x="11" y="194" label="http://www.superflashbros.net/as3sfxr/" color="#0000FF" paddingLeft="0" paddingRight="0" click="linkClick(event)"/>
 	<mx:LinkButton x="11" y="243" label="http://www.drpetter.se/project_sfxr.html" color="#0000FF" paddingLeft="0" paddingRight="0" click="linkClick(event)"/>
-	<s:Label x="10" y="49" text="Version 1.4"/>
+	<s:Label x="10" y="49" text="Version 1.3.2"/>
 	<s:Label x="10" y="98" text="By increpare:"/>
 	<s:Label x="11" y="174" text="Based on as3sfxr:"/>
 	<s:Label x="11" y="223" text="Which is based on Sfxr:"/>

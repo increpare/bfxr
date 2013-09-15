@@ -199,9 +199,9 @@
 				mixerInterface = new MixerInterface(this,globalState);
 				
 				_time.addEventListener(TimerEvent.TIMER, timerHandler);
-				_time.start();				
-				
-				OnGlobalParameterChanged();
+				_time.start();												
+
+
 			}
 			
 			public function hasModifiedData():Boolean
@@ -950,67 +950,16 @@
 				}
 			}
 			
-			private function DoClearAll():void 
-			{
-				var oldindex:int = soundList.selectedIndex;
-				while(this.soundItems.length>1)
-				{
-					this.soundItems.removeItemAt(1);					
-				}
-				if (oldindex!=0) 
-				{
-					SelectItemInSoundList(0);
-				}
-				this.layerItems.removeAll();
-				
-				OnGlobalParameterChanged();
-				
-				this.saveManager.RefreshSaveWithAppData();
-				
-				synthInterface.OnParameterChanged(false, false);
-				this.soundList.selectedIndex=globalState.selectedSoundItemID;
-				this.mixesList.selectedIndex=globalState.selectedLayerItemID;
-				
-				SelectItemInSoundListByID(globalState.selectedSoundItemID,false,false);
-				SelectItemInLayerListByID(globalState.selectedLayerItemID,false,false);
-				
-				synthInterface.OnParameterChanged(false, false);
-				mixerInterface.OnParameterChanged(false, false);
-				
-				synthInterface.RefreshUI();
-				mixerInterface.RefreshUI();
-				
-				this.DisableApplyButton(false);			
-			}
-			
 			private function clickLoadAll(event:MenuEvent):void
 			{
 				switch (event.index)
 				{
-					case 0:  
-					{
-						var myClickHandler:Function = function (evt_obj:Object):void {
-							if (evt_obj.detail == Alert.OK) {
-								DoClearAll();
-							}
-						}
-						
-						Alert.show(
-							"Are you sure you want to Clear All?  This will clear your current playlists in both tabs.", 
-							"Alert", 
-							Alert.OK | Alert.CANCEL, 
-							null, 
-							myClickHandler, 
-							null, 
-							Alert.OK);	
-						break;
-					}
-					case 1:
+					case 0:
 					{
 						parentApplication.clickLoadSound();
 						break;
 					}
-					case 2:
+					case 1:
 					{
 						var myClickHandler:Function = function (evt_obj:Object):void {
 							if (evt_obj.detail == Alert.OK) {
@@ -1044,8 +993,7 @@
 				
 				AddToSoundList("loaded");
 				var lib:SfxLibrary = SfxLibrary.LoadFrom(dat);
-				
-				
+								
 				//SYNTHS
 				this.soundItems.removeAll();
 				for (i=0;i<lib.synths.length;i++)
@@ -1087,7 +1035,6 @@
 			//doesn't change list selections
 			private function OnGlobalParameterChanged():void
 			{
-				trace("OnGlobalParameterChanged");
 				playonchange.selected = globalState.playOnChange;
 				createNew.selected = globalState.createNew;
 			}
@@ -1186,17 +1133,6 @@
 				}
             }
 
-			private function clickExportAll(event:MenuEvent):void
-			{
-				if (event.index==0) {
-					SaveWave();
-					return;
-				}
-				
-				//export all
-				parentApplication.exportAll();
-			}
-			
             private function SaveWave():void
             {
                 switch (tabs.selectedIndex)
@@ -1394,17 +1330,10 @@
         <mx:ArrayList id="layerItems">
         </mx:ArrayList>		
 		
-		<fx:XML format="e4x" id="exportoptions"> 
-			<root>
-				<editItem label="Export Wav"/>
-				<editItem label="Export All"/>				
-			</root>
-		</fx:XML>
 		<fx:XML format="e4x" id="loadoptions"> 
 			<root>
-				<editItem label="Clear All"/>
 				<editItem label="Load"/> 
-				<editItem label="Load All"/> 				
+				<editItem label="Load All"/> 
 			</root>
 		</fx:XML>
 		<fx:XML format="e4x" id="saveoptions"> 
@@ -1478,7 +1407,7 @@
                     click="clickPreset(event)"/>
                 <s:CheckBox id="createNew"
                     label="Create New Sound"
-                    selected="true"
+                    selected="false"
 					toolTip="Whether to create a new synth when a preset button is clicked, as opposed to modifying an existing one."
 					valueCommit="{this.globalState.OnCreateNewChange(event); saveManager.commitGlobal(globalState);}"
                 change="CommitGlobal()"
@@ -1796,19 +1725,9 @@
 						 toolTip="The overall volume of your currently-selected sound."
 						 />
                 <mx:Spacer height="10"/>
-                <!--<s:Button id="exportwav"
+                <s:Button id="exportwav"
                     label="Export Wav"
-                    click="SaveWave()"/>-->
-				<mx:PopUpMenuButton 
-					dataProvider="{exportoptions}"
-					labelField="@label" 
-					showRoot="false" 
-					id="exportwav"
-					creationComplete="{Menu(loadmenu.popUp).selectedIndex=0;}"
-					label="Export Wav"
-					toolTip="Exports the current sound as a WAV file to disk."
-					itemClick="clickExportAll(event)"
-					/>
+                    click="SaveWave()"/>
                 <mx:PopUpMenuButton 
                 	dataProvider="{loadoptions}"
                 	labelField="@label" 

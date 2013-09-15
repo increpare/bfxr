@@ -1194,15 +1194,9 @@
 		public function getWavFile():ByteArray
 		{
 			stop();								
-			var ww:WaveWriter = new WaveWriter(false,16);			
-			var cw:ByteArray = cachedWave;	
-			var cw2:ByteArray = new ByteArray();
-			cw2.writeBytes(cw);
-			for (var i:int=0;i<2000;i++) {
-				cw2.writeFloat(0);
-				cw2.writeFloat(0);
-			}
-			ww.addSamples(cw2);			
+			var ww:WaveWriter = new WaveWriter(true,16);			
+			var cw:ByteArray = cachedWave;			
+			ww.addSamples(cw);			
 			ww.finalize();			
 			return ww.outBuffer;
 		}
