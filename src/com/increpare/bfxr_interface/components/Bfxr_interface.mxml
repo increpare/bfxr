@@ -13,6 +13,7 @@
     pageTitle="as3sfxr-b"
 	keyDown="keyDown(event)"
 	initialize="onInitialize()"
+	
     creationComplete="onApplicationComplete();"
 	xmlns:local="*" xmlns:ns="com.increpare.bfxr_interface.components.*">
 	
@@ -118,6 +119,10 @@
 						
 			public function DoPlay():void
             {
+				if (tabs==null)
+				{
+					return;
+				}
                 switch (tabs.selectedIndex)
                 {
                     case 0:
@@ -302,10 +307,6 @@
 				_time.addEventListener(TimerEvent.TIMER, timerHandler);
 				_time.start();												
 				OnGlobalParameterChanged();
-				if(globalState.playOnChange) 
-				{
-					DoPlay();
-				}
 			}
 			
 			public function hasModifiedData():Boolean
@@ -1380,46 +1381,47 @@
 				
 				var dats:Array = [];
 				var names:Array=[];
-				var sounddats:Vector.<SoundData> = saveManager.GetSounds();
-				var layerdats:Vector.<LayerData> = saveManager.GetLayers();
+				
+				//var sounddats:Vector.<SoundData> = saveManager.GetSounds();
+				//var layerdats:Vector.<LayerData> = saveManager.GetLayers();
 				
 				var j:int=-1;
 				var tick:Function = function():void {
 					trace("tick2 " + j);
 					
 					_progBar.indeterminate=false;	
-					_progBar.setProgress(j,sounddats.length+layerdats.length);
+					_progBar.setProgress(j,soundItems.length+layerItems.length);
 					
 					var s:SfxrSynth = new SfxrSynth();
 					if (j==-1)
 					{
 						
 					}
-					else if (j<sounddats.length)
+					else if (j<soundItems.length)
 					{						
-						var sd:SoundData = sounddats[j];
+						var sd:SoundData = soundItems.getItemAt(j) as SoundData;
 						var soundname:String=sd.label;
 						while (names.indexOf(soundname)>=0)
 						{
 							soundname=soundname+"_";
 						}
 						names.push(soundname);
-						_progBar.label=soundname+".wav (" +j+" of " + (sounddats.length+layerdats.length)+")";
+						_progBar.label=soundname+".wav (" +j+" of " + (soundItems.length+layerItems.length)+")";
 						s.Load(sd.data);					
 						dats.push([soundname,s.getWavFile()]);
 					}
-					else if (j-sounddats.length<layerdats.length)
+					else if (j-soundItems.length<layerItems.length)
 					{
 					
 						var mixersynth:MixerPlayer = new MixerPlayer();
 
-						var ld:LayerData = layerdats[j-sounddats.length];
+						var ld:LayerData = layerItems.getItemAt(j-soundItems.length) as LayerData;
 						soundname=ld.label;
 						while (names.indexOf(soundname)>=0)
 						{
 							soundname=soundname+"_";
 						}
-						_progBar.label=soundname+".wav (" +sounddats.length+" of " + layerdats.length+")";
+						_progBar.label=soundname+".wav (" +j+" of " + (soundItems.length+layerItems.length)+")";
 						names.push(soundname);
 						mixersynth.Load(ld.data);
 						dats.push([soundname,mixersynth.getWavFile()]);
