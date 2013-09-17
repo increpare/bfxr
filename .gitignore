@@ -1,1 +1,5 @@
+.DS_Store
 bin-debug/
+bin-release/
+Bfxr/
+*.zip
