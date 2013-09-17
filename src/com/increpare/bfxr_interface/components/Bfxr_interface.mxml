@@ -1231,7 +1231,7 @@
 								
 				try
 				{
-					new FileReference().save(file, "sfx.bfxrlibrary");
+					parentApplication.DoSave(file,"sfx.bfxrlibrary","bfxrlibrary");
 				}
 				catch(e:Error)
 				{
@@ -1290,7 +1290,7 @@
 				
 				try
 				{
-					parentApplication.DoSave(dat,name+".bfxrsound");
+					parentApplication.DoSave(dat,name+".bfxrsound","bfxrsound");
 				}
 				catch(e:Error)
 				{
