@@ -399,6 +399,8 @@ package com.increpare.bfxr.synthesis.Synthesizer
                                 setParam("waveType", 5);
                         }
 
+                        setParam("attackTime", Math.random() * 0.6);
+
 			if(Math.random() < 0.5)
 			{
 				setParam("startFrequency", 0.1 + Math.random() * 0.4);
