@@ -1,8 +1,6 @@
 package com.increpare.bfxr.synthesis.Synthesizer   
 {
 	import com.increpare.bfxr.synthesis.ISerializable;
-	
-	import mx.utils.StringUtil;
 
 	/**
 	 * SfxrParams
