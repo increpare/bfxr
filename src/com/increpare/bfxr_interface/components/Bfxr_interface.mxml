@@ -1847,7 +1847,7 @@
                                         <s:ToggleButton id="W1"
                                             width="65"
                                             label="Saw"
-											toolTip="Saw waves are raspy mother-fuckers."
+											toolTip="Saw waves are pretty raspy!"
                                             change="synthInterface.WaveformSelect(event)"/>
                                         <s:ToggleButton id="W8"
                                             width="65"
