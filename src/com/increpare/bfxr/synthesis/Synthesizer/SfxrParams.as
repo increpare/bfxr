@@ -142,10 +142,10 @@ package com.increpare.bfxr.synthesis.Synthesizer
 			_params = new Object();			
 			for (var i:int=0;i<ParamData.length;i++)
 			{
-				_params[ParamData[i][3]]=-100;
+				_params[ParamData[i][3]]=ParamData[i][4];
 			}
 			
-			resetParams();
+			resetParams(null,true);
 		}
 		
 		public function getDefault(param:String):Number
