@@ -134,7 +134,7 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		//
 		//--------------------------------------------------------------------------
 		
-		public static const WAVETYPECOUNT:int = 9;
+		public static const WAVETYPECOUNT:int = 12;
 		
 		public function SfxrParams()
 		{
@@ -334,7 +334,11 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		public function generateExplosion():void
 		{
 			resetParams(null,false);
-			setParam("waveType", 3,true);
+			if(Math.random() < 0.5){
+				setParam("waveType", 3,true);
+			} else {				
+				setParam("waveType", 9,true);
+			}
 			
 			if(Math.random() < 0.5)
 			{
@@ -408,9 +412,11 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		{
 			resetParams(null,false);
 			
-			setParam("waveType", uint(Math.random() * 3),true);
+			setParam("waveType", uint(Math.random() * 4),true);
 			if(int(getParam("waveType")) == 2) 
-				setParam("waveType", 3,true);
+				setParam("waveType", 3,true);//white noise
+			else if(int(getParam("waveType")) == 3) 
+				setParam("waveType", 9,true);//bitnoise
 			else if(int(getParam("waveType")) == 0) 
 				setParam("squareDuty", Math.random() * 0.6);
 			
@@ -466,18 +472,22 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		public function resetParams(paramsToReset:Array = null,allowUnlock:Boolean = true):void
 		{
 			paramsDirty = true;
-			
-			for (var param:String in _params)
-			{
-				if (paramsToReset==null || paramsToReset.indexOf(param)>=0)
-					_params[param]=getDefault(param);
-			}
+						
 			
 			if (allowUnlock && (paramsToReset==null || paramsToReset.indexOf("lockedParams")>=0))
 			{
 				_lockedParams = new Vector.<String>();
 				//lock this one by default
 				_lockedParams.push("masterVolume");
+			}
+			
+			for (var param:String in _params)
+			{
+				if (paramsToReset==null || paramsToReset.indexOf(param)>=0) {
+					if (lockedParam(param)==false){
+						_params[param]=getDefault(param);
+					}
+				}
 			}
 			
 		}
@@ -536,7 +546,10 @@ package com.increpare.bfxr.synthesis.Synthesizer
 				1,//5:pink
 				1,//6:tan
 				1,//7:whistle
-				1//8:breaker
+				1,//8:breaker
+				1,//9:bitnoise
+				1,//10:new 1
+				1,//11:buzz
 			];
 			
 		/**

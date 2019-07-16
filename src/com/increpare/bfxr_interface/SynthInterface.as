@@ -259,7 +259,7 @@ package com.increpare.bfxr_interface
 		{
 			var tb:ToggleButton = event.target as ToggleButton;
 			
-			var ind:int = parseInt(tb.id.charAt(1));
+			var ind:int = parseInt(tb.id.substring(1));
 			
 			//deselect other buttons
 			for (var i:int = 0; i < SfxrParams.WAVETYPECOUNT; i++)

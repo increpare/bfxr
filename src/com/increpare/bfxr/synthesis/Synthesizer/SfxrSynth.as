@@ -11,7 +11,6 @@
 	import flash.media.SoundChannel;
 	import flash.media.SoundTransform;
 	import flash.utils.ByteArray;
-	import flash.utils.Endian;
 	import flash.utils.getTimer;
 
 	/**
@@ -164,6 +163,12 @@
 		private var _noiseBuffer:Vector.<Number>;			// Buffer of random values used to generate noise
 		private var _pinkNoiseBuffer:Vector.<Number>;			// Buffer of random values used to generate noise
 		private var _loResNoiseBuffer:Vector.<Number>;			// Buffer of random values used to generate noise
+		
+		private var _oneBitNoiseState:int;					// Buffer containing one-bit periodic noise state.
+		private var _oneBitNoise:Number;					// Current sample of one-bit noise.
+		
+		private var _buzzState:int;							// Buffer containing 'buzz' periodic noise state.
+		private var _buzz:Number							// Current sample of 'buzz' noise.
 		
 		private var _pinkNumber:PinkNumber;
 		
@@ -716,7 +721,7 @@
 			
 			_period = 100.0 / (p.getParam("startFrequency") * p.getParam("startFrequency") + 0.001);
 			_maxPeriod = 100.0 / (p.getParam("minFrequency") * p.getParam("minFrequency") + 0.001);
-			
+						
 			
 			_slide = 1.0 - p.getParam("slide") * p.getParam("slide") * p.getParam("slide") * 0.01;
 			_deltaSlide = -p.getParam("deltaSlide") * p.getParam("deltaSlide") * p.getParam("deltaSlide") * 0.000001;
@@ -826,6 +831,11 @@
 				if(!_loResNoiseBuffer) _loResNoiseBuffer = new Vector.<Number>(32, true);
 				if (!_pinkNumber) _pinkNumber = new PinkNumber();
 				
+				_oneBitNoiseState = 1 << 14;
+				_oneBitNoise = 0;
+				_buzzState = 1 << 14;
+				_buzz = 0;
+				
 				for(var i:uint = 0; i < 1024; i++) _flangerBuffer[i] = 0.0;
 				for(i = 0; i < 32; i++) _noiseBuffer[i] = Math.random() * 2.0 - 1.0;
 				for(i = 0; i < 32; i++) _pinkNoiseBuffer[i] = _pinkNumber.GetNextValue();
@@ -835,6 +845,30 @@
 				
 				if (p.getParam("repeatSpeed") == 0.0) 	_repeatLimit = 0;
 				else 						_repeatLimit = int((1.0-p.getParam("repeatSpeed")) * (1.0-p.getParam("repeatSpeed")) * 20000) + 32;
+			}
+			
+			if (_waveType==9 || _waveType==11){
+				
+				var sf:Number = p.getParam("startFrequency");
+				var mf:Number = p.getParam("minFrequency");
+				
+				var startFrequency_min:Number = p.getMin("startFrequency");
+				var startFrequency_max:Number = p.getMax("startFrequency");
+				var startFrequency_mid:Number = (startFrequency_max+startFrequency_min)/2;
+				
+				var minFrequency_min:Number = p.getMin("minFrequency");
+				var minFrequency_max:Number = p.getMax("minFrequency");
+				var minFrequency_mid:Number = (minFrequency_max+minFrequency_min)/2;
+				
+				var delta_start:Number = (sf-startFrequency_min)/(startFrequency_max-startFrequency_min)
+				var delta_min:Number = (mf-minFrequency_min)/(minFrequency_max-minFrequency_min)
+				
+				sf = startFrequency_mid+delta_start/2;
+				mf = minFrequency_mid+delta_min/2;
+				
+				_period = 100.0 / (sf*sf + 0.001);
+				_maxPeriod = 100.0 / (mf*mf + 0.001);
+				
 			}
 		}
 		
@@ -851,6 +885,7 @@
 			_sampleCount = 0;
 			_bufferSample = 0.0;
 			
+
 			for(var i:uint = 0; i < length; i++)
 			{
 				if (_finished) 
@@ -999,6 +1034,26 @@
 						{
 							for(n = 0; n < 32; n++) _loResNoiseBuffer[n] = ((n%LoResNoisePeriod)==0) ? Math.random()*2.0-1.0 : _loResNoiseBuffer[n-1];							
 						}
+						else if (_waveType == 9)
+						{
+							// Bitnoise
+							// Based on SN76489 periodic "white" noise
+							// http://www.smspower.org/Development/SN76489?sid=ae16503f2fb18070f3f40f2af56807f1#NoiseChannel
+							// This one matches the behaviour of the SN76489 in the BBC Micro.
+							var feedBit:int = (_oneBitNoiseState >> 1 & 1) ^ (_oneBitNoiseState & 1);
+							_oneBitNoiseState = _oneBitNoiseState >> 1 | (feedBit << 14);
+							_oneBitNoise = (~_oneBitNoiseState & 1) - 0.5;
+							
+						} else if (_waveType == 11)
+						{
+							// Based on SN76489 periodic "white" noise
+							// http://www.smspower.org/Development/SN76489?sid=ae16503f2fb18070f3f40f2af56807f1#NoiseChannel
+							// This one doesn't match the behaviour of anything real, but it made a nice sound, so I kept it.
+							var fb:int = (_buzzState >> 3 & 1) ^ (_buzzState & 1);
+							_buzzState = _buzzState >> 1 | (fb << 14);
+							_buzz = (~_buzzState & 1) - 0.5;
+							
+						}
 					}
 					
 					_sample=0;
@@ -1007,7 +1062,11 @@
 					{
 						var tempphase:Number = (_phase*(k+1))%_periodTemp;
 						// Gets the sample from the oscillator
-						switch(_waveType)
+						var wtype:Number = _waveType;
+						if (wtype==10){
+							wtype = Math.floor(_phase/4) %10;
+						}
+						switch(wtype)
 						{
 							case 0: // Square wave
 							{
@@ -1070,6 +1129,16 @@
 							{	
 								var amp:Number = tempphase/_periodTemp;								
 								_sample += overtonestrength*(Math.abs(1-amp*amp*2)-1);
+								break;
+							}
+							case 9: // Bitnoise (1-bit periodic "white" noise)
+							{
+								_sample += overtonestrength*_oneBitNoise;
+								break;
+							}
+							case 11: //new2
+							{
+								_sample += overtonestrength*_buzz;
 								break;
 							}
 						}
