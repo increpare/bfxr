@@ -46,7 +46,7 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		["Wave Type","Shape of the wave.",
 			0,"waveType",2,0,WAVETYPECOUNT-0.0001], // the 6.999 thing is because this is really an int parameter...		
 		
-		["Master Volume","Overall volume of the sound.",
+		["Sound Volume","Overall volume of the current sound.",
 			1,"masterVolume",0.5,0,1], 	
 		["Attack Time","Length of the volume envelope attack.",
 			1,"attackTime",0,0,1],		
@@ -185,13 +185,18 @@ package com.increpare.bfxr.synthesis.Synthesizer
 			return _params[param];			
 		}
 		
-		public function setParam(param:String,value:Number):void
+		public function setParam(param:String,value:Number,checkLocked:Boolean=false):void
 		{
 			if (! (param in _params))
 			{
 				throw new Error("Could not set param.  Param not found " + param);
 			}
 			
+			if (checkLocked){
+				if (lockedParam(param)==true){
+					return;
+				}
+			}
 			_params[param]=clamp(value,getMin(param),getMax(param));
 			paramsDirty = true;
 		}
@@ -249,21 +254,21 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		 */
 		public function generatePickupCoin():void
 		{
-			resetParams();
+			resetParams(null,false);
 			
-			setParam("startFrequency",0.4+Math.random()*0.5);
+			setParam("startFrequency",0.4+Math.random()*0.5,true);
 			
-			setParam("sustainTime", Math.random() * 0.1);
-			setParam("decayTime", 0.1 + Math.random() * 0.4);
-			setParam("sustainPunch", 0.3 + Math.random() * 0.3);
+			setParam("sustainTime", Math.random() * 0.1,true);
+			setParam("decayTime", 0.1 + Math.random() * 0.4,true);
+			setParam("sustainPunch", 0.3 + Math.random() * 0.3,true);
 			
 			if(Math.random() < 0.5) 
 			{
-				setParam("changeSpeed", 0.5 + Math.random() * 0.2);
+				setParam("changeSpeed", 0.5 + Math.random() * 0.2,true);
 				var cnum:int = int(Math.random()*7)+1;
 				var cden:int = cnum+int(Math.random()*7)+2;
 				
-				setParam("changeAmount", Number(cnum)/Number(cden));
+				setParam("changeAmount", Number(cnum)/Number(cden),true);
 			}
 			
 		}
@@ -273,54 +278,54 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		 */
 		public function generateLaserShoot():void
 		{
-			resetParams();
+			resetParams(null,false);
 			
-			setParam("waveType",uint(Math.random() * 3));
-			if( int(getParam("waveType")) == 2 && Math.random() < 0.5) 
+			setParam("waveType",uint(Math.random() * 3),true);
+			if( int(getParam("waveType")) == 2 && Math.random() < 0.5,true) 
 			{
 				setParam("waveType", 
-					uint(Math.random() * 2));
+					uint(Math.random() * 2),true);
 			}
 			
 			setParam("startFrequency", 
-				0.5 + Math.random() * 0.5);
+				0.5 + Math.random() * 0.5,true);
 			setParam("minFrequency", 
-				getParam("startFrequency") - 0.2 - Math.random() * 0.6);
+				getParam("startFrequency") - 0.2 - Math.random() * 0.6,true);
 			
 			if(getParam("minFrequency") < 0.2) 
-				setParam("minFrequency",0.2);
+				setParam("minFrequency",0.2,true);
 			
-			setParam("slide", -0.15 - Math.random() * 0.2);			
+			setParam("slide", -0.15 - Math.random() * 0.2,true);			
 			 
 			if(Math.random() < 0.33)
 			{
-				setParam("startFrequency", Math.random() * 0.6);
-				setParam("minFrequency", Math.random() * 0.1);
-				setParam("slide", -0.35 - Math.random() * 0.3);
+				setParam("startFrequency", Math.random() * 0.6,true);
+				setParam("minFrequency", Math.random() * 0.1,true);
+				setParam("slide", -0.35 - Math.random() * 0.3,true);
 			}
 			
 			if(Math.random() < 0.5) 
 			{
-				setParam("squareDuty", Math.random() * 0.5);
-				setParam("dutySweep", Math.random() * 0.2);
+				setParam("squareDuty", Math.random() * 0.5,true);
+				setParam("dutySweep", Math.random() * 0.2,true);
 			}
 			else
 			{
-				setParam("squareDuty", 0.4 + Math.random() * 0.5);
-				setParam("dutySweep",- Math.random() * 0.7);	
+				setParam("squareDuty", 0.4 + Math.random() * 0.5,true);
+				setParam("dutySweep",- Math.random() * 0.7,true);	
 			}
 			
-			setParam("sustainTime", 0.1 + Math.random() * 0.2);
-			setParam("decayTime", Math.random() * 0.4);
-			if(Math.random() < 0.5) setParam("sustainPunch", Math.random() * 0.3);
+			setParam("sustainTime", 0.1 + Math.random() * 0.2,true);
+			setParam("decayTime", Math.random() * 0.4,true);
+			if(Math.random() < 0.5) setParam("sustainPunch", Math.random() * 0.3,true);
 			
 			if(Math.random() < 0.33)
 			{
-				setParam("flangerOffset", Math.random() * 0.2);
-				setParam("flangerSweep", -Math.random() * 0.2);
+				setParam("flangerOffset", Math.random() * 0.2,true);
+				setParam("flangerSweep", -Math.random() * 0.2,true);
 			}
 			
-			if(Math.random() < 0.5) setParam("hpFilterCutoff", Math.random() * 0.3);
+			if(Math.random() < 0.5) setParam("hpFilterCutoff", Math.random() * 0.3,true);
 		}
 		
 		/**
@@ -328,39 +333,39 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		 */
 		public function generateExplosion():void
 		{
-			resetParams();
-			setParam("waveType", 3);
+			resetParams(null,false);
+			setParam("waveType", 3,true);
 			
 			if(Math.random() < 0.5)
 			{
-				setParam("startFrequency", 0.1 + Math.random() * 0.4);
-				setParam("slide", -0.1 + Math.random() * 0.4);
+				setParam("startFrequency", 0.1 + Math.random() * 0.4,true);
+				setParam("slide", -0.1 + Math.random() * 0.4,true);
 			}
 			else
 			{
-				setParam("startFrequency", 0.2 + Math.random() * 0.7);
-				setParam("slide", -0.2 - Math.random() * 0.2);
+				setParam("startFrequency", 0.2 + Math.random() * 0.7,true);
+				setParam("slide", -0.2 - Math.random() * 0.2,true);
 			}
 			
-			setParam("startFrequency", getParam("startFrequency") * getParam("startFrequency"));
+			setParam("startFrequency", getParam("startFrequency") * getParam("startFrequency"),true);
 			
-			if(Math.random() < 0.2) setParam("slide", 0.0);
-			if(Math.random() < 0.33) setParam("repeatSpeed", 0.3 + Math.random() * 0.5);
+			if(Math.random() < 0.2) setParam("slide", 0.0,true);
+			if(Math.random() < 0.33) setParam("repeatSpeed", 0.3 + Math.random() * 0.5,true);
 			
-			setParam("sustainTime", 0.1 + Math.random() * 0.3);
-			setParam("decayTime", Math.random() * 0.5);
-			setParam("sustainPunch", 0.2 + Math.random() * 0.6);
+			setParam("sustainTime", 0.1 + Math.random() * 0.3,true);
+			setParam("decayTime", Math.random() * 0.5,true);
+			setParam("sustainPunch", 0.2 + Math.random() * 0.6,true);
 			
 			if(Math.random() < 0.5)
 			{
-				setParam("flangerOffset", -0.3 + Math.random() * 0.9);
-				setParam("flangerSweep", -Math.random() * 0.3);
+				setParam("flangerOffset", -0.3 + Math.random() * 0.9,true);
+				setParam("flangerSweep", -Math.random() * 0.3,true);
 			}
 			
 			if(Math.random() < 0.33)
 			{
-				setParam("changeSpeed", 0.6 + Math.random() * 0.3);
-				setParam("changeAmount", 0.8 - Math.random() * 1.6);
+				setParam("changeSpeed", 0.6 + Math.random() * 0.3,true);
+				setParam("changeAmount", 0.8 - Math.random() * 1.6,true);
 			}
 		}
 		
@@ -369,31 +374,31 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		 */
 		public function generatePowerup():void
 		{
-			resetParams();
+			resetParams(null,false);
 			
-			if(Math.random() < 0.5) setParam("waveType", 1);
-			else 					setParam("squareDuty", Math.random() * 0.6);
+			if(Math.random() < 0.5) setParam("waveType", 1,true);
+			else 					setParam("squareDuty", Math.random() * 0.6,true);
 			
 			if(Math.random() < 0.5)
 			{
-				setParam("startFrequency", 0.2 + Math.random() * 0.3);
-				setParam("slide", 0.1 + Math.random() * 0.4);
-				setParam("repeatSpeed", 0.4 + Math.random() * 0.4);
+				setParam("startFrequency", 0.2 + Math.random() * 0.3,true);
+				setParam("slide", 0.1 + Math.random() * 0.4,true);
+				setParam("repeatSpeed", 0.4 + Math.random() * 0.4,true);
 			}
 			else
 			{
-				setParam("startFrequency", 0.2 + Math.random() * 0.3);
-				setParam("slide", 0.05 + Math.random() * 0.2);
+				setParam("startFrequency", 0.2 + Math.random() * 0.3,true);
+				setParam("slide", 0.05 + Math.random() * 0.2,true);
 				
 				if(Math.random() < 0.5)
 				{
-					setParam("vibratoDepth", Math.random() * 0.7);
-					setParam("vibratoSpeed", Math.random() * 0.6);
+					setParam("vibratoDepth", Math.random() * 0.7,true);
+					setParam("vibratoSpeed", Math.random() * 0.6,true);
 				}
 			}
 			
-			setParam("sustainTime", Math.random() * 0.4);
-			setParam("decayTime", 0.1 + Math.random() * 0.4);
+			setParam("sustainTime", Math.random() * 0.4,true);
+			setParam("decayTime", 0.1 + Math.random() * 0.4,true);
 		}
 		
 		/**
@@ -401,21 +406,21 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		 */
 		public function generateHitHurt():void
 		{
-			resetParams();
+			resetParams(null,false);
 			
-			setParam("waveType", uint(Math.random() * 3));
+			setParam("waveType", uint(Math.random() * 3),true);
 			if(int(getParam("waveType")) == 2) 
-				setParam("waveType", 3);
+				setParam("waveType", 3,true);
 			else if(int(getParam("waveType")) == 0) 
 				setParam("squareDuty", Math.random() * 0.6);
 			
-			setParam("startFrequency", 0.2 + Math.random() * 0.6);
-			setParam("slide", -0.3 - Math.random() * 0.4);
+			setParam("startFrequency", 0.2 + Math.random() * 0.6,true);
+			setParam("slide", -0.3 - Math.random() * 0.4,true);
 			
-			setParam("sustainTime", Math.random() * 0.1);
-			setParam("decayTime", 0.1 + Math.random() * 0.2);
+			setParam("sustainTime", Math.random() * 0.1,true);
+			setParam("decayTime", 0.1 + Math.random() * 0.2,true);
 			
-			if(Math.random() < 0.5) setParam("hpFilterCutoff", Math.random() * 0.3);
+			if(Math.random() < 0.5) setParam("hpFilterCutoff", Math.random() * 0.3,true);
 		}
 		
 		/**
@@ -423,18 +428,18 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		 */
 		public function generateJump():void
 		{
-			resetParams();
+			resetParams(null,false);
 			
-			setParam("waveType", 0);
-			setParam("squareDuty", Math.random() * 0.6);
-			setParam("startFrequency", 0.3 + Math.random() * 0.3);
-			setParam("slide", 0.1 + Math.random() * 0.2);
+			setParam("waveType", 0,true);
+			setParam("squareDuty", Math.random() * 0.6,true);
+			setParam("startFrequency", 0.3 + Math.random() * 0.3,true);
+			setParam("slide", 0.1 + Math.random() * 0.2,true);
 			
-			setParam("sustainTime", 0.1 + Math.random() * 0.3);
-			setParam("decayTime", 0.1 + Math.random() * 0.2);
+			setParam("sustainTime", 0.1 + Math.random() * 0.3,true);
+			setParam("decayTime", 0.1 + Math.random() * 0.2,true);
 			
-			if(Math.random() < 0.5) setParam("hpFilterCutoff", Math.random() * 0.3);
-			if(Math.random() < 0.5) setParam("lpFilterCutoff", 1.0 - Math.random() * 0.6);
+			if(Math.random() < 0.5) setParam("hpFilterCutoff", Math.random() * 0.3,true);
+			if(Math.random() < 0.5) setParam("lpFilterCutoff", 1.0 - Math.random() * 0.6,true);
 		}
 		
 		/**
@@ -442,23 +447,23 @@ package com.increpare.bfxr.synthesis.Synthesizer
 		 */
 		public function generateBlipSelect():void
 		{
-			resetParams();
+			resetParams(null,false);
 			
-			setParam("waveType", uint(Math.random() * 2));
+			setParam("waveType", uint(Math.random() * 2),true);
 			if(int(getParam("waveType")) == 0) 
-				setParam("squareDuty", Math.random() * 0.6);
+				setParam("squareDuty", Math.random() * 0.6,true);
 			
-			setParam("startFrequency", 0.2 + Math.random() * 0.4);
+			setParam("startFrequency", 0.2 + Math.random() * 0.4,true);
 			
-			setParam("sustainTime", 0.1 + Math.random() * 0.1);
-			setParam("decayTime", Math.random() * 0.2);
-			setParam("hpFilterCutoff", 0.1);
+			setParam("sustainTime", 0.1 + Math.random() * 0.1,true);
+			setParam("decayTime", Math.random() * 0.2,true);
+			setParam("hpFilterCutoff", 0.1,true);
 		}
 		
 		/**
 		 * Resets the parameters, used at the start of each generate function
 		 */
-		public function resetParams(paramsToReset:Array = null):void
+		public function resetParams(paramsToReset:Array = null,allowUnlock:Boolean = true):void
 		{
 			paramsDirty = true;
 			
@@ -468,7 +473,7 @@ package com.increpare.bfxr.synthesis.Synthesizer
 					_params[param]=getDefault(param);
 			}
 			
-			if (paramsToReset==null || paramsToReset.indexOf("lockedParams")>=0)
+			if (allowUnlock && (paramsToReset==null || paramsToReset.indexOf("lockedParams")>=0))
 			{
 				_lockedParams = new Vector.<String>();
 				//lock this one by default
