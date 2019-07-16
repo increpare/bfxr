@@ -863,8 +863,8 @@
 				var delta_start:Number = (sf-startFrequency_min)/(startFrequency_max-startFrequency_min)
 				var delta_min:Number = (mf-minFrequency_min)/(minFrequency_max-minFrequency_min)
 				
-				sf = startFrequency_mid+delta_start/2;
-				mf = minFrequency_mid+delta_min/2;
+				sf = startFrequency_mid+delta_start;
+				mf = minFrequency_mid+delta_min;
 				
 				_period = 100.0 / (sf*sf + 0.001);
 				_maxPeriod = 100.0 / (mf*mf + 0.001);
