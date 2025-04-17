@@ -1,4 +1,4 @@
-**FEB 2021 UPDATE**: work has began on the pure-javascript sequel now   
+**MAR 2025 UPDATE**: Bfxr has been superseeded by javascript reworking Bfxr2
 https://github.com/increpare/bfxr2
 
 ---
